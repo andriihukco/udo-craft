@@ -7,6 +7,16 @@
     "packages/*"
   ],
   "scripts": {
+    "build": "npm run build:shared && npm run build:ui && npm run build:admin && npm run build:client",
+    "build:admin": "npm run build --workspace=admin",
+    "build:client": "npm run build --workspace=client",
+    "build:shared": "npm run build --workspace=@udo-craft/shared",
+    "build:ui": "npm run build --workspace=@udo-craft/ui",
+    "dev": "npm run dev:admin & npm run dev:client",
+    "dev:admin": "npm run dev --workspace=admin",
+    "dev:client": "npm run dev --workspace=client",
+    "lint": "npm run lint --workspaces",
+    "type-check": "npm run type-check --workspaces",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -23,6 +33,7 @@
     "@testing-library/react": "^16.3.2",
     "@vitest/coverage-v8": "^4.1.0",
     "jsdom": "^28.1.0",
+    "turbo": "^2.0.0",
     "vitest": "^4.1.0"
   }
 }

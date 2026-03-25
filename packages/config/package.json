@@ -1,0 +1,13 @@
+{
+  "name": "@udo-craft/config",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./tailwind.ts",
+  "types": "./tailwind.ts",
+  "dependencies": {
+    "tailwindcss": "^3.4.1"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}

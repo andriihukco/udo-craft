@@ -1,9 +1,19 @@
 {
   "name": "@udo-craft/shared",
   "version": "1.0.0",
-  "main": "index.ts",
-  "types": "index.ts",
+  "private": true,
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "type-check": "tsc --noEmit"
+  },
   "dependencies": {
-    "zod": "^3.22.4"
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5"
   }
 }
