@@ -29,6 +29,7 @@ export const PrintZoneSchema = z.object({
   y: z.number().int(),
   width: z.number().int(),
   height: z.number().int(),
+  allowed_print_types: z.array(z.string()).default(["dtf"]).optional(),
 });
 
 export const LeadSchema = z.object({
@@ -64,3 +65,35 @@ export type Lead = z.infer<typeof LeadSchema>;
 export type OrderItem = z.infer<typeof OrderItemSchema>;
 export type LeadStatus = z.infer<typeof LeadStatusEnum>;
 export type PrintZoneSide = z.infer<typeof PrintZoneSideEnum>;
+
+// ── Catalog hierarchy ───────────────────────────────────────────────────────
+
+export const CategorySchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  slug: z.string(),
+  sort_order: z.number().int().default(0),
+  is_active: z.boolean().default(true),
+  image_url: z.string().nullable().optional(),
+});
+
+export const MaterialSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  hex_code: z.string().default("#000000"),
+  is_active: z.boolean().default(true),
+  sort_order: z.number().int().default(0),
+});
+
+export const ProductColorVariantSchema = z.object({
+  id: z.string().uuid(),
+  product_id: z.string().uuid(),
+  material_id: z.string().uuid(),
+  images: z.record(z.string(), z.string()),
+  sort_order: z.number().int().default(0),
+  is_active: z.boolean().default(true),
+});
+
+export type Category = z.infer<typeof CategorySchema>;
+export type Material = z.infer<typeof MaterialSchema>;
+export type ProductColorVariant = z.infer<typeof ProductColorVariantSchema>;
