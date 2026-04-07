@@ -160,6 +160,20 @@ GitHub Actions (`.github/workflows/deploy.yml`) automatically:
 
 **This is the recommended approach** — no manual steps, no workarounds.
 
+### ⚠️ CRITICAL: Update Domain Aliases After Deployment
+
+**After every deployment, you MUST update the domain aliases** or users will see the old cached version.
+
+```bash
+# Get the new deployment URL from GitHub Actions output, then:
+vercel alias set <new-admin-url> admin.u-do-craft.store --scope team_XX3rqg5IE2XdK6oxIVibJTt6
+vercel alias set <new-client-url> www.u-do-craft.store --scope team_XX3rqg5IE2XdK6oxIVibJTt6
+```
+
+**Why:** Each deployment gets a unique URL (e.g., `udo-craft-admin-7uandexb1-...`). The domain alias must point to the new URL, otherwise it keeps serving the old code.
+
+**See DEPLOYMENT.md for detailed instructions.**
+
 ### Deploy via CLI (Manual)
 If you need to deploy manually without pushing to git:
 
@@ -178,6 +192,8 @@ export VERCEL_TOKEN=your_token_here
 ```
 
 The script handles all project ID and org ID configuration automatically.
+
+**⚠️ Remember:** After using the script, manually update the domain aliases (see section above).
 
 ### How Vercel Builds Work (Monorepo)
 Each app has its own `vercel.json` config in its directory:

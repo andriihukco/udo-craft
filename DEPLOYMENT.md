@@ -35,6 +35,37 @@ export VERCEL_TOKEN=your_token_here
 
 ---
 
+## ⚠️ CRITICAL: Update Domain Aliases After Deployment
+
+**This is the most common mistake.** After deploying, you MUST update the domain aliases to point to the new deployments, otherwise the old cached version will be served.
+
+```bash
+# After deploying admin, get the new deployment URL from Vercel output
+# Then update the alias:
+vercel alias set <new-deployment-url> admin.u-do-craft.store --scope team_XX3rqg5IE2XdK6oxIVibJTt6
+
+# After deploying client:
+vercel alias set <new-deployment-url> www.u-do-craft.store --scope team_XX3rqg5IE2XdK6oxIVibJTt6
+```
+
+**Example:**
+```bash
+# If deployment output shows: udo-craft-admin-7uandexb1-ahuk1312-gmailcoms-projects.vercel.app
+vercel alias set udo-craft-admin-7uandexb1-ahuk1312-gmailcoms-projects.vercel.app admin.u-do-craft.store --scope team_XX3rqg5IE2XdK6oxIVibJTt6
+
+# If deployment output shows: udo-craft-client-15et09o4i-ahuk1312-gmailcoms-projects.vercel.app
+vercel alias set udo-craft-client-15et09o4i-ahuk1312-gmailcoms-projects.vercel.app www.u-do-craft.store --scope team_XX3rqg5IE2XdK6oxIVibJTt6
+```
+
+**Why this matters:**
+- New code is deployed to a unique URL (e.g., `udo-craft-admin-7uandexb1-...`)
+- The domain alias (e.g., `admin.u-do-craft.store`) points to a deployment
+- If you don't update the alias, it keeps pointing to the OLD deployment
+- Users see the old code, not your new fixes
+- This is why the direct Vercel URL worked but the domain didn't
+
+---
+
 ## Why We Changed the Deployment Process
 
 ### The Old Way (❌ Confusing)
@@ -83,6 +114,7 @@ When you push to `main` or `develop`, GitHub Actions:
 3. Builds both apps
 4. Deploys admin to `admin.u-do-craft.store`
 5. Deploys client to `www.u-do-craft.store`
+6. **Automatically updates domain aliases** ✅
 
 See `.github/workflows/deploy.yml` for details.
 
@@ -92,6 +124,8 @@ See `.github/workflows/deploy.yml` for details.
 - Correct org ID
 - Correct build commands
 - No file manipulation needed
+
+**⚠️ Note:** When using the script, you must manually update aliases (see section above).
 
 ### App-Level Vercel Config
 Each app has its own `vercel.json`:
@@ -103,6 +137,18 @@ This allows Vercel to resolve workspace packages correctly.
 ---
 
 ## Troubleshooting
+
+### "Domain shows old code after deployment"
+**This is the alias issue.** The domain is pointing to an old deployment.
+
+**Solution:**
+1. Get the new deployment URL from Vercel output
+2. Run: `vercel alias set <new-url> admin.u-do-craft.store --scope team_XX3rqg5IE2XdK6oxIVibJTt6`
+3. Wait 30 seconds for DNS to propagate
+4. Refresh the domain
+
+### "Direct Vercel URL works but domain doesn't"
+Same issue — the alias is stale. Update it (see above).
 
 ### "Deployment went to wrong project"
 This shouldn't happen with the new process. If it does:
@@ -155,3 +201,19 @@ Set these in Vercel dashboard for each project:
 | Admin | `prj_uNMByvkPtFNKthWbXcbTTdDOvIt2` | `admin.u-do-craft.store` |
 | Client | `prj_GTScm9WnDiwD837rrOKHsXiFRsFS` | `www.u-do-craft.store` |
 | Org | `team_XX3rqg5IE2XdK6oxIVibJTt6` | — |
+
+---
+
+## Deployment Checklist
+
+Use this before every production deployment:
+
+- [ ] Code is committed and pushed to `main`
+- [ ] GitHub Actions completed successfully
+- [ ] Check Vercel deployment URLs in the workflow output
+- [ ] Update admin alias: `vercel alias set <admin-url> admin.u-do-craft.store --scope team_XX3rqg5IE2XdK6oxIVibJTt6`
+- [ ] Update client alias: `vercel alias set <client-url> www.u-do-craft.store --scope team_XX3rqg5IE2XdK6oxIVibJTt6`
+- [ ] Wait 30 seconds for DNS propagation
+- [ ] Test both domains work correctly
+- [ ] Verify new code is live (not old cached version)
+
