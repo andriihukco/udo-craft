@@ -19,9 +19,12 @@
     "dev:admin": "npm run dev --workspace=admin",
     "dev:client": "npm run dev --workspace=client",
     "lint": "npm run lint --workspaces",
-    "type-check": "npm run type-check --workspaces"
+    "prepare": "husky",
+    "type-check": "npm run type-check --workspaces --if-present"
   },
   "devDependencies": {
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0",
     "turbo": "^2.0.0"
   }
 }

@@ -1,96 +1,83 @@
-# UDO Craft
+# U:DO Craft
 
-A professional monorepo for custom print-on-demand products with admin and client applications.
+Custom print-on-demand platform. Monorepo with an admin dashboard and a customer-facing storefront.
 
-## 🏗️ Architecture
-
-This monorepo uses:
-- **Turborepo** for efficient build orchestration
-- **Next.js 14** for both admin and client apps
-- **shadcn/ui** for consistent UI components
-- **Supabase** for backend services
-- **TypeScript** for type safety
-- **Tailwind CSS** for styling
-
-## 📁 Project Structure
+## Structure
 
 ```
 udo-craft/
 ├── apps/
-│   ├── admin/           # Admin dashboard
-│   └── client/          # Customer-facing app
+│   ├── admin/          → Next.js 14 dashboard (admin.u-do-craft.store)
+│   └── client/         → Next.js 14 storefront (u-do-craft.store)
 ├── packages/
-│   ├── shared/          # Shared types and schemas
-│   ├── ui/              # Shared UI components
-│   ├── config/          # Shared configuration
-│   └── styles/          # Global styles
-├── .github/workflows/   # CI/CD pipelines
-└── tests/               # E2E tests and fixtures
+│   ├── shared/         → Zod schemas + TypeScript types (source of truth)
+│   ├── ui/             → Shared React components (MockupViewer, BrandLogo, ClarityInit)
+│   ├── config/         → Shared Tailwind config
+│   └── styles/         → Global CSS
+├── .github/workflows/  → CI (type-check + lint) and CD (Vercel deploy)
+└── .husky/             → Pre-commit hooks (blocks .env commits)
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
-# Install dependencies
+# Install all deps from repo root (never from inside an app)
 npm install
 
-# Start development servers
+# Start both apps
 npm run dev
-
-# Build all packages
-npm run build
-
-# Run tests
-npm run test
-
-# Run E2E tests
-npm run test:e2e
+# admin → http://localhost:3001
+# client → http://localhost:3000
 ```
 
-## 📦 Scripts
+## Scripts
 
-- `npm run dev` - Start both admin and client in development
-- `npm run build` - Build all packages and apps
-- `npm run lint` - Lint all packages
-- `npm run type-check` - Type check all packages
-- `npm run test` - Run unit tests with coverage
-- `npm run test:e2e` - Run Playwright E2E tests
+| Command | What it does |
+|---|---|
+| `npm run dev` | Start admin + client in parallel |
+| `npm run build` | Build shared → ui → admin → client |
+| `npm run type-check` | TypeScript check across all packages |
+| `npm run lint` | Lint all packages |
 
-## 🧪 Testing
+## Shared Packages
 
-- **Unit Tests**: Vitest with React Testing Library
-- **E2E Tests**: Playwright
-- **Coverage**: Vitest coverage reports
+**`@udo-craft/shared`** — single source of truth for all data shapes:
+- Zod schemas: `LeadSchema`, `ProductSchema`, `OrderItemSchema`, etc.
+- Shared constants: `PRINT_TYPES`, `TEXT_FONTS`, `DISCOUNT_TIERS`, `PREDEFINED_TAGS`
+- Shared types: `PrintLayer`, `PrintTypeId`, `TextFontId`, `CreateLead`
+- Shared hook: `useCustomizer` (canvas layer management, upload, cart logic)
 
-## 🚀 Deployment
+**`@udo-craft/ui`** — shared React components:
+- `MockupViewer` — multi-side mockup display with side-toggle
+- `BrandLogo` — brand logo component
+- `ClarityInit` — Microsoft Clarity analytics init
 
-### Staging
-- Push to `develop` branch → Auto-deploy to staging
+## Deployment
 
-### Production
-- Push to `main` branch → Auto-deploy to production
+Push to `main` → auto-deploys both apps to production via GitHub Actions.
 
-## 📋 Environment Variables
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for full details including how to set up the required GitHub secrets.
 
-See `.env.example` files in each app for required environment variables.
+## Environment Variables
 
-## 🔧 Development
+Each app needs its own `.env` file (never committed — blocked by pre-commit hook):
 
-### Adding New Components
-1. Add to `packages/ui/components/ui/`
-2. Export from `packages/ui/components/ui/index.ts`
-3. Use in apps via `@udo-craft/ui`
+```
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_APP_URL=
+```
 
-### Shared Types
-Add new types to `packages/shared/index.ts`
+Admin also needs `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, and optionally `NEXT_PUBLIC_SENTRY_DSN`.
 
-### Global Styles
-Modify `packages/styles/globals.css`
+## Branch Strategy
 
-## 📊 CI/CD
+| Branch | Purpose | Deploys to |
+|---|---|---|
+| `main` | Production | `admin.u-do-craft.store` + `u-do-craft.store` |
+| `develop` | Staging / integration | Vercel preview URLs |
+| `feature/*` | New features | PR preview (no auto-deploy) |
+| `fix/*` | Bug fixes | PR preview (no auto-deploy) |
 
-- **Type checking** on all PRs
-- **Linting** on all PRs  
-- **Unit tests** with coverage reporting
-- **E2E tests** on build artifacts
-- **Automated deployment** to staging/production
+Workflow: `feature/my-thing` → PR to `develop` → merge → staging → PR to `main` → production.

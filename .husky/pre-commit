@@ -1,0 +1,15 @@
+#!/bin/sh
+# Prevent .env files from being committed
+
+env_files=$(git diff --cached --name-only | grep -E '(^|/)\.env(\.|$)')
+
+if [ -n "$env_files" ]; then
+  echo ""
+  echo "ERROR: Attempt to commit .env file(s) detected:"
+  echo "$env_files"
+  echo ""
+  echo "Remove them from the commit with:"
+  echo "  git reset HEAD <file>"
+  echo ""
+  exit 1
+fi

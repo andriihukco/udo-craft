@@ -1,196 +1,133 @@
 # Deployment Guide
 
-## Quick Start
+## How Deployments Work
 
-### Recommended: Automatic Deployment (via Git)
+Both apps deploy automatically via GitHub Actions when you push to `main` or `develop`.
+
+- `main` → production (`admin.u-do-craft.store` + `u-do-craft.store`)
+- `develop` → Vercel preview URLs (staging)
+
+The workflow files live in `.github/workflows/`:
+- `ci.yml` — runs type-check + lint on every PR
+- `deploy.yml` — deploys both apps on push to `main` or `develop`
+
+---
+
+## One-Time Setup: GitHub Secrets
+
+Before the first deploy, add these secrets to your GitHub repo:
+
+**GitHub → Settings → Secrets and variables → Actions → New repository secret**
+
+| Secret | Where to get it |
+|---|---|
+| `VERCEL_TOKEN` | [vercel.com/account/tokens](https://vercel.com/account/tokens) → Create token |
+| `VERCEL_ORG_ID` | `team_XX3rqg5IE2XdK6oxIVibJTt6` |
+
+That's all the workflow needs — the Vercel project links are already configured in `apps/admin/.vercel/project.json` and `apps/client/.vercel/project.json`.
+
+---
+
+## Deploying to Production
+
 ```bash
-# Deploy to production (both admin and client)
+git add .
+git commit -m "your message"
 git push origin main
-
-# Deploy to staging
-git push origin develop
 ```
 
-That's it. GitHub Actions handles everything automatically.
+GitHub Actions picks it up, builds both apps, and deploys. Check progress at:
+`https://github.com/andriihukco/udo-craft/actions`
 
 ---
 
-## Manual Deployment (CLI)
+## Branch Workflow
 
-If you need to deploy without pushing to git:
-
-```bash
-# Set your Vercel token (get from https://vercel.com/account/tokens)
-export VERCEL_TOKEN=your_token_here
-
-# Deploy both apps
-./scripts/deploy.sh
-
-# Deploy only admin
-./scripts/deploy.sh admin
-
-# Deploy only client
-./scripts/deploy.sh client
 ```
+feature/my-thing  →  develop  →  main
+     (local)        (staging)  (production)
+```
+
+1. Create a branch from `develop`:
+   ```bash
+   git checkout develop
+   git pull origin develop
+   git checkout -b feature/my-feature
+   ```
+
+2. Work, commit, push:
+   ```bash
+   git push origin feature/my-feature
+   ```
+
+3. Open a PR to `develop` on GitHub. CI runs type-check + lint automatically.
+
+4. Merge to `develop` → deploys to staging (Vercel preview URL).
+
+5. When ready for production, open a PR from `develop` → `main` and merge.
+
+**Never push directly to `main`.**
 
 ---
 
-## ⚠️ CRITICAL: Update Domain Aliases After Deployment
+## Environments
 
-**This is the most common mistake.** After deploying, you MUST update the domain aliases to point to the new deployments, otherwise the old cached version will be served.
+### Production
+- Admin: `https://admin.u-do-craft.store`
+- Client: `https://u-do-craft.store`
+- Supabase: production project
+- Env vars: set in Vercel dashboard for each project
 
-```bash
-# After deploying admin, get the new deployment URL from Vercel output
-# Then update the alias:
-vercel alias set <new-deployment-url> admin.u-do-craft.store --scope team_XX3rqg5IE2XdK6oxIVibJTt6
-
-# After deploying client:
-vercel alias set <new-deployment-url> www.u-do-craft.store --scope team_XX3rqg5IE2XdK6oxIVibJTt6
-```
-
-**Example:**
-```bash
-# If deployment output shows: udo-craft-admin-7uandexb1-ahuk1312-gmailcoms-projects.vercel.app
-vercel alias set udo-craft-admin-7uandexb1-ahuk1312-gmailcoms-projects.vercel.app admin.u-do-craft.store --scope team_XX3rqg5IE2XdK6oxIVibJTt6
-
-# If deployment output shows: udo-craft-client-15et09o4i-ahuk1312-gmailcoms-projects.vercel.app
-vercel alias set udo-craft-client-15et09o4i-ahuk1312-gmailcoms-projects.vercel.app www.u-do-craft.store --scope team_XX3rqg5IE2XdK6oxIVibJTt6
-```
-
-**Why this matters:**
-- New code is deployed to a unique URL (e.g., `udo-craft-admin-7uandexb1-...`)
-- The domain alias (e.g., `admin.u-do-craft.store`) points to a deployment
-- If you don't update the alias, it keeps pointing to the OLD deployment
-- Users see the old code, not your new fixes
-- This is why the direct Vercel URL worked but the domain didn't
-
----
-
-## Why We Changed the Deployment Process
-
-### The Old Way (❌ Confusing)
-```bash
-# Deploy admin
-vercel deploy --prod --yes --local-config vercel.admin.json
-
-# Deploy client — swap .vercel/project.json first
-echo '{"projectId":"prj_GTScm9WnDiwD837rrOKHsXiFRsFS",...}' > .vercel/project.json
-vercel deploy --prod --yes --local-config vercel.client.json
-
-# Restore to admin
-echo '{"projectId":"prj_uNMByvkPtFNKthWbXcbTTdDOvIt2",...}' > .vercel/project.json
-```
-
-**Problems:**
-- Manual file manipulation error-prone
-- Easy to forget to restore `.vercel/project.json`
-- Confusing for new team members
-- Risk of deploying wrong app to wrong project
-
-### The New Way (✅ Clean)
-```bash
-# Option 1: Just push to git (recommended)
-git push origin main
-
-# Option 2: Use deployment script
-./scripts/deploy.sh
-```
-
-**Benefits:**
-- No manual file manipulation
-- Project IDs embedded in script
-- Clear, simple commands
-- Automatic via GitHub Actions
-- Impossible to deploy to wrong project
-
----
-
-## How It Works
-
-### GitHub Actions (Automatic)
-When you push to `main` or `develop`, GitHub Actions:
-1. Checks out code
-2. Installs dependencies
-3. Builds both apps
-4. Deploys admin to `admin.u-do-craft.store`
-5. Deploys client to `www.u-do-craft.store`
-6. **Automatically updates domain aliases** ✅
-
-See `.github/workflows/deploy.yml` for details.
-
-### Deployment Script (Manual)
-`scripts/deploy.sh` uses Vercel CLI with:
-- Correct project IDs for each app
-- Correct org ID
-- Correct build commands
-- No file manipulation needed
-
-**⚠️ Note:** When using the script, you must manually update aliases (see section above).
-
-### App-Level Vercel Config
-Each app has its own `vercel.json`:
-- `apps/admin/vercel.json` — builds admin
-- `apps/client/vercel.json` — builds client
-
-This allows Vercel to resolve workspace packages correctly.
-
----
-
-## Troubleshooting
-
-### "Domain shows old code after deployment"
-**This is the alias issue.** The domain is pointing to an old deployment.
-
-**Solution:**
-1. Get the new deployment URL from Vercel output
-2. Run: `vercel alias set <new-url> admin.u-do-craft.store --scope team_XX3rqg5IE2XdK6oxIVibJTt6`
-3. Wait 30 seconds for DNS to propagate
-4. Refresh the domain
-
-### "Direct Vercel URL works but domain doesn't"
-Same issue — the alias is stale. Update it (see above).
-
-### "Deployment went to wrong project"
-This shouldn't happen with the new process. If it does:
-1. Check `.vercel/project.json` — it should only exist at root for reference
-2. Use GitHub Actions (git push) instead of manual CLI
-3. Use `./scripts/deploy.sh` if you must deploy manually
-
-### "Build failed: Cannot find module '@udo-craft/shared'"
-This means the build ran from the wrong directory. With the new setup:
-- GitHub Actions builds from repo root ✅
-- `./scripts/deploy.sh` builds from repo root ✅
-- Manual `vercel deploy` from app directory ❌ (don't do this)
-
-### "VERCEL_TOKEN not set"
-```bash
-export VERCEL_TOKEN=your_token_here
-./scripts/deploy.sh
-```
-
-Get your token from https://vercel.com/account/tokens
+### Staging / Dev
+- Supabase: `udocraft-dev` project (separate credentials)
+- Env vars: set in Vercel dashboard under Preview environment
 
 ---
 
 ## Environment Variables
 
-Set these in Vercel dashboard for each project:
+Set these in the Vercel dashboard for each project (Settings → Environment Variables).
 
-**Admin** (`admin.u-do-craft.store`):
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `NEXT_PUBLIC_APP_URL` = `https://admin.u-do-craft.store`
-- `TELEGRAM_BOT_TOKEN`
-- `TELEGRAM_WEBHOOK_SECRET`
-- `NEXT_PUBLIC_SENTRY_DSN` (optional)
+**Admin** (`prj_uNMByvkPtFNKthWbXcbTTdDOvIt2`):
+```
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+NEXT_PUBLIC_APP_URL        = https://admin.u-do-craft.store
+TELEGRAM_BOT_TOKEN
+TELEGRAM_WEBHOOK_SECRET
+NEXT_PUBLIC_SENTRY_DSN     (optional)
+```
 
-**Client** (`www.u-do-craft.store`):
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `NEXT_PUBLIC_APP_URL` = `https://www.u-do-craft.store`
-- `NEXT_PUBLIC_SENTRY_DSN` (optional)
+**Client** (`prj_GTScm9WnDiwD837rrOKHsXiFRsFS`):
+```
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+NEXT_PUBLIC_APP_URL        = https://u-do-craft.store
+NEXT_PUBLIC_SENTRY_DSN     (optional)
+```
+
+For staging (Preview environment), use the `udocraft-dev` Supabase project credentials.
+
+---
+
+## Manual Deploy (CLI)
+
+If you need to deploy without pushing to git:
+
+```bash
+# Install Vercel CLI if needed
+npm i -g vercel
+
+# Deploy admin
+vercel deploy --prod --yes --cwd=apps/admin
+
+# Deploy client
+vercel deploy --prod --yes --cwd=apps/client
+```
+
+You'll be prompted to authenticate if not already logged in.
 
 ---
 
@@ -199,21 +136,21 @@ Set these in Vercel dashboard for each project:
 | App | Project ID | Domain |
 |---|---|---|
 | Admin | `prj_uNMByvkPtFNKthWbXcbTTdDOvIt2` | `admin.u-do-craft.store` |
-| Client | `prj_GTScm9WnDiwD837rrOKHsXiFRsFS` | `www.u-do-craft.store` |
+| Client | `prj_GTScm9WnDiwD837rrOKHsXiFRsFS` | `u-do-craft.store` |
 | Org | `team_XX3rqg5IE2XdK6oxIVibJTt6` | — |
 
 ---
 
-## Deployment Checklist
+## Troubleshooting
 
-Use this before every production deployment:
+**Build fails: "Cannot find module '@udo-craft/shared'"**
+The build must run from the repo root. The `vercel.json` in each app handles this — don't run `vercel deploy` from inside an app directory.
 
-- [ ] Code is committed and pushed to `main`
-- [ ] GitHub Actions completed successfully
-- [ ] Check Vercel deployment URLs in the workflow output
-- [ ] Update admin alias: `vercel alias set <admin-url> admin.u-do-craft.store --scope team_XX3rqg5IE2XdK6oxIVibJTt6`
-- [ ] Update client alias: `vercel alias set <client-url> www.u-do-craft.store --scope team_XX3rqg5IE2XdK6oxIVibJTt6`
-- [ ] Wait 30 seconds for DNS propagation
-- [ ] Test both domains work correctly
-- [ ] Verify new code is live (not old cached version)
+**Deployment succeeded but domain shows old code**
+The domain alias may be stale. Go to Vercel dashboard → your project → Deployments, find the latest, and promote it to production.
 
+**Type errors in CI**
+Run `npm run type-check` locally first and fix before pushing.
+
+**Telegram notifications not working after deploy**
+Call `GET /api/telegram/setup` once after deploying admin to register the webhook.

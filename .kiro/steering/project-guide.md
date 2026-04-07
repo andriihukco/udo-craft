@@ -14,10 +14,13 @@ udo-craft/
 │   ├── admin/     → Next.js 14, internal dashboard (admin.u-do-craft.store)
 │   └── client/    → Next.js 14, customer-facing store (u-do-craft.store)
 ├── packages/
-│   ├── shared/    → Zod schemas + TypeScript types (source of truth for all data shapes)
-│   ├── ui/        → Shared React components
+│   ├── shared/    → Zod schemas, TypeScript types, shared constants + hooks
+│   ├── ui/        → Shared React components (MockupViewer, BrandLogo, ClarityInit)
 │   ├── config/    → Shared Tailwind config
 │   └── styles/    → Global CSS
+├── .github/
+│   └── workflows/ → ci.yml (type-check + lint on PRs), deploy.yml (Vercel on push)
+└── .husky/        → pre-commit hook (blocks .env commits)
 ```
 
 **Key tech:** Next.js 14 · React 18 · TypeScript · Tailwind CSS · Supabase (Postgres + Auth + Storage) · Fabric.js (canvas editor) · Sentry · Vercel
@@ -41,7 +44,7 @@ Internal dashboard for managing the business.
 | `/analytics` | Revenue, order, and conversion metrics |
 | `/settings` | Notification preferences |
 
-All pages require Supabase auth. Middleware (`src/middleware.ts`) redirects unauthenticated users to `/login`.
+All pages require Supabase auth. Middleware (`src/middleware.ts`) redirects unauthenticated users to `/login`. Auth is enforced at middleware level — no per-route permission stubs.
 
 ### Client (`apps/client`) — port 3000
 Customer-facing B2B merch platform.
@@ -54,9 +57,53 @@ Customer-facing B2B merch platform.
 
 ---
 
+## Shared Packages
+
+### `@udo-craft/shared`
+Single source of truth for all data shapes, constants, and shared logic.
+
+```ts
+// Zod schemas + types
+import { Product, Lead, OrderItem, LeadStatus, CreateLeadSchema } from "@udo-craft/shared";
+
+// Print types and canvas constants
+import { PRINT_TYPES, TEXT_FONTS, type PrintLayer, type PrintTypeId } from "@udo-craft/shared";
+
+// Order constants
+import { DISCOUNT_TIERS, PREDEFINED_TAGS } from "@udo-craft/shared";
+
+// Shared canvas/customizer hook
+import { useCustomizer } from "@udo-craft/shared";
+```
+
+When adding new DB columns or changing data shapes, update `packages/shared/index.ts` first.
+
+**`CreateLeadSchema`** is used by both `/api/leads` POST handlers for Zod validation — returns structured `{ error: { fieldErrors } }` on invalid input.
+
+**`useCustomizer(config)`** encapsulates `addLayer`, `addTextLayer`, `resolveLayerPrice`, and `handleAddToCart` with app-specific upload config:
+```ts
+// Client
+useCustomizer({ uploadUrl: "/api/upload", uploadResponseKey: "urls[0]" })
+// Admin
+useCustomizer({ uploadUrl: "/api/upload", uploadResponseKey: "results[0].url", uploadTags: "print" })
+```
+
+### `@udo-craft/ui`
+Shared React components used in both apps.
+
+```ts
+import { MockupViewer, BrandLogo, ClarityInit } from "@udo-craft/ui";
+```
+
+Add new components here if they're needed in both apps.
+
+---
+
 ## Database (Supabase)
 
-Single Supabase project shared by both apps.
+Two Supabase projects:
+- **Production** — used by `main` branch / production Vercel deployments
+- **`udocraft-dev`** — used by `develop` branch / staging Vercel deployments
 
 **Key tables:**
 - `leads` — orders (status, customer_data JSON, total_amount_cents, tags, notes)
@@ -96,12 +143,14 @@ NEXT_PUBLIC_APP_URL=              # https://u-do-craft.store in prod
 NEXT_PUBLIC_SENTRY_DSN=           # optional
 ```
 
+`.env` files are never committed — blocked by the pre-commit hook in `.husky/pre-commit`. All production/staging values are set in the Vercel dashboard.
+
 ---
 
 ## Local Development
 
 ```bash
-# Install all dependencies (run from repo root)
+# Install all dependencies (run from repo root — never from inside an app)
 npm install
 
 # Start both apps simultaneously
@@ -113,8 +162,6 @@ npm run dev
 npm run dev:admin
 npm run dev:client
 ```
-
-**Important:** Always run `npm install` from the repo root, never from inside `apps/admin` or `apps/client`. The workspace packages (`@udo-craft/shared`, `@udo-craft/ui`) are resolved from the root `node_modules`.
 
 ---
 
@@ -132,172 +179,70 @@ npm run build:client
 
 ---
 
-## Deployment
-
-### Vercel Projects
-| App | Project | Domain | Project ID |
-|---|---|---|---|
-| Admin | `udo-craft-admin` | `admin.u-do-craft.store` | `prj_uNMByvkPtFNKthWbXcbTTdDOvIt2` |
-| Client | `udo-craft-client` | `u-do-craft.store` | `prj_GTScm9WnDiwD837rrOKHsXiFRsFS` |
-| Org ID | `team_XX3rqg5IE2XdK6oxIVibJTt6` | | |
-
-### Recommended: Deploy via Git (Automatic)
-The easiest and most reliable way to deploy:
-
-```bash
-# Deploy to production (both apps)
-git push origin main
-
-# Deploy to staging (both apps)
-git push origin develop
-```
-
-GitHub Actions (`.github/workflows/deploy.yml`) automatically:
-- Builds both apps
-- Runs type-check and lint
-- Deploys admin to `admin.u-do-craft.store`
-- Deploys client to `www.u-do-craft.store`
-
-**This is the recommended approach** — no manual steps, no workarounds.
-
-### ⚠️ CRITICAL: Update Domain Aliases After Deployment
-
-**After every deployment, you MUST update the domain aliases** or users will see the old cached version.
-
-```bash
-# Get the new deployment URL from GitHub Actions output, then:
-vercel alias set <new-admin-url> admin.u-do-craft.store --scope team_XX3rqg5IE2XdK6oxIVibJTt6
-vercel alias set <new-client-url> www.u-do-craft.store --scope team_XX3rqg5IE2XdK6oxIVibJTt6
-```
-
-**Why:** Each deployment gets a unique URL (e.g., `udo-craft-admin-7uandexb1-...`). The domain alias must point to the new URL, otherwise it keeps serving the old code.
-
-**See DEPLOYMENT.md for detailed instructions.**
-
-### Deploy via CLI (Manual)
-If you need to deploy manually without pushing to git:
-
-```bash
-# Set your Vercel token
-export VERCEL_TOKEN=your_token_here
-
-# Deploy both apps
-./scripts/deploy.sh
-
-# Deploy only admin
-./scripts/deploy.sh admin
-
-# Deploy only client
-./scripts/deploy.sh client
-```
-
-The script handles all project ID and org ID configuration automatically.
-
-**⚠️ Remember:** After using the script, manually update the domain aliases (see section above).
-
-### How Vercel Builds Work (Monorepo)
-Each app has its own `vercel.json` config in its directory:
-- `apps/admin/vercel.json` — builds admin from root, outputs to `.next`
-- `apps/client/vercel.json` — builds client from root, outputs to `.next`
-
-This allows Vercel to resolve workspace packages (`@udo-craft/shared`, `@udo-craft/ui`) correctly.
-
-### Vercel Environment Variables
-Set these in the Vercel dashboard for each project:
-```bash
-# Example: add a var to admin production
-cd apps/admin
-vercel env add NEXT_PUBLIC_SUPABASE_URL production
-```
-
-**All env vars must be set in Vercel dashboard** — `.env` files are local only and not deployed.
-
----
-
 ## Git & Branch Strategy
 
 | Branch | Purpose | Auto-deploys to |
 |---|---|---|
 | `main` | Production | `admin.u-do-craft.store` + `u-do-craft.store` |
 | `develop` | Staging / integration | Vercel preview URLs |
-| `feature/*` | New features | PR preview URLs |
-| `fix/*` | Bug fixes | PR preview URLs |
+| `feature/*` | New features | No auto-deploy (PR only) |
+| `fix/*` | Bug fixes | No auto-deploy (PR only) |
 
 **Workflow:**
-1. Create `feature/my-feature` from `develop`
-2. Open PR → `develop` (CI runs: type-check, lint, build)
-3. Merge to `develop` → staging deploy
-4. When ready: merge `develop` → `main` → production deploy
+1. Branch off `develop`: `git checkout -b feature/my-feature develop`
+2. Work and commit locally
+3. Push and open a PR → `develop`
+4. CI runs type-check + lint automatically
+5. Merge to `develop` → staging deploy
+6. When ready for production: open PR `develop` → `main` and merge
 
 **Never push directly to `main`.**
 
 ---
 
-## Shared Packages
+## Deployment
 
-### `@udo-craft/shared`
-Source of truth for all data types. Uses Zod schemas — both for runtime validation and TypeScript types.
-
-```ts
-import { Product, Lead, OrderItem, LeadStatus } from "@udo-craft/shared";
+### Automatic (recommended)
+```bash
+git push origin main    # → production
+git push origin develop # → staging preview
 ```
 
-When adding new DB columns or changing data shapes, update `packages/shared/index.ts` first.
+GitHub Actions (`.github/workflows/deploy.yml`) handles everything.
 
-### `@udo-craft/ui`
-Shared React components. Add new components here if they're used in both apps.
+### Required GitHub Secrets (one-time setup)
+Go to GitHub → Settings → Secrets and variables → Actions:
 
-```ts
-import { Button } from "@udo-craft/ui";
+| Secret | Value |
+|---|---|
+| `VERCEL_TOKEN` | Get from [vercel.com/account/tokens](https://vercel.com/account/tokens) |
+| `VERCEL_ORG_ID` | `team_XX3rqg5IE2XdK6oxIVibJTt6` |
+
+### Vercel Projects
+| App | Project ID | Domain |
+|---|---|---|
+| Admin | `prj_uNMByvkPtFNKthWbXcbTTdDOvIt2` | `admin.u-do-craft.store` |
+| Client | `prj_GTScm9WnDiwD837rrOKHsXiFRsFS` | `u-do-craft.store` |
+
+### Manual CLI Deploy
+```bash
+vercel deploy --prod --yes --cwd=apps/admin
+vercel deploy --prod --yes --cwd=apps/client
 ```
+
+See [DEPLOYMENT.md](../../DEPLOYMENT.md) for full details.
 
 ---
 
-## Common Issues & Fixes
-
-### Admin shows "loading forever" for orders/products/etc.
-**Cause:** API routes return 401 (not authenticated) but the UI doesn't handle it gracefully.
-**Fix:** Make sure you're logged in at `admin.u-do-craft.store/login`. If already logged in, check browser DevTools → Network tab for 401 responses. Clear cookies and log in again.
-
-### `npm install` fails on Vercel
-**Cause:** Missing `vercel.json` in the app directory, so Vercel installs from `apps/admin` instead of repo root and can't resolve workspace packages.
-**Fix:** Ensure `apps/admin/vercel.json` and `apps/client/vercel.json` both exist with `"installCommand": "cd ../.. && npm install"`.
-
-### Build fails with "Cannot find module '@udo-craft/shared'"
-**Cause:** Running build from inside an app directory instead of repo root.
-**Fix:** Always run `npm run build:admin` (or `:client`) from the repo root.
-
-### Supabase auth not working after deploy
-**Cause:** Missing or wrong env vars in Vercel project settings.
-**Fix:** Check Vercel dashboard → Project Settings → Environment Variables. All 3 Supabase vars must be set for Production environment.
-
-### Telegram notifications not working
-**Cause:** Webhook not registered, or `TELEGRAM_BOT_TOKEN` / `TELEGRAM_WEBHOOK_SECRET` missing.
-**Fix:** After deploying admin, call `GET /api/telegram/setup` once to register the webhook.
-
----
-
-## CI/CD Pipeline (GitHub Actions)
+## CI/CD Pipeline
 
 **On every PR to `main` or `develop`** (`.github/workflows/ci.yml`):
 - Type check (`npm run type-check`)
 - Lint (`npm run lint`)
-- Unit tests
-- Build both apps
 
-**On push to `develop`** (`.github/workflows/deploy.yml`):
-- Deploy to Vercel staging
-
-**On push to `main`** (`.github/workflows/deploy.yml`):
-- Deploy admin to production
-- Deploy client to production
-
-Required GitHub secrets:
-- `VERCEL_TOKEN`
-- `VERCEL_ORG_ID` = `team_XX3rqg5IE2XdK6oxIVibJTt6`
-- `VERCEL_ADMIN_PROJECT_ID` = `prj_uNMByvkPtFNKthWbXcbTTdDOvIt2`
-- `VERCEL_CLIENT_PROJECT_ID` = `prj_GTScm9WnDiwD837rrOKHsXiFRsFS`
-- `SENTRY_AUTH_TOKEN`
+**On push to `main` or `develop`** (`.github/workflows/deploy.yml`):
+- Deploy admin to Vercel (prod on `main`, preview on `develop`)
+- Deploy client to Vercel (prod on `main`, preview on `develop`)
 
 ---
 
@@ -306,7 +251,7 @@ Required GitHub secrets:
 1. Customer visits `u-do-craft.store`, browses products
 2. Clicks "Customize" → `/order` page with Fabric.js canvas editor
 3. Uploads design, positions it, selects size/color/quantity
-4. Submits order form → `POST /api/leads` (client app)
+4. Submits order form → `POST /api/leads` (validated by `CreateLeadSchema`)
 5. Lead + order_items saved to Supabase
 6. Admin receives real-time notification (Supabase subscription)
 7. Admin sees new order in Kanban at `admin.u-do-craft.store/orders`
@@ -315,24 +260,43 @@ Required GitHub secrets:
 
 ---
 
+## Common Issues & Fixes
+
+### Admin shows "loading forever"
+**Cause:** API routes return 401. **Fix:** Log in at `/login`, or clear cookies and try again.
+
+### `npm install` fails on Vercel
+**Cause:** Missing `vercel.json` in app directory. **Fix:** Ensure both `apps/admin/vercel.json` and `apps/client/vercel.json` exist with `"installCommand": "cd ../.. && npm install"`.
+
+### Build fails: "Cannot find module '@udo-craft/shared'"
+**Cause:** Build ran from inside an app directory. **Fix:** Always run builds from repo root.
+
+### Supabase auth not working after deploy
+**Cause:** Missing env vars in Vercel. **Fix:** Check Vercel dashboard → Project Settings → Environment Variables.
+
+### Telegram notifications not working
+**Cause:** Webhook not registered. **Fix:** Call `GET /api/telegram/setup` once after deploying admin.
+
+### POST /api/leads returns 400 with fieldErrors
+This is correct behavior — `CreateLeadSchema` validation is active. Ensure the payload includes `status` and `customer_data.name`.
+
+---
+
 ## Useful Commands
 
 ```bash
-# Check TypeScript errors across all packages
+# Type check all packages
 npm run type-check
 
 # Lint everything
 npm run lint
 
-# Check Vercel deployment status (from app dir)
+# Check what's tracked by git (should be empty for .env)
+git ls-files "**/.env"
+
+# View Vercel deployments
 cd apps/admin && vercel ls
 
-# View Vercel env vars for admin
+# View Vercel env vars
 cd apps/admin && vercel env ls
-
-# Add env var to Vercel
-cd apps/admin && vercel env add VAR_NAME production
-
-# Promote a specific deployment to production alias
-vercel alias set <deployment-url> admin.u-do-craft.store
 ```

@@ -1,0 +1,85 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main, develop]
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+
+jobs:
+  deploy-admin:
+    name: Deploy Admin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy Admin to Vercel
+        id: deploy-admin
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            URL=$(vercel deploy --prod --yes \
+              --token=${{ secrets.VERCEL_TOKEN }} \
+              --scope=${{ secrets.VERCEL_ORG_ID }} \
+              --cwd=apps/admin)
+          else
+            URL=$(vercel deploy --yes \
+              --token=${{ secrets.VERCEL_TOKEN }} \
+              --scope=${{ secrets.VERCEL_ORG_ID }} \
+              --cwd=apps/admin)
+          fi
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "Admin deployed to: $URL"
+
+      - name: Output Admin URL
+        run: echo "Admin URL ${{ steps.deploy-admin.outputs.url }}"
+
+  deploy-client:
+    name: Deploy Client
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy Client to Vercel
+        id: deploy-client
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            URL=$(vercel deploy --prod --yes \
+              --token=${{ secrets.VERCEL_TOKEN }} \
+              --scope=${{ secrets.VERCEL_ORG_ID }} \
+              --cwd=apps/client)
+          else
+            URL=$(vercel deploy --yes \
+              --token=${{ secrets.VERCEL_TOKEN }} \
+              --scope=${{ secrets.VERCEL_ORG_ID }} \
+              --cwd=apps/client)
+          fi
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "Client deployed to: $URL"
+
+      - name: Output Client URL
+        run: echo "Client URL ${{ steps.deploy-client.outputs.url }}"
