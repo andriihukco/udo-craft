@@ -1,70 +1,70 @@
 # Deployment Guide
 
-## How Deployments Work
+## TL;DR — How to deploy
 
-Both apps deploy automatically via GitHub Actions when you push to `main` or `develop`.
+```bash
+git push origin main     # → production (both apps)
+git push origin develop  # → staging preview (both apps)
+```
 
-- `main` → production (`admin.u-do-craft.store` + `u-do-craft.store`)
-- `develop` → Vercel preview URLs (staging)
-
-The workflow files live in `.github/workflows/`:
-- `ci.yml` — runs type-check + lint on every PR
-- `deploy.yml` — deploys both apps on push to `main` or `develop`
+That's it. Vercel's GitHub integration handles everything automatically.
 
 ---
 
-## One-Time Setup: GitHub Secrets
+## How it works
 
-Before the first deploy, add these secrets to your GitHub repo:
+Both `udo-craft-admin` and `udo-craft-client` are connected to the `andriihukco/udo-craft` GitHub repo on Vercel. Every push to `main` triggers a production build for both. Every push to `develop` triggers a preview build.
 
-**GitHub → Settings → Secrets and variables → Actions → New repository secret**
+### Vercel project settings (already configured — don't change)
 
-| Secret | Where to get it |
+Both projects are configured identically:
+
+| Setting | Value |
 |---|---|
-| `VERCEL_TOKEN` | [vercel.com/account/tokens](https://vercel.com/account/tokens) → Create token |
-| `VERCEL_ORG_ID` | `team_XX3rqg5IE2XdK6oxIVibJTt6` |
-
-That's all the workflow needs — the Vercel project links are already configured in `apps/admin/.vercel/project.json` and `apps/client/.vercel/project.json`.
+| Root Directory | `apps/admin` or `apps/client` |
+| Include files outside root | ON (required for monorepo) |
+| Install command | `cd ../.. && npm install --legacy-peer-deps` |
+| Build command | `cd ../.. && npm run build:admin` (or `:client`) |
+| Output directory | `.next` |
+| Framework | Next.js |
 
 ---
 
-## Deploying to Production
+## Branch workflow
+
+```
+feature/my-thing  ──PR──►  develop  ──PR──►  main
+   (local)                (staging)         (production)
+```
+
+### Starting a new feature or fix
+
+```bash
+# Always branch from develop, not main
+git checkout develop
+git pull origin develop
+git checkout -b feature/my-feature   # or fix/my-fix
+```
+
+### Working and committing
 
 ```bash
 git add .
-git commit -m "your message"
-git push origin main
+git commit -m "feat: describe what you did"
+git push origin feature/my-feature
 ```
 
-GitHub Actions picks it up, builds both apps, and deploys. Check progress at:
-`https://github.com/andriihukco/udo-craft/actions`
+### Getting to staging
 
----
+Open a PR from `feature/my-feature` → `develop` on GitHub.
+- CI runs automatically: type-check + lint
+- Merge when green → Vercel deploys to staging preview URL
 
-## Branch Workflow
+### Getting to production
 
-```
-feature/my-thing  →  develop  →  main
-     (local)        (staging)  (production)
-```
-
-1. Create a branch from `develop`:
-   ```bash
-   git checkout develop
-   git pull origin develop
-   git checkout -b feature/my-feature
-   ```
-
-2. Work, commit, push:
-   ```bash
-   git push origin feature/my-feature
-   ```
-
-3. Open a PR to `develop` on GitHub. CI runs type-check + lint automatically.
-
-4. Merge to `develop` → deploys to staging (Vercel preview URL).
-
-5. When ready for production, open a PR from `develop` → `main` and merge.
+Open a PR from `develop` → `main` on GitHub.
+- Review the staging preview
+- Merge → Vercel deploys to production
 
 **Never push directly to `main`.**
 
@@ -72,85 +72,79 @@ feature/my-thing  →  develop  →  main
 
 ## Environments
 
-### Production
-- Admin: `https://admin.u-do-craft.store`
-- Client: `https://u-do-craft.store`
-- Supabase: production project
-- Env vars: set in Vercel dashboard for each project
-
-### Staging / Dev
-- Supabase: `udocraft-dev` project (separate credentials)
-- Env vars: set in Vercel dashboard under Preview environment
+| Environment | Branch | Admin URL | Client URL | Supabase |
+|---|---|---|---|---|
+| Production | `main` | `admin.u-do-craft.store` | `u-do-craft.store` | Production project |
+| Staging | `develop` | Vercel preview URL | Vercel preview URL | `udocraft-dev` project |
+| Local | — | `localhost:3001` | `localhost:3000` | Either project |
 
 ---
 
 ## Environment Variables
 
-Set these in the Vercel dashboard for each project (Settings → Environment Variables).
+Set in Vercel dashboard → Project → Settings → Environment Variables.
 
-**Admin** (`prj_uNMByvkPtFNKthWbXcbTTdDOvIt2`):
-```
-NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY
-SUPABASE_SERVICE_ROLE_KEY
-NEXT_PUBLIC_APP_URL        = https://admin.u-do-craft.store
-TELEGRAM_BOT_TOKEN
-TELEGRAM_WEBHOOK_SECRET
-NEXT_PUBLIC_SENTRY_DSN     (optional)
-```
+Use "Production" environment for `main` branch values, "Preview" for staging (`udocraft-dev` credentials).
 
-**Client** (`prj_GTScm9WnDiwD837rrOKHsXiFRsFS`):
-```
-NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY
-SUPABASE_SERVICE_ROLE_KEY
-NEXT_PUBLIC_APP_URL        = https://u-do-craft.store
-NEXT_PUBLIC_SENTRY_DSN     (optional)
-```
+### Admin (`udo-craft-admin`)
 
-For staging (Preview environment), use the `udocraft-dev` Supabase project credentials.
+| Variable | Description |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key (public) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (server-only, never expose) |
+| `NEXT_PUBLIC_APP_URL` | `https://admin.u-do-craft.store` |
+| `TELEGRAM_BOT_TOKEN` | From @BotFather |
+| `TELEGRAM_WEBHOOK_SECRET` | Any random string |
+| `NEXT_PUBLIC_SENTRY_DSN` | Optional — from sentry.io |
+
+### Client (`udo-craft-client`)
+
+| Variable | Description |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key (public) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (server-only) |
+| `NEXT_PUBLIC_APP_URL` | `https://u-do-craft.store` |
+| `NEXT_PUBLIC_SENTRY_DSN` | Optional — from sentry.io |
 
 ---
 
-## Manual Deploy (CLI)
+## After deploying admin for the first time
 
-If you need to deploy without pushing to git:
+Register the Telegram webhook:
 
 ```bash
-# Install Vercel CLI if needed
-npm i -g vercel
-
-# Deploy admin
-vercel deploy --prod --yes --cwd=apps/admin
-
-# Deploy client
-vercel deploy --prod --yes --cwd=apps/client
+curl https://admin.u-do-craft.store/api/telegram/setup
 ```
 
-You'll be prompted to authenticate if not already logged in.
+Only needs to be done once (or after changing the domain).
 
 ---
 
-## Project IDs Reference
+## Vercel project reference
 
-| App | Project ID | Domain |
-|---|---|---|
-| Admin | `prj_uNMByvkPtFNKthWbXcbTTdDOvIt2` | `admin.u-do-craft.store` |
-| Client | `prj_GTScm9WnDiwD837rrOKHsXiFRsFS` | `u-do-craft.store` |
-| Org | `team_XX3rqg5IE2XdK6oxIVibJTt6` | — |
+| App | Project | Project ID | Domain |
+|---|---|---|---|
+| Admin | `udo-craft-admin` | `prj_UKfsyyoJDIIhJ67xXqSnBy2c7zmk` | `admin.u-do-craft.store` |
+| Client | `udo-craft-client` | `prj_GTScm9WnDiwD837rrOKHsXiFRsFS` | `u-do-craft.store` |
+| Org | `udo-craft` | `team_XX3rqg5IE2XdK6oxIVibJTt6` | — |
 
 ---
 
 ## Troubleshooting
 
 **Build fails: "Cannot find module '@udo-craft/shared'"**
-The build must run from the repo root. The `vercel.json` in each app handles this — don't run `vercel deploy` from inside an app directory.
+The build must run from the repo root. The `vercel.json` `buildCommand` handles this with `cd ../..`. Don't run `vercel deploy` from inside an app directory.
 
-**Deployment succeeded but domain shows old code**
-The domain alias may be stale. Go to Vercel dashboard → your project → Deployments, find the latest, and promote it to production.
+**Build fails: "No Next.js version detected"**
+The Vercel project's Root Directory setting is wrong. It must be `apps/admin` or `apps/client` (not empty, not the repo root).
+
+**Build fails: "Missing required Supabase environment variable"**
+Add the env vars in Vercel dashboard → Project Settings → Environment Variables.
+
+**Domain shows old code after deployment**
+Go to Vercel dashboard → project → Deployments → find the latest Ready deployment → promote to production.
 
 **Type errors in CI**
-Run `npm run type-check` locally first and fix before pushing.
-
-**Telegram notifications not working after deploy**
-Call `GET /api/telegram/setup` once after deploying admin to register the webhook.
+Run `npm run type-check` locally and fix before pushing.

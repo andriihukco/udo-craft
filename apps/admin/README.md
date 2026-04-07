@@ -1,36 +1,164 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# U:DO Craft — Admin Dashboard
 
-## Getting Started
+Internal dashboard for managing the U:DO Craft print-on-demand business.
 
-First, run the development server:
+**URL:** [admin.u-do-craft.store](https://admin.u-do-craft.store)
+**Port (local):** 3001
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## What it does
+
+The admin app is the operational hub. Everything that happens after a customer submits an order flows through here.
+
+### Routes
+
+| Route | Purpose |
+|---|---|
+| `/` | Dashboard — KPI badges (revenue, orders, conversion) |
+| `/orders` | Kanban board — full order lifecycle management |
+| `/orders/new` | Create a new order manually (admin-initiated) |
+| `/products` | Product catalog — color variants, print zones, pricing |
+| `/categories` | Category management |
+| `/materials` | Color/material swatches |
+| `/clients` | Customer list |
+| `/messages` | Chat with customers (Telegram integration) |
+| `/analytics` | Revenue, order, and conversion metrics with charts |
+| `/settings` | Notification preferences |
+
+All routes require Supabase auth. Unauthenticated users are redirected to `/login` by middleware.
+
+---
+
+## Key Features
+
+### Orders Kanban (`/orders`)
+
+Drag-and-drop board with columns: `draft → new → in_progress → production → completed → archived`
+
+- Mouse and touch drag-and-drop
+- Real-time updates via Supabase Realtime subscription
+- Resizable detail drawer — click any order to see full details
+- Order tags: Paid 100%, Paid 50%, Urgent, VIP, New Client
+- Touch ghost with brand color border during drag
+
+### Order Creator (`/orders/new`)
+
+Full customizer flow for admin-initiated orders:
+
+1. Select product, color variant, size
+2. Open canvas editor (Fabric.js) — upload design, position, resize, rotate
+3. Add text layers with font/color/curve controls
+4. Select print type per layer (DTF, embroidery, screen, sublimation, patch)
+5. Quantity stepper with live discount grid and price breakdown
+6. Add to cart → repeat for multiple items
+7. Fill customer data, delivery info, tags, notes
+8. Submit → creates lead + order_items in Supabase
+
+### Canvas Editor
+
+Built on Fabric.js 5. Features:
+- Image layer upload with background removal (`@imgly/background-removal`)
+- Text layers with 15 Cyrillic-compatible Google Fonts
+- Text curve (arc up/down)
+- Per-layer print type and size selection
+- Drag-and-drop layer reordering (LayersPanel)
+- Mockup capture for cart preview
+
+### Analytics (`/analytics`)
+
+Charts built with Recharts:
+- Revenue over time
+- Orders by status
+- Conversion funnel
+- Top products
+
+### Messages (`/messages`)
+
+Bidirectional chat with customers via Telegram bot integration. Messages stored in `messages` table, synced via webhook.
+
+---
+
+## Tech Stack
+
+| | |
+|---|---|
+| Framework | Next.js 14 (App Router) |
+| Language | TypeScript 5 |
+| Styling | Tailwind CSS 4 + Shadcn/ui |
+| Canvas | Fabric.js 5 |
+| Charts | Recharts 2 |
+| Backend | Supabase (Postgres + Auth + Storage + Realtime) |
+| Validation | Zod via `@udo-craft/shared` |
+| Notifications | Sonner |
+| Monitoring | Sentry 10 |
+| Analytics | Microsoft Clarity |
+
+### Key dependencies
+
+```json
+"fabric": "^5.5.2"              — canvas editor
+"recharts": "^2.12.0"           — analytics charts
+"@imgly/background-removal"     — AI background removal
+"@supabase/ssr"                 — Supabase SSR client
+"@udo-craft/shared"             — shared schemas, constants, useCustomizer hook
+"@udo-craft/ui"                 — MockupViewer, BrandLogo, ClarityInit
+"emoji-picker-react"            — emoji support in messages
+"next-themes"                   — dark/light mode
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Local Development
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# From repo root
+npm install
+npm run dev:admin
+# → http://localhost:3001
+```
 
-## Learn More
+Requires `apps/admin/.env` with:
+```
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_APP_URL=http://localhost:3001
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_WEBHOOK_SECRET=
+```
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## API Routes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Method | Route | Purpose |
+|---|---|---|
+| GET | `/api/leads` | List all leads with order items |
+| POST | `/api/leads` | Create lead (validated by `CreateLeadSchema`) |
+| GET/PATCH/DELETE | `/api/leads/[id]` | Single lead operations |
+| GET | `/api/products` | List products |
+| POST | `/api/products` | Create product |
+| GET/PATCH/DELETE | `/api/products/[id]` | Single product |
+| GET/POST | `/api/materials` | Materials CRUD |
+| GET/POST | `/api/categories` | Categories CRUD |
+| GET/POST | `/api/print-zones` | Print zones |
+| GET/POST | `/api/print-type-pricing` | Pricing tiers |
+| POST | `/api/upload` | Upload file to Supabase Storage |
+| GET | `/api/analytics/dashboard` | Analytics data |
+| GET | `/api/dashboard/badges` | KPI badge counts |
+| GET | `/api/messages` | Chat messages |
+| POST | `/api/telegram/webhook` | Telegram webhook receiver |
+| GET | `/api/telegram/setup` | Register Telegram webhook (run once after deploy) |
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deployment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Part of the monorepo — deploys automatically when you push to `main`.
+
+```bash
+git push origin main   # deploys to admin.u-do-craft.store
+```
+
+See the root [README.md](../../README.md) and [DEPLOYMENT.md](../../DEPLOYMENT.md) for full details.
