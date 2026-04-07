@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS products (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name TEXT NOT NULL,
   slug TEXT UNIQUE NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
   base_price_cents INTEGER NOT NULL,
   images JSONB NOT NULL DEFAULT '{}',
   px_to_mm_ratio NUMERIC NOT NULL DEFAULT 0.5,
@@ -50,7 +51,7 @@ CREATE TABLE IF NOT EXISTS print_zones (
 DO $$ 
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'lead_status') THEN
-    CREATE TYPE lead_status AS ENUM ('new', 'in_progress', 'production', 'completed', 'archived');
+    CREATE TYPE lead_status AS ENUM ('draft', 'new', 'in_progress', 'production', 'completed', 'archived');
   END IF;
 END $$;
 
@@ -114,6 +115,12 @@ CREATE TABLE IF NOT EXISTS site_events (
 -- ─────────────────────────────────────────────
 DO $$
 BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'products' AND column_name = 'description'
+  ) THEN
+    ALTER TABLE products ADD COLUMN description TEXT NOT NULL DEFAULT '';
+  END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_print_zones_product_id') THEN
     CREATE INDEX idx_print_zones_product_id ON print_zones(product_id);
   END IF;

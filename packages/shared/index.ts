@@ -5,13 +5,14 @@ export const PX_TO_MM_RATIO = 0.5; // Example ratio
 
 // Enums
 export const PrintZoneSideEnum = z.enum(["front", "back"]);
-export const LeadStatusEnum = z.enum(["new", "in_progress", "production", "completed", "archived"]);
+export const LeadStatusEnum = z.enum(["draft", "new", "in_progress", "production", "completed", "archived"]);
 
 // Zod Schemas
 export const ProductSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   slug: z.string(),
+  description: z.string().default(""),
   base_price_cents: z.number().int(),
   images: z.record(z.string(), z.string()), // flexible: { front: url, back: url, left: url, ... }
   px_to_mm_ratio: z.number(),
