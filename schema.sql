@@ -530,12 +530,12 @@ END $$;
 -- qty_tiers: JSONB масив [{min_qty, price_cents}]
 -- print_type: відповідає PrintTypeId з фронтенду
 -- ─────────────────────────────────────────────
-DO $
+DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'print_type_enum') THEN
     CREATE TYPE print_type_enum AS ENUM ('dtf', 'embroidery', 'screen', 'sublimation', 'patch');
   END IF;
-END $;
+END $$;
 
 CREATE TABLE IF NOT EXISTS print_type_pricing (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -552,7 +552,7 @@ CREATE TABLE IF NOT EXISTS print_type_pricing (
   UNIQUE(print_type, size_label)
 );
 
-DO $
+DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_print_type_pricing_type') THEN
     CREATE INDEX idx_print_type_pricing_type ON print_type_pricing(print_type);
@@ -560,31 +560,31 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_print_type_pricing_sort') THEN
     CREATE INDEX idx_print_type_pricing_sort ON print_type_pricing(print_type, sort_order ASC);
   END IF;
-END $;
+END $$;
 
 ALTER TABLE IF EXISTS print_type_pricing ENABLE ROW LEVEL SECURITY;
 
-DO $
+DO $$
 BEGIN
   DROP POLICY IF EXISTS "Print type pricing public read" ON print_type_pricing;
   DROP POLICY IF EXISTS "Print type pricing admin write" ON print_type_pricing;
   CREATE POLICY "Print type pricing public read" ON print_type_pricing FOR SELECT USING (true);
   CREATE POLICY "Print type pricing admin write" ON print_type_pricing FOR ALL
     USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
-END $;
+END $$;
 
-DO $
+DO $$
 BEGIN
   DROP TRIGGER IF EXISTS update_print_type_pricing_updated_at ON print_type_pricing;
   CREATE TRIGGER update_print_type_pricing_updated_at BEFORE UPDATE ON print_type_pricing
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-END $;
+END $$;
 
 -- ─────────────────────────────────────────────
 -- ADD allowed_print_types TO PRINT_ZONES
 -- Які типи друку дозволені для цієї зони
 -- ─────────────────────────────────────────────
-DO $
+DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns
@@ -592,7 +592,7 @@ BEGIN
   ) THEN
     ALTER TABLE print_zones ADD COLUMN allowed_print_types print_type_enum[] DEFAULT ARRAY['dtf']::print_type_enum[];
   END IF;
-END $;
+END $$;
 
 -- ─────────────────────────────────────────────
 -- SEED: ВИШИВКА (embroidery) pricing
