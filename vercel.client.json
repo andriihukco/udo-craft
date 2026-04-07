@@ -1,6 +1,7 @@
 {
-  "buildCommand": "npm run build:shared && npm run build:client",
+  "buildCommand": "npm run build:client",
   "outputDirectory": "apps/client/.next",
   "installCommand": "npm install",
   "framework": "nextjs"
 }
+

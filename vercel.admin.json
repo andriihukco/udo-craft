@@ -1,6 +1,7 @@
 {
-  "buildCommand": "npm run build:shared && npm run build:admin",
+  "buildCommand": "npm run build:admin",
   "outputDirectory": "apps/admin/.next",
   "installCommand": "npm install",
   "framework": "nextjs"
 }
+

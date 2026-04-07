@@ -141,45 +141,53 @@ npm run build:client
 | Client | `udo-craft-client` | `u-do-craft.store` | `prj_GTScm9WnDiwD837rrOKHsXiFRsFS` |
 | Org ID | `team_XX3rqg5IE2XdK6oxIVibJTt6` | | |
 
-### How Vercel Builds Work (Monorepo)
-Both apps are deployed from the **repo root** using `--local-config` to point to the right config file. This is required because workspace packages (`@udo-craft/shared`, `@udo-craft/ui`) must be installed from the root.
-
-Root-level config files:
-- `vercel.admin.json` — builds admin, outputs to `apps/admin/.next`
-- `vercel.client.json` — builds client, outputs to `apps/client/.next`
-
-The root `.vercel/project.json` must point to the project being deployed. It defaults to admin.
-
-### Deploy Manually (CLI)
-Always run from the **repo root**:
+### Recommended: Deploy via Git (Automatic)
+The easiest and most reliable way to deploy:
 
 ```bash
-# Deploy admin
-vercel deploy --prod --yes --local-config vercel.admin.json
-
-# Deploy client — swap .vercel/project.json first
-echo '{"projectId":"prj_GTScm9WnDiwD837rrOKHsXiFRsFS","orgId":"team_XX3rqg5IE2XdK6oxIVibJTt6","projectName":"udo-craft-client"}' > .vercel/project.json
-vercel deploy --prod --yes --local-config vercel.client.json
-
-# Restore to admin
-echo '{"projectId":"prj_uNMByvkPtFNKthWbXcbTTdDOvIt2","orgId":"team_XX3rqg5IE2XdK6oxIVibJTt6","projectName":"udo-craft-admin"}' > .vercel/project.json
-```
-
-**Never deploy from inside `apps/admin` or `apps/client`** — Vercel won't be able to resolve workspace packages.
-
-### Deploy via Git (Recommended)
-```bash
-# Deploy to production
+# Deploy to production (both apps)
 git push origin main
 
-# Deploy to preview/staging
+# Deploy to staging (both apps)
 git push origin develop
 ```
 
-GitHub Actions (`.github/workflows/deploy.yml`) handles CI/CD automatically.
+GitHub Actions (`.github/workflows/deploy.yml`) automatically:
+- Builds both apps
+- Runs type-check and lint
+- Deploys admin to `admin.u-do-craft.store`
+- Deploys client to `www.u-do-craft.store`
+
+**This is the recommended approach** — no manual steps, no workarounds.
+
+### Deploy via CLI (Manual)
+If you need to deploy manually without pushing to git:
+
+```bash
+# Set your Vercel token
+export VERCEL_TOKEN=your_token_here
+
+# Deploy both apps
+./scripts/deploy.sh
+
+# Deploy only admin
+./scripts/deploy.sh admin
+
+# Deploy only client
+./scripts/deploy.sh client
+```
+
+The script handles all project ID and org ID configuration automatically.
+
+### How Vercel Builds Work (Monorepo)
+Each app has its own `vercel.json` config in its directory:
+- `apps/admin/vercel.json` — builds admin from root, outputs to `.next`
+- `apps/client/vercel.json` — builds client from root, outputs to `.next`
+
+This allows Vercel to resolve workspace packages (`@udo-craft/shared`, `@udo-craft/ui`) correctly.
 
 ### Vercel Environment Variables
-Set these in the Vercel dashboard for each project (or via CLI):
+Set these in the Vercel dashboard for each project:
 ```bash
 # Example: add a var to admin production
 cd apps/admin
