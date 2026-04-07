@@ -1,0 +1,54 @@
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+    .text-balance {
+        text-wrap: balance;
+    }
+}
+
+@layer base {
+    html {
+        scroll-behavior: smooth;
+    }
+
+    :root {
+        /* === Unified with admin app === */
+        --background: oklch(0.985 0 0);
+        --foreground: oklch(0.145 0 0);
+        --card: oklch(1 0 0);
+        --card-foreground: oklch(0.145 0 0);
+        --popover: oklch(1 0 0);
+        --popover-foreground: oklch(0.145 0 0);
+        --primary: oklch(0.38 0.22 264);
+        --primary-foreground: oklch(1 0 0);
+        --secondary: oklch(0.97 0 0);
+        --secondary-foreground: oklch(0.145 0 0);
+        --muted: oklch(0.97 0 0);
+        --muted-foreground: oklch(0.556 0 0);
+        --accent: oklch(0.48 0.2 264);
+        --accent-foreground: oklch(1 0 0);
+        --destructive: oklch(0.577 0.245 27.325);
+        --border: oklch(0.91 0 0);
+        --input: oklch(0.91 0 0);
+        --ring: oklch(0.38 0.22 264);
+        --radius: 0.5rem;
+    }
+
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground font-sans antialiased;
+    }
+
+    select {
+        @apply rounded-full border border-input bg-background px-3 text-sm transition-colors outline-none;
+        @apply focus:border-ring;
+        @apply disabled:cursor-not-allowed disabled:opacity-50;
+    }
+}

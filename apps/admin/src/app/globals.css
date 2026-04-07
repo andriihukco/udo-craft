@@ -1,0 +1,78 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@source "../components/**/*.{ts,tsx}";
+@source "../app/**/*.{ts,tsx}";
+@source "../hooks/**/*.{ts,tsx}";
+
+@utility text-balance {
+  text-wrap: balance;
+}
+
+@theme inline {
+  --color-background: oklch(0.985 0 0);
+  --color-foreground: oklch(0.145 0 0);
+  --color-card: oklch(1 0 0);
+  --color-card-foreground: oklch(0.145 0 0);
+  --color-popover: oklch(1 0 0);
+  --color-popover-foreground: oklch(0.145 0 0);
+  --color-primary: oklch(0.38 0.22 264);
+  --color-primary-foreground: oklch(1 0 0);
+  --color-secondary: oklch(0.97 0 0);
+  --color-secondary-foreground: oklch(0.145 0 0);
+  --color-muted: oklch(0.97 0 0);
+  --color-muted-foreground: oklch(0.556 0 0);
+  --color-accent: oklch(0.48 0.2 264);
+  --color-accent-foreground: oklch(1 0 0);
+  --color-destructive: oklch(0.577 0.245 27.325);
+  --color-border: oklch(0.91 0 0);
+  --color-input: oklch(0.91 0 0);
+  --color-ring: oklch(0.7 0 0);
+  --color-sidebar: oklch(1 0 0);
+  --color-sidebar-foreground: oklch(0.145 0 0);
+  --color-sidebar-primary: oklch(0.38 0.22 264);
+  --color-sidebar-primary-foreground: oklch(1 0 0);
+  --color-sidebar-accent: oklch(0.922 0 0);
+  --color-sidebar-accent-foreground: oklch(0.145 0 0);
+  --color-sidebar-border: oklch(0.88 0 0);
+  --color-sidebar-ring: oklch(0.38 0.22 264);
+  --color-chart-1: oklch(0.38 0.22 264);
+  --color-chart-2: oklch(0.6 0.18 150);
+  --color-chart-3: oklch(0.65 0.2 45);
+  --color-chart-4: oklch(0.55 0.22 300);
+  --color-chart-5: oklch(0.5 0.2 20);
+  --radius: 0.5rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+}
+
+@layer base {
+  *, *::before, *::after {
+    border-color: var(--color-border);
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  select {
+    @apply rounded-full border border-input bg-background px-3 text-sm transition-colors outline-none;
+    @apply focus:border-ring focus:ring-3 focus:ring-ring/50;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+    appearance: auto;
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  15%       { transform: translateX(-4px); }
+  30%       { transform: translateX(4px); }
+  45%       { transform: translateX(-3px); }
+  60%       { transform: translateX(3px); }
+  75%       { transform: translateX(-2px); }
+  90%       { transform: translateX(2px); }
+}
+
+.animate-shake {
+  animation: shake 0.6s ease-in-out;
+}
