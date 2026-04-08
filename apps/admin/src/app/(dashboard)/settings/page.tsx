@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
-import { Bell, Loader2, Lock, User } from "lucide-react";
+import { Activity, Bell, Loader2, Lock, User } from "lucide-react";
+import { SystemTab } from "./_components/SystemTab";
 
 function NotifRow({ label, desc, checked, onChange, disabled }: { label: string; desc: string; checked: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
   return (
@@ -23,12 +24,13 @@ function NotifRow({ label, desc, checked, onChange, disabled }: { label: string;
   );
 }
 
-type Tab = "profile" | "security" | "notifications";
+type Tab = "profile" | "security" | "notifications" | "system";
 
 const TABS: { key: Tab; icon: React.ElementType; label: string }[] = [
-  { key: "profile",        icon: User,    label: "Профіль" },
-  { key: "security",       icon: Lock,    label: "Безпека" },
-  { key: "notifications",  icon: Bell,    label: "Сповіщення" },
+  { key: "profile",        icon: User,     label: "Профіль" },
+  { key: "security",       icon: Lock,     label: "Безпека" },
+  { key: "notifications",  icon: Bell,     label: "Сповіщення" },
+  { key: "system",         icon: Activity, label: "Система" },
 ];
 
 export default function SettingsPage() {
@@ -200,6 +202,8 @@ export default function SettingsPage() {
               />
             </div>
           )}
+
+          {tab === "system" && <SystemTab />}
 
         </div>
       </div>
