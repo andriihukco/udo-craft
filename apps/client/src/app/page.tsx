@@ -570,12 +570,12 @@ export default function HomePage() {
           </Link>
           <p className="text-gray-600 text-xs text-center">© {new Date().getFullYear()} U:DO CRAFT. Всі права захищені.</p>
           <div className="flex items-center gap-4">
-            <a href="https://instagram.com/udocraft" target="_blank" rel="noopener noreferrer"
+            <a href="https://www.instagram.com/u.do.craft/" target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-2 text-gray-500 hover:text-gray-200 transition-colors duration-200">
               <Instagram className="w-4 h-4" aria-hidden="true" />
               <span className="text-xs font-medium">Instagram</span>
             </a>
-            <a href="https://t.me/udocraft" target="_blank" rel="noopener noreferrer"
+            <a href="https://t.me/udostore" target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-2 text-gray-500 hover:text-gray-200 transition-colors duration-200">
               <Send className="w-4 h-4" aria-hidden="true" />
               <span className="text-xs font-medium">Telegram</span>
