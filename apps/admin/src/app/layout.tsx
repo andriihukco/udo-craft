@@ -3,6 +3,7 @@ import { Cousine } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
 import { ClarityInit } from "@/components/clarity";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const cousine = Cousine({
@@ -21,9 +22,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="uk" className={cn(cousine.variable)}>
       <body className="min-h-screen bg-background">
-        <ClarityInit />
+        <ClarityInit clarityId="w6t8md9b3l" />
         {children}
         <Toaster theme="light" toastOptions={{ style: { background: "white", border: "1px solid #e5e7eb", color: "#111827" } }} />
+        <Analytics />
       </body>
     </html>
   );
