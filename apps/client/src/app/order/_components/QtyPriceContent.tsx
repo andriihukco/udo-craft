@@ -102,13 +102,13 @@ export function QtyPriceContent({
         >+</button>
       </div>
 
-      {/* Discount grid */}
+      {/* Discount chips */}
       {(() => {
         const grid = product.discount_grid;
         if (!grid?.length) return null;
         const sorted = [...grid].sort((a, b) => a.qty - b.qty);
         return (
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="flex flex-wrap gap-1.5">
             {sorted.map((tier, i) => {
               const nextQty = sorted[i + 1]?.qty;
               const active = quantity >= tier.qty && (nextQty === undefined || quantity < nextQty);
@@ -117,10 +117,13 @@ export function QtyPriceContent({
                   key={tier.qty}
                   onClick={() => { setQuantity(tier.qty); setQtyStr(String(tier.qty)); }}
                   disabled={disabled}
-                  className={`cursor-pointer text-center px-1 py-2 rounded-xl border text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed ${active ? "border-primary bg-primary/10 text-primary font-semibold" : "border-border text-muted-foreground hover:border-primary/30"}`}
+                  className={`cursor-pointer flex items-center gap-1 px-2.5 py-1 rounded-full border text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                    active
+                      ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                      : "border-primary text-primary hover:bg-primary/10"
+                  }`}
                 >
-                  <div className="font-bold">від {tier.qty}</div>
-                  <div className="opacity-80 text-[10px]">−{tier.discount_pct}%</div>
+                  від {tier.qty} · −{tier.discount_pct}%
                 </button>
               );
             })}
