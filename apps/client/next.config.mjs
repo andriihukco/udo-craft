@@ -1,3 +1,4 @@
+import { withSentryConfig } from "@sentry/nextjs";
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ["@udo-craft/shared", "@udo-craft/ui", "@udo-craft/config", "@udo-craft/styles"],
@@ -37,4 +38,11 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  org: "udo-craft",
+  project: "udocraft-client",
+  silent: !process.env.CI,
+  disableReplayInjection: true,
+  widenClientFileUpload: true,
+  tunnelRoute: "/monitoring",
+});

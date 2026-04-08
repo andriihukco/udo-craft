@@ -2,21 +2,23 @@
 
 import { useEffect } from "react";
 
-export function ClarityInit() {
+interface ClarityInitProps {
+  clarityId: string;
+}
+
+export function ClarityInit({ clarityId }: ClarityInitProps) {
   useEffect(() => {
-    // Use dynamic import to avoid SSR issues
     import("@microsoft/clarity").then((clarity) => {
-      clarity.default.init("w6t8md9b3l");
+      clarity.default.init(clarityId);
     }).catch(() => {
-      // Fallback: inject script tag directly
       if (typeof window !== "undefined" && !(window as any).clarity) {
         const s = document.createElement("script");
         s.async = true;
-        s.src = "https://www.clarity.ms/tag/w6t8md9b3l";
+        s.src = "https://www.clarity.ms/tag/" + clarityId;
         document.head.appendChild(s);
       }
     });
-  }, []);
+  }, [clarityId]);
 
   return null;
 }
