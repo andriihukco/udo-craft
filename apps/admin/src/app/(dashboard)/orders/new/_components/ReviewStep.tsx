@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { FileDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { FileDown, Loader2 } from "lucide-react";
 import type { CartItem } from "./CartSummary";
 import { PREDEFINED_TAGS, DELIVERY_OPTIONS, getDiscount } from "../_lib/constants";
 
@@ -20,10 +21,13 @@ interface ReviewStepProps {
   orderTags: string[];
   extraFiles: File[];
   generatingPdf: boolean;
+  submitting: boolean;
+  onBack: () => void;
+  onSubmit: () => void;
   onDownloadInvoice: () => void;
 }
 
-export function ReviewStep({ cart, totalCents, contact, orderTags, extraFiles, generatingPdf, onDownloadInvoice }: ReviewStepProps) {
+export function ReviewStep({ cart, totalCents, contact, orderTags, extraFiles, generatingPdf, submitting, onBack, onSubmit, onDownloadInvoice }: ReviewStepProps) {
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold">Перевірте замовлення</h2>
@@ -155,7 +159,15 @@ export function ReviewStep({ cart, totalCents, contact, orderTags, extraFiles, g
             </div>
           )}
         </div>
-        <div className="h-4" />
+        <div className="h-16" />
+      </div>
+
+      {/* Sticky bottom nav — matches client */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card px-4 py-3 flex gap-2">
+        <Button variant="outline" className="flex-1" onClick={onBack}>Редагувати</Button>
+        <Button className="flex-1 gap-1.5" onClick={onSubmit} disabled={submitting}>
+          {submitting ? <><Loader2 className="size-3.5 animate-spin" /> Зберігаємо...</> : "Підтвердити замовлення"}
+        </Button>
       </div>
     </div>
   );
