@@ -195,6 +195,7 @@ export default function ProductCanvas({
     const proxy = imgUrl.startsWith("http") ? `/api/proxy-image?url=${encodeURIComponent(imgUrl)}` : imgUrl;
     if (backgroundUrlRef.current === proxy) return;
     setBackgroundLoaded(false);
+    const htmlImage = new Image();
     htmlImage.crossOrigin = "anonymous";
     htmlImage.decoding = "async";
     htmlImage.onload = () => {
