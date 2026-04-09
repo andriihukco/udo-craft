@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import type { PrintLayer } from "@/components/print-types";
@@ -62,6 +62,7 @@ export function QtyPricePanel({
   addingToCart,
   onAddToCart,
 }: QtyPricePanelProps) {
+  const [qtyStr, setQtyStr] = useState(String(quantity));
   const total = (discounted + printCostPerUnit) * quantity;
 
   return (
@@ -71,51 +72,52 @@ export function QtyPricePanel({
       {/* Quantity stepper */}
       <div className="flex items-center gap-1.5">
         <button
-          onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+          onClick={() => { const n = Math.max(1, quantity - 1); setQuantity(n); setQtyStr(String(n)); }}
           className="cursor-pointer size-8 rounded-lg border border-border flex items-center justify-center text-base font-medium hover:bg-muted transition-colors shrink-0"
-        >
-          −
-        </button>
+        >−</button>
         <input
           type="number"
           min={1}
-          value={quantity}
-          onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+          value={qtyStr}
+          onChange={(e) => {
+            setQtyStr(e.target.value);
+            const n = Math.max(1, parseInt(e.target.value) || 1);
+            setQuantity(n);
+          }}
+          onBlur={() => {
+            const safe = Math.max(1, parseInt(qtyStr) || 1);
+            setQuantity(safe);
+            setQtyStr(String(safe));
+          }}
           className="flex-1 min-w-0 text-center text-xl font-bold tabular-nums border border-border rounded-lg py-1.5 focus:outline-none focus:ring-1 focus:ring-primary bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
         <button
-          onClick={() => setQuantity((q) => q + 1)}
+          onClick={() => { const n = quantity + 1; setQuantity(n); setQtyStr(String(n)); }}
           className="cursor-pointer size-8 rounded-lg border border-border flex items-center justify-center text-base font-medium hover:bg-muted transition-colors shrink-0"
-        >
-          +
-        </button>
+        >+</button>
       </div>
 
       {/* Discount grid */}
-      <div className="grid grid-cols-3 gap-1.5">
-        {(() => {
-          if (!discountGrid?.length) return null;
-          const sorted = [...discountGrid].sort((a, b) => a.qty - b.qty);
-          return sorted.map((tier, i) => {
-            const nextQty = sorted[i + 1]?.qty;
-            const active = quantity >= tier.qty && (nextQty === undefined || quantity < nextQty);
-            return (
-              <button
-                key={tier.qty}
-                onClick={() => setQuantity(tier.qty)}
-                className={`cursor-pointer text-center px-1 py-2 rounded-xl border text-xs transition-all ${
-                  active
-                    ? "border-primary bg-primary/10 text-primary font-semibold"
-                    : "border-border text-muted-foreground hover:border-primary/30"
-                }`}
-              >
-                <div className="font-bold">від {tier.qty}</div>
-                <div className="opacity-80 text-[10px]">−{tier.discount_pct}%</div>
-              </button>
-            );
-          });
-        })()}
-      </div>
+      {(() => {
+        if (!discountGrid?.length) return null;
+        const sorted = [...discountGrid].sort((a, b) => a.qty - b.qty);
+        return (
+          <div className="grid grid-cols-3 gap-1.5">
+            {sorted.map((tier, i) => {
+              const nextQty = sorted[i + 1]?.qty;
+              const active = quantity >= tier.qty && (nextQty === undefined || quantity < nextQty);
+              return (
+                <button key={tier.qty}
+                  onClick={() => { setQuantity(tier.qty); setQtyStr(String(tier.qty)); }}
+                  className={`cursor-pointer text-center px-1 py-2 rounded-xl border text-xs transition-all ${active ? "border-primary bg-primary/10 text-primary font-semibold" : "border-border text-muted-foreground hover:border-primary/30"}`}>
+                  <div className="font-bold">від {tier.qty}</div>
+                  <div className="opacity-80 text-[10px]">−{tier.discount_pct}%</div>
+                </button>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       {/* Price breakdown */}
       <div className="rounded-xl border border-border/40 bg-muted/50 p-3.5 space-y-2">
@@ -147,7 +149,7 @@ export function QtyPricePanel({
               return (
                 <div key={layer.id} className="flex justify-between text-xs text-muted-foreground">
                   <span className="truncate max-w-[60%]">
-                    {PRINT_TYPE_LABELS[layer.type] ?? layer.type}
+                    <span className="font-medium text-foreground">{PRINT_TYPE_LABELS[layer.type] ?? layer.type}</span>
                     {sizeLabel ? ` · ${sizeLabel}` : " · Оберіть розмір"}
                     {row?.size_min_cm && row?.size_max_cm ? ` (${row.size_min_cm}–${row.size_max_cm} см)` : ""}
                     <span className="text-[10px] ml-1 opacity-60">({layer.side})</span>
@@ -169,7 +171,7 @@ export function QtyPricePanel({
 
         <div className="border-t border-border/60 pt-2 flex justify-between font-bold text-lg">
           <span>Разом</span>
-          <span>{total.toFixed(0)} ₴</span>
+          <span className="text-primary">{total.toFixed(0)} ₴</span>
         </div>
       </div>
 
@@ -187,6 +189,13 @@ export function QtyPricePanel({
 
       {addDisabledReason && <p className="text-xs text-amber-600">{addDisabledReason}</p>}
 
+      {/* Disclaimer — matches client */}
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-2.5">
+        <p className="text-xs text-amber-900">
+          <span className="font-semibold">Важливо:</span> Ціни є орієнтовними. Остаточна вартість може змінитися після обговорення з менеджером.
+        </p>
+      </div>
+
       {/* Add-to-cart button */}
       <Button
         type="button"
@@ -195,9 +204,7 @@ export function QtyPricePanel({
         disabled={addingToCart || !!addDisabledReason}
       >
         {addingToCart ? (
-          <>
-            <Loader2 className="size-3.5 animate-spin" /> Додаємо...
-          </>
+          <><Loader2 className="size-3.5 animate-spin" /> Додаємо...</>
         ) : (
           "Додати до замовлення"
         )}
