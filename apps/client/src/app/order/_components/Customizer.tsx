@@ -53,6 +53,7 @@ export interface CustomizerProps {
   initialColor?: string;
   initialLayers?: PrintLayer[];
   autoOpenCanvas?: boolean;
+  existingMockupUploadedUrl?: string;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────
@@ -67,10 +68,11 @@ export function Customizer({
   initialSize,
   initialColor,
   initialLayers,
+  existingMockupUploadedUrl,
 }: CustomizerProps) {
   const s = useCustomizerState({
     product, printZones, materials, variants, onAdd,
-    initialSize, initialColor, initialLayers,
+    initialSize, initialColor, initialLayers, existingMockupUploadedUrl,
   });
 
   if (!s.mounted) return null;

@@ -43,7 +43,13 @@ export function OrderReview({
                 <div key={i} className="bg-muted/30 rounded-xl overflow-hidden">
                   <div className="flex gap-3 p-3">
                     <div className="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-card border border-border/40">
-                      <MockupViewer images={item.mockupsMap} frontUrl={item.mockupDataUrl} backUrl={item.mockupBackDataUrl} fallbackUrl={item.productImage} alt={item.productName} />
+                      <MockupViewer
+                        images={item.mockupsMap}
+                        frontUrl={item.mockupDataUrl ?? item.mockupUploadedUrl}
+                        backUrl={item.mockupBackDataUrl}
+                        fallbackUrl={item.productImage}
+                        alt={item.productName}
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold">{item.productName}</p>

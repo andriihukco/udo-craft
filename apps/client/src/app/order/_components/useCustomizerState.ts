@@ -22,6 +22,7 @@ interface UseCustomizerStateProps {
   initialSize?: string;
   initialColor?: string;
   initialLayers?: PrintLayer[];
+  existingMockupUploadedUrl?: string;
 }
 
 export function useCustomizerState({
@@ -33,6 +34,7 @@ export function useCustomizerState({
   initialSize,
   initialColor,
   initialLayers,
+  existingMockupUploadedUrl,
 }: UseCustomizerStateProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasSaveRef = useRef<(() => string) | null>(null);
@@ -176,6 +178,7 @@ export function useCustomizerState({
         itemNote, offsetTopMm,
         printZone: printZones.front ?? printZones.back ?? null,
         requiresGarmentSize, hasIncompletePrintSizes,
+        existingMockupUploadedUrl,
       });
       onAdd(item);
     } finally {
