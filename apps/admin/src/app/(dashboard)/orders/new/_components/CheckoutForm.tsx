@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ChevronRight, X, Upload } from "lucide-react";
+import { ChevronRight, X, Upload, Plus } from "lucide-react";
 import type { CartItem } from "./CartSummary";
 import { PREDEFINED_TAGS, DELIVERY_OPTIONS } from "../_lib/constants";
 import { useCipherText } from "./useCipherText";
@@ -34,6 +34,7 @@ export function CheckoutForm({
   onReview, onBack,
 }: CheckoutFormProps) {
   const [showExtraDetails, setShowExtraDetails] = useState(false);
+  const [customTagInput, setCustomTagInput] = useState("");
   const [highlightRequired, setHighlightRequired] = useState(false);
   const cipherText = useCipherText(true);
 
@@ -128,14 +129,50 @@ export function CheckoutForm({
               const active = orderTags.includes(tag.id);
               return (
                 <button key={tag.id} type="button" onClick={() => toggleTag(tag.id)}
-                  className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-all"
+                  className="inline-flex items-center gap-1.5 h-7 px-3 rounded-full text-xs font-medium border transition-all duration-150"
                   style={{ color: active ? tag.color : undefined, backgroundColor: active ? tag.bg : undefined, borderColor: active ? `${tag.color}40` : undefined }}>
                   <span className="size-1.5 rounded-full" style={{ backgroundColor: active ? tag.color : "#9ca3af" }} />
                   {tag.label}
                 </button>
               );
             })}
+
+            {/* Custom tags already added */}
+            {orderTags
+              .filter((t) => !PREDEFINED_TAGS.find((p) => p.id === t))
+              .map((tag) => (
+                <span key={tag}
+                  className="inline-flex items-center gap-1.5 h-7 px-3 rounded-full text-xs font-medium border border-border bg-muted/40 text-foreground">
+                  {tag}
+                  <button type="button" onClick={() => toggleTag(tag)} className="opacity-40 hover:opacity-80 transition-opacity">
+                    <X className="size-2.5" />
+                  </button>
+                </span>
+              ))}
           </div>
+
+          {/* Custom tag input */}
+          <form className="flex items-center gap-2 mt-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const val = customTagInput.trim();
+              if (!val || orderTags.includes(val)) return;
+              setOrderTags((prev) => [...prev, val]);
+              setCustomTagInput("");
+            }}>
+            <Input
+              value={customTagInput}
+              onChange={(e) => setCustomTagInput(e.target.value)}
+              placeholder="Власний тег..."
+              className="h-7 text-xs flex-1"
+            />
+            {customTagInput.trim() && (
+              <button type="submit"
+                className="h-7 w-7 rounded-full flex items-center justify-center bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0">
+                <Plus className="size-3" />
+              </button>
+            )}
+          </form>
         </div>
 
         {/* Collapsible extra details */}
