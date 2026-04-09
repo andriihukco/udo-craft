@@ -7,7 +7,7 @@ import { generateInvoicePDF } from "@/lib/generate-invoice";
 import { Product, PrintZone, Material, ProductColorVariant } from "@udo-craft/shared";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Customizer } from "./_components/Customizer";
 import { DesktopCartPanel, type CartItem } from "./_components/CartSummary";
@@ -15,6 +15,7 @@ import { MobileAdminCart } from "./_components/MobileAdminCart";
 import { ReviewStep } from "./_components/ReviewStep";
 import { ProductCardInline } from "./_components/ProductCardInline";
 import { CheckoutForm, type ContactData } from "./_components/CheckoutForm";
+import { StepHeader } from "./_components/StepHeader";
 import { getDiscount } from "./_lib/constants";
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -218,14 +219,17 @@ export default function NewOrderPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      <div className="flex flex-col flex-1 min-h-0">
+        <StepHeader step={step} cartLength={cart.length} onNavigate={setStep} />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex flex-col flex-1 min-h-0">
       {customizerProduct && (
         <Customizer
           product={customizerProduct}
@@ -241,60 +245,62 @@ export default function NewOrderPage() {
         />
       )}
 
-      {step === "catalog" && cart.length > 0 && (
-        <DesktopCartPanel cart={cart} totalCents={totalCents} products={products}
-          variants={variants} materials={materials} onEdit={handleEditCartItem}
-          onRemove={(i) => setCart((prev) => prev.filter((_, idx) => idx !== i))}
-          onCheckout={() => setStep("checkout")} />
-      )}
+      {/* Sticky step header */}
+      <StepHeader step={step} cartLength={cart.length} onNavigate={setStep} />
+
+      {/* Body */}
+      <div className="flex-1 min-h-0 flex overflow-hidden">
+        <div className="flex-1 overflow-y-auto">
+          <div className={`mx-auto px-4 py-6 space-y-6 ${step === "catalog" ? `max-w-full ${cart.length > 0 ? "lg:pr-80" : ""}` : "max-w-4xl pb-20"}`}>
+
+            {step === "catalog" && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {products.map((product) => (
+                  <ProductCardInline key={product.id} product={product}
+                    variants={variants.filter((v) => v.product_id === product.id)}
+                    materials={materials}
+                    onOpen={(variant: ProductColorVariant | null, size?: string | null) => openCustomizer(product, variant, size)}
+                    onAddWithoutPrint={(variant: ProductColorVariant | null, size?: string | null) => handleAddWithoutPrint(product, variant, size)} />
+                ))}
+              </div>
+            )}
+
+            {step === "checkout" && (
+              <CheckoutForm contact={contact} setContact={setContact}
+                orderTags={orderTags} setOrderTags={setOrderTags}
+                extraFiles={extraFiles} setExtraFiles={setExtraFiles}
+                cart={cart} totalCents={totalCents} onReview={() => setStep("review")} />
+            )}
+
+            {step === "review" && (
+              <div className="space-y-6">
+                <ReviewStep cart={cart} totalCents={totalCents} contact={contact}
+                  orderTags={orderTags} extraFiles={extraFiles}
+                  generatingPdf={generatingPdf} onDownloadInvoice={handleDownloadInvoice} />
+                <Button className="w-full h-12 text-base font-semibold"
+                  onClick={handleSubmitOrder} disabled={submitting}>
+                  {submitting ? <><Loader2 className="size-4 animate-spin mr-2" />Зберігаємо...</> : "Підтвердити замовлення"}
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Desktop cart side panel */}
+        {step === "catalog" && cart.length > 0 && (
+          <DesktopCartPanel cart={cart} totalCents={totalCents} products={products}
+            variants={variants} materials={materials} onEdit={handleEditCartItem}
+            onRemove={(i) => setCart((prev) => prev.filter((_, idx) => idx !== i))}
+            onCheckout={() => setStep("checkout")} />
+        )}
+      </div>
+
+      {/* Mobile cart bar */}
       {step === "catalog" && (
         <MobileAdminCart cart={cart} totalCents={totalCents} onEdit={handleEditCartItem}
           onRemove={(i) => setCart((prev) => prev.filter((_, idx) => idx !== i))}
           onCheckout={() => setStep("checkout")} />
       )}
-
-      <div className={`px-4 py-6 max-w-5xl mx-auto ${step === "catalog" && cart.length > 0 ? "lg:pr-80" : ""}`}>
-        <div className="flex items-center gap-3 mb-6">
-          <button onClick={() => step !== "catalog" ? setStep(step === "review" ? "checkout" : "catalog") : router.push("/orders")}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="size-4" /> {step !== "catalog" ? "Назад" : "Замовлення"}
-          </button>
-          <h1 className="text-xl font-bold">
-            {step === "catalog" ? "Нове замовлення" : step === "checkout" ? "Оформлення" : "Перевірка"}
-          </h1>
-        </div>
-
-        {step === "catalog" && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            {products.map((product) => (
-              <ProductCardInline key={product.id} product={product}
-                variants={variants.filter((v) => v.product_id === product.id)}
-                materials={materials}
-                onOpen={(variant: ProductColorVariant | null, size?: string | null) => openCustomizer(product, variant, size)}
-                onAddWithoutPrint={(variant: ProductColorVariant | null, size?: string | null) => handleAddWithoutPrint(product, variant, size)} />
-            ))}
-          </div>
-        )}
-
-        {step === "checkout" && (
-          <CheckoutForm contact={contact} setContact={setContact}
-            orderTags={orderTags} setOrderTags={setOrderTags}
-            extraFiles={extraFiles} setExtraFiles={setExtraFiles}
-            cart={cart} totalCents={totalCents} onReview={() => setStep("review")} />
-        )}
-
-        {step === "review" && (
-          <div className="space-y-6">
-            <ReviewStep cart={cart} totalCents={totalCents} contact={contact}
-              orderTags={orderTags} extraFiles={extraFiles}
-              generatingPdf={generatingPdf} onDownloadInvoice={handleDownloadInvoice} />
-            <Button className="w-full h-12 text-base font-semibold"
-              onClick={handleSubmitOrder} disabled={submitting}>
-              {submitting ? <><Loader2 className="size-4 animate-spin mr-2" />Зберігаємо...</> : "Підтвердити замовлення"}
-            </Button>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
