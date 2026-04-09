@@ -297,19 +297,18 @@ export default function NewOrderPage() {
               <CheckoutForm contact={contact} setContact={setContact}
                 orderTags={orderTags} setOrderTags={setOrderTags}
                 extraFiles={extraFiles} setExtraFiles={setExtraFiles}
-                cart={cart} totalCents={totalCents} onReview={() => setStep("review")} />
+                cart={cart} totalCents={totalCents}
+                onBack={() => setStep("catalog")}
+                onReview={() => setStep("review")} />
             )}
 
             {step === "review" && (
-              <div className="space-y-6">
-                <ReviewStep cart={cart} totalCents={totalCents} contact={contact}
-                  orderTags={orderTags} extraFiles={extraFiles}
-                  generatingPdf={generatingPdf} onDownloadInvoice={handleDownloadInvoice} />
-                <Button className="w-full h-12 text-base font-semibold"
-                  onClick={handleSubmitOrder} disabled={submitting}>
-                  {submitting ? <><Loader2 className="size-4 animate-spin mr-2" />Зберігаємо...</> : "Підтвердити замовлення"}
-                </Button>
-              </div>
+              <ReviewStep cart={cart} totalCents={totalCents} contact={contact}
+                orderTags={orderTags} extraFiles={extraFiles}
+                generatingPdf={generatingPdf} submitting={submitting}
+                onBack={() => setStep("checkout")}
+                onSubmit={() => void handleSubmitOrder()}
+                onDownloadInvoice={handleDownloadInvoice} />
             )}
           </div>
         </div>
