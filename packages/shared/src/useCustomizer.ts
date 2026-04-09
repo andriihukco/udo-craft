@@ -83,6 +83,8 @@ export interface HandleAddToCartParams {
   printZone?: import("../index").PrintZone | null;
   requiresGarmentSize: boolean;
   hasIncompletePrintSizes: boolean;
+  /** Existing mockup URL from a previous cart item (edit mode) — skip re-upload if unchanged */
+  existingMockupUploadedUrl?: string;
 }
 
 export interface HandleAddToCartResult {
@@ -259,15 +261,20 @@ export function useCustomizer(config: UseCustomizerConfig): UseCustomizerReturn 
         itemNote,
         offsetTopMm,
         printZone,
+        existingMockupUploadedUrl,
       } = params;
 
       // Wait for any pending layer uploads (up to 8s)
-      const deadline = Date.now() + 8000;
-      while (
-        lRef.current.some((l) => !l.uploadedUrl) &&
-        Date.now() < deadline
-      ) {
-        await new Promise((r) => setTimeout(r, 200));
+      // Skip wait entirely if all layers already have uploadedUrl (edit with no changes)
+      const allUploaded = lRef.current.every((l) => l.kind === "text" || !!l.uploadedUrl);
+      if (!allUploaded) {
+        const deadline = Date.now() + 8000;
+        while (
+          lRef.current.some((l) => l.kind !== "text" && !l.uploadedUrl) &&
+          Date.now() < deadline
+        ) {
+          await new Promise((r) => setTimeout(r, 200));
+        }
       }
 
       // Capture current side synchronously
@@ -284,9 +291,9 @@ export function useCustomizer(config: UseCustomizerConfig): UseCustomizerReturn 
         allMockups.front || allMockups[Object.keys(allMockups)[0]] || "";
       const mockupBackDataUrl = allMockups.back;
 
-      // Upload primary mockup to storage
-      let mockupUploadedUrl: string | undefined;
-      if (mockupDataUrl) {
+      // Upload primary mockup to storage — skip if we already have one (edit with no changes)
+      let mockupUploadedUrl: string | undefined = existingMockupUploadedUrl;
+      if (!mockupUploadedUrl && mockupDataUrl) {
         try {
           const [header, b64] = mockupDataUrl.split(",");
           const mime = header.match(/:(.*?);/)?.[1] ?? "image/png";
@@ -315,7 +322,7 @@ export function useCustomizer(config: UseCustomizerConfig): UseCustomizerReturn 
       const sidesWithLayers = new Set(lRef.current.map((l) => l.side));
       const filteredMockups: Record<string, string> = {};
       for (const [side, url] of Object.entries(allMockups)) {
-        if (sidesWithLayers.has(side) && url.startsWith("data:image")) {
+        if (sidesWithLayers.has(side) && (url.startsWith("data:image") || url.startsWith("http"))) {
           filteredMockups[side] = url;
         }
       }

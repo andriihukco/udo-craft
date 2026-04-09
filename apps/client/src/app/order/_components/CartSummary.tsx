@@ -161,8 +161,13 @@ export function CartSummary({
           }
         }
 
-        const layerUrls: { url: string; type: string; side: string; sizeLabel?: string; sizeMinCm?: number; sizeMaxCm?: number; priceCents?: number }[] = [];
+        const layerUrls: { url: string; type: string; side: string; kind?: string; textContent?: string; sizeLabel?: string; sizeMinCm?: number; sizeMaxCm?: number; priceCents?: number }[] = [];
         for (const layer of (item.layers ?? [])) {
+          if (layer.kind === "text") {
+            // Text layers have no uploadedUrl — include them with their text content
+            layerUrls.push({ url: "", type: layer.type, side: layer.side, kind: "text", textContent: layer.textContent, sizeLabel: layer.sizeLabel, sizeMinCm: layer.sizeMinCm, sizeMaxCm: layer.sizeMaxCm, priceCents: layer.priceCents });
+            continue;
+          }
           const url = layer.uploadedUrl;
           if (!url) continue;
           layerUrls.push({ url, type: layer.type, side: layer.side, sizeLabel: layer.sizeLabel, sizeMinCm: layer.sizeMinCm, sizeMaxCm: layer.sizeMaxCm, priceCents: layer.priceCents });
