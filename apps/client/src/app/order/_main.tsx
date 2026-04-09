@@ -203,6 +203,7 @@ export function OrderPageInner({
           initialSize={editingCartIndex !== null ? cart[editingCartIndex]?.size : (customizerInitialSize ?? searchParams.get("size") ?? undefined)}
           initialColor={editingCartIndex !== null ? cart[editingCartIndex]?.color : (customizerInitialColor ?? searchParams.get("color") ?? undefined)}
           initialLayers={editingCartIndex !== null ? cart[editingCartIndex]?.layers : undefined}
+          existingMockupUploadedUrl={editingCartIndex !== null ? cart[editingCartIndex]?.mockupUploadedUrl : undefined}
         />
       )}
 

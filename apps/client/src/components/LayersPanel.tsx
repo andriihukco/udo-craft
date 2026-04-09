@@ -258,59 +258,60 @@ export default function LayersPanel({
                   <div className="mt-1 rounded-xl border border-border bg-card overflow-hidden" onPointerDown={(e) => e.stopPropagation()}>
                     {/* ── Type + Size — always first ── */}
                     <div className="p-3 space-y-2 border-b border-border">
-                      <div className="space-y-1" onPointerDown={(e) => e.stopPropagation()}>
-                        <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Тип нанесення</label>
-                        <Select value={layer.type} onValueChange={(val) => onTypeChange(layer.id, val as PrintTypeId)}>
-                          <SelectTrigger className="h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {PRINT_TYPES.map((t) => (
-                              <SelectItem key={t.id} value={t.id}>{t.label} — {t.desc}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                      <div className="grid grid-cols-2 gap-2" onPointerDown={(e) => e.stopPropagation()}>
+                        <div className="space-y-1" onPointerDown={(e) => e.stopPropagation()}>
+                          <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Тип нанесення</label>
+                          <Select value={layer.type} onValueChange={(val) => onTypeChange(layer.id, val as PrintTypeId)}>
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {PRINT_TYPES.map((t) => (
+                                <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {sizePriceRows.length > 0 && onSizeLabelChange && (() => {
+                          // Calculate live cm from canvas scale
+                          const scale = layerScales[layer.id];
+                          const CANVAS_SIZE = 520;
+                          const liveCm = (scale && pxToMmRatio)
+                            ? Math.round((scale * CANVAS_SIZE * 0.4) / (pxToMmRatio * 10) * 10) / 10
+                            : null;
+                          
+                          let autoSelectedSize = sizeLabel;
+                          if (liveCm !== null) {
+                            const closest = sizePriceRows.reduce((prev, curr) => {
+                              const prevDist = Math.abs((prev.size_min_cm + prev.size_max_cm) / 2 - liveCm);
+                              const currDist = Math.abs((curr.size_min_cm + curr.size_max_cm) / 2 - liveCm);
+                              return currDist < prevDist ? curr : prev;
+                            });
+                            autoSelectedSize = closest?.size_label;
+                          }
+                          
+                          return (
+                            <div className="space-y-1" onPointerDown={(e) => e.stopPropagation()}>
+                              <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Розмір нанесення</label>
+                              <Select value={autoSelectedSize ?? ""} onValueChange={(val) => val && onSizeLabelChange(layer.id, val)}>
+                                <SelectTrigger className="h-8 text-xs">
+                                  <SelectValue placeholder="Розмір" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {sizePriceRows.map((r) => {
+                                    const p = calcPrice(r.qty_tiers, quantity);
+                                    return (
+                                      <SelectItem key={r.size_label} value={r.size_label ?? ""}>
+                                        {r.size_label} ({r.size_min_cm}–{r.size_max_cm} см){p ? ` — ${(p / 100).toFixed(0)} ₴` : ""}
+                                      </SelectItem>
+                                    );
+                                  })}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          );
+                        })()}
                       </div>
-                      {sizePriceRows.length > 0 && onSizeLabelChange && (() => {
-                        // Calculate live cm from canvas scale
-                        const scale = layerScales[layer.id];
-                        const CANVAS_SIZE = 520;
-                        const liveCm = (scale && pxToMmRatio)
-                          ? Math.round((scale * CANVAS_SIZE * 0.4) / (pxToMmRatio * 10) * 10) / 10
-                          : null;
-                        
-                        // Always auto-select closest size based on current canvas scale
-                        let autoSelectedSize = sizeLabel;
-                        if (liveCm !== null) {
-                          const closest = sizePriceRows.reduce((prev, curr) => {
-                            const prevDist = Math.abs((prev.size_min_cm + prev.size_max_cm) / 2 - liveCm);
-                            const currDist = Math.abs((curr.size_min_cm + curr.size_max_cm) / 2 - liveCm);
-                            return currDist < prevDist ? curr : prev;
-                          });
-                          autoSelectedSize = closest?.size_label;
-                        }
-                        
-                        return (
-                          <div className="space-y-1" onPointerDown={(e) => e.stopPropagation()}>
-                            <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Розмір нанесення</label>
-                            <Select value={autoSelectedSize ?? ""} onValueChange={(val) => val && onSizeLabelChange(layer.id, val)}>
-                              <SelectTrigger className="h-8 text-xs">
-                                <SelectValue placeholder="Оберіть розмір нанесення" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {sizePriceRows.map((r) => {
-                                  const p = calcPrice(r.qty_tiers, quantity);
-                                  return (
-                                    <SelectItem key={r.size_label} value={r.size_label ?? ""}>
-                                      {r.size_label} ({r.size_min_cm}–{r.size_max_cm} см){p ? ` — ${(p / 100).toFixed(0)} ₴` : ""}
-                                    </SelectItem>
-                                  );
-                                })}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        );
-                      })()}
                     </div>
 
                     {/* ── Text config (text layers only) ── */}
