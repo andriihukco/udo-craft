@@ -131,7 +131,7 @@ export function CheckoutForm({
                 <button key={tag.id} type="button" onClick={() => toggleTag(tag.id)}
                   className="inline-flex items-center gap-1.5 h-7 px-3 rounded-full text-xs font-medium border transition-all duration-150"
                   style={{ color: active ? tag.color : undefined, backgroundColor: active ? tag.bg : undefined, borderColor: active ? `${tag.color}40` : undefined }}>
-                  <span className="size-1.5 rounded-full" style={{ backgroundColor: active ? tag.color : "#9ca3af" }} />
+                  <span className="size-1.5 rounded-full shrink-0" style={{ backgroundColor: tag.color, opacity: active ? 1 : 0.35 }} />
                   {tag.label}
                 </button>
               );
@@ -149,30 +149,30 @@ export function CheckoutForm({
                   </button>
                 </span>
               ))}
-          </div>
 
-          {/* Custom tag input */}
-          <form className="flex items-center gap-2 mt-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              const val = customTagInput.trim();
-              if (!val || orderTags.includes(val)) return;
-              setOrderTags((prev) => [...prev, val]);
-              setCustomTagInput("");
-            }}>
-            <Input
-              value={customTagInput}
-              onChange={(e) => setCustomTagInput(e.target.value)}
-              placeholder="Власний тег..."
-              className="h-7 text-xs flex-1"
-            />
-            {customTagInput.trim() && (
-              <button type="submit"
-                className="h-7 w-7 rounded-full flex items-center justify-center bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0">
-                <Plus className="size-3" />
-              </button>
-            )}
-          </form>
+            {/* Custom tag input — inline chip style matching orders drawer */}
+            <form className="inline-flex items-center gap-1.5"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const val = customTagInput.trim();
+                if (!val || orderTags.includes(val)) return;
+                setOrderTags((prev) => [...prev, val]);
+                setCustomTagInput("");
+              }}>
+              <input
+                value={customTagInput}
+                onChange={(e) => setCustomTagInput(e.target.value)}
+                placeholder="Свій тег..."
+                className="h-7 text-xs border border-dashed border-border/70 rounded-full px-3 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary bg-transparent placeholder:text-muted-foreground/50 w-24 transition-all focus:w-32"
+              />
+              {customTagInput.trim() && (
+                <button type="submit"
+                  className="h-7 w-7 rounded-full flex items-center justify-center bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0">
+                  <Plus className="size-3" />
+                </button>
+              )}
+            </form>
+          </div>
         </div>
 
         {/* Collapsible extra details */}
