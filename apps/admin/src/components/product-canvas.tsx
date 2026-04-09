@@ -76,6 +76,7 @@ export default function ProductCanvas({
   const [hasObjects, setHasObjects] = useState(false);
   const [removingBg, setRemovingBg] = useState(false);
   const [canvasReady, setCanvasReady] = useState(false);
+  const [backgroundLoaded, setBackgroundLoaded] = useState(false);
   const loadingIds = useRef<Set<string>>(new Set());
   const backgroundUrlRef = useRef<string | null>(null);
   const layerSizeSignatureRef = useRef<Record<string, string>>({});
@@ -193,7 +194,7 @@ export default function ProductCanvas({
     let cancelled = false;
     const proxy = imgUrl.startsWith("http") ? `/api/proxy-image?url=${encodeURIComponent(imgUrl)}` : imgUrl;
     if (backgroundUrlRef.current === proxy) return;
-    const htmlImage = new Image();
+    setBackgroundLoaded(false);
     htmlImage.crossOrigin = "anonymous";
     htmlImage.decoding = "async";
     htmlImage.onload = () => {
@@ -203,10 +204,13 @@ export default function ProductCanvas({
       fi.set({ left: 0, top: 0, selectable: false, evented: false, scaleX: scale, scaleY: scale });
       backgroundUrlRef.current = proxy;
       fabricRef.current.setBackgroundImage(fi, () => {
-        if (!cancelled && fabricRef.current) try { fabricRef.current.renderAll(); } catch { /* disposed */ }
+        if (!cancelled && fabricRef.current) {
+          try { fabricRef.current.renderAll(); } catch { /* disposed */ }
+          setBackgroundLoaded(true);
+        }
       });
     };
-    htmlImage.onerror = () => { cancelled = true; };
+    htmlImage.onerror = () => { cancelled = true; setBackgroundLoaded(true); };
     htmlImage.src = proxy;
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -677,6 +681,12 @@ export default function ProductCanvas({
           <div className="rounded-2xl overflow-hidden shadow-lg border border-border/60 w-full h-full">
             <canvas ref={canvasRef} />
           </div>
+          {/* Skeleton overlay — shown until background image is loaded */}
+          {!backgroundLoaded && (
+            <div className="absolute inset-0 rounded-2xl overflow-hidden z-10 pointer-events-none">
+              <div className="w-full h-full bg-muted animate-pulse" />
+            </div>
+          )}
           {removingBg && (
             <div className="absolute inset-0 rounded-2xl bg-background/60 backdrop-blur-sm flex items-center justify-center z-10">
               <div className="flex items-center gap-2.5 rounded-2xl border border-border bg-card px-5 py-3.5 shadow-xl text-sm font-semibold">
