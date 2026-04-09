@@ -35,6 +35,8 @@ export default function NewOrderPage() {
   const [products, setProducts] = useState<ProductWithConfig[]>([]);
   const [variants, setVariants] = useState<ProductColorVariant[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [printZonesMap, setPrintZonesMap] = useState<Record<string, { front?: PrintZone | null; back?: PrintZone | null }>>({});
   const [sizeChartsMap, setSizeChartsMap] = useState<Record<string, SizeChart | null>>({});
   const [loading, setLoading] = useState(true);
@@ -46,12 +48,14 @@ export default function NewOrderPage() {
       fetch("/api/product-color-variants").then((r) => r.json()),
       fetch("/api/materials").then((r) => r.json()),
       fetch("/api/print-zones").then((r) => r.json()),
+      fetch("/api/categories").then((r) => r.json()),
     ])
-      .then(([prods, vars, mats, zones]) => {
+      .then(([prods, vars, mats, zones, cats]) => {
         const prodList: ProductWithConfig[] = Array.isArray(prods) ? prods : [];
         setProducts(prodList);
         setVariants(Array.isArray(vars) ? vars : []);
         setMaterials(Array.isArray(mats) ? mats : []);
+        setCategories(Array.isArray(cats) ? cats.map((c: { id: string; name: string }) => ({ id: c.id, name: c.name })) : []);
         const zonesMap: Record<string, { front?: PrintZone | null; back?: PrintZone | null }> = {};
         if (Array.isArray(zones)) {
           for (const z of zones as PrintZone[]) {
@@ -254,14 +258,38 @@ export default function NewOrderPage() {
           <div className={`mx-auto px-4 py-6 space-y-6 ${step === "catalog" ? `max-w-full ${cart.length > 0 ? "lg:pr-80" : ""}` : "max-w-4xl pb-20"}`}>
 
             {step === "catalog" && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                {products.map((product) => (
-                  <ProductCardInline key={product.id} product={product}
-                    variants={variants.filter((v) => v.product_id === product.id)}
-                    materials={materials}
-                    onOpen={(variant: ProductColorVariant | null, size?: string | null) => openCustomizer(product, variant, size)}
-                    onAddWithoutPrint={(variant: ProductColorVariant | null, size?: string | null) => handleAddWithoutPrint(product, variant, size)} />
-                ))}
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-xl font-bold mb-1">Виберіть товари</h2>
+                  <p className="text-sm text-muted-foreground">Натисніть на товар, щоб налаштувати та додати до замовлення</p>
+                </div>
+
+                {categories.length > 0 && (
+                  <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+                    <button onClick={() => setActiveCategory(null)}
+                      className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-semibold border transition-all shrink-0 ${activeCategory === null ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-foreground/40"}`}>
+                      Всі
+                    </button>
+                    {categories.map((cat) => (
+                      <button key={cat.id} onClick={() => setActiveCategory(cat.id)}
+                        className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-semibold border transition-all shrink-0 ${activeCategory === cat.id ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-foreground/40"}`}>
+                        {cat.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {products
+                    .filter((p) => !activeCategory || (p as ProductWithConfig & { category_id?: string }).category_id === activeCategory)
+                    .map((product) => (
+                      <ProductCardInline key={product.id} product={product}
+                        variants={variants.filter((v) => v.product_id === product.id)}
+                        materials={materials}
+                        onOpen={(variant: ProductColorVariant | null, size?: string | null) => openCustomizer(product, variant, size)}
+                        onAddWithoutPrint={(variant: ProductColorVariant | null, size?: string | null) => handleAddWithoutPrint(product, variant, size)} />
+                    ))}
+                </div>
               </div>
             )}
 
