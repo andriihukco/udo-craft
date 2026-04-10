@@ -21,7 +21,7 @@ export function MobileAdminCart({ cart, totalCents, onEdit, onRemove, onCheckout
 
   return (
     <>
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border px-4 pb-5 pt-3 shadow-[0_-4px_24px_rgba(0,0,0,0.08)]">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border px-4 pt-3 shadow-[0_-4px_24px_rgba(0,0,0,0.08)]" style={{ paddingBottom: "env(safe-area-inset-bottom, 20px)" }}>
         <button onClick={() => setOpen(true)}
           className="w-full flex items-center gap-3 bg-primary text-primary-foreground rounded-xl px-4 py-3 active:scale-[0.98] transition-transform">
           <div className="relative shrink-0">
@@ -37,7 +37,7 @@ export function MobileAdminCart({ cart, totalCents, onEdit, onRemove, onCheckout
       {open && (
         <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end">
           <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
-          <div className="relative bg-card rounded-t-2xl flex flex-col max-h-[85vh] shadow-2xl">
+          <div className="relative bg-card rounded-t-3xl flex flex-col max-h-[85vh] shadow-2xl">
             <div className="flex justify-center pt-3 pb-1 shrink-0"><div className="w-10 h-1 rounded-full bg-border" /></div>
             <div className="flex items-center justify-between px-4 py-2 shrink-0 border-b border-border">
               <span className="font-semibold text-sm">Кошик ({cart.length})</span>

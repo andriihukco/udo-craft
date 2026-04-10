@@ -4,7 +4,7 @@ import React from "react";
 import { MockupViewer } from "@/components/MockupViewer";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Trash2, ShoppingCart } from "lucide-react";
 import type { CartItem } from "./Customizer";
 
 interface DesktopCartPanelProps {
@@ -17,12 +17,18 @@ interface DesktopCartPanelProps {
 
 export function DesktopCartPanel({ cart, totalCents, onCheckout, onEdit, onRemove }: DesktopCartPanelProps) {
   return (
-    <div className="hidden lg:flex fixed top-0 right-0 bottom-0 z-40 w-72 border-l border-border bg-card flex-col shadow-xl">
+    <div className="hidden lg:flex fixed top-0 right-0 bottom-0 z-40 w-80 border-l border-border bg-card flex-col shadow-xl">
       <div className="h-12 px-4 border-b border-border flex items-center justify-between shrink-0">
         <span className="font-semibold text-sm">Кошик ({cart.length})</span>
         <span className="text-xs text-muted-foreground">{(totalCents / 100).toFixed(0)} ₴</span>
       </div>
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
+        {cart.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground py-12">
+            <ShoppingCart className="size-10 opacity-30" />
+            <p className="text-sm">Кошик порожній</p>
+          </div>
+        )}
         {cart.map((item, i) => (
           <div key={i} className="rounded-xl border border-border bg-card overflow-hidden">
             <div className="relative bg-card aspect-square">

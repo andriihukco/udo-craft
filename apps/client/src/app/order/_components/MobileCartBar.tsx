@@ -17,7 +17,7 @@ export function MobileCartBar({ cart, totalCents, onCheckout, onRemove, onEdit }
 
   return (
     <>
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 px-4 pb-5 pt-3 bg-card border-t border-border shadow-[0_-4px_24px_rgba(0,0,0,0.08)]">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 px-4 pt-3 bg-card border-t border-border shadow-[0_-4px_24px_rgba(0,0,0,0.08)]" style={{ paddingBottom: "env(safe-area-inset-bottom, 20px)" }}>
         <button onClick={() => setOpen(true)} className="w-full flex items-center gap-3 bg-primary text-primary-foreground rounded-2xl px-4 py-3.5 active:scale-[0.98] transition-transform">
           <div className="relative shrink-0">
             <ShoppingCart className="size-5" />
