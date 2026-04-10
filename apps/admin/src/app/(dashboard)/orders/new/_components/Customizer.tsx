@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { type PrintLayer } from "@/components/print-types";
 import { QtyPricePanel } from "./QtyPricePanel";
 import { LeftPanel } from "./LeftPanel";
+import { GenerationDrawer } from "./GenerationDrawer";
 
 const ProductCanvas = dynamic(() => import("@/components/product-canvas"), { ssr: false });
 
@@ -83,6 +84,12 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
   const [layerScales, setLayerScales] = useState<Record<string, number>>({});
   const [mobileSheet, setMobileSheet] = useState<"config" | "price" | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
+
+  const productImages = selectedVariant?.images ?? product.images ?? {};
+
+  const addLayerForAI = (file: File, side: string, pricing: typeof printPricing) =>
+    addLayerFromHook(file, side, pricing);
 
   useEffect(() => { setMounted(true); }, []);
   useEffect(() => {
@@ -183,7 +190,7 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
       const row = rows.find((r) => r.size_label === sizeLabel) ?? rows[0];
       const sorted = row ? [...row.qty_tiers].sort((a, b) => b.min_qty - a.min_qty) : [];
       const tier = sorted.find((t) => quantity >= t.min_qty) ?? sorted[sorted.length - 1];
-      return { ...l, sizeLabel, sizeMinCm: row?.size_min_cm, sizeMaxCm: row?.size_max_cm, priceCents: tier?.price_cents, transform: undefined };
+      return { ...l, sizeLabel, sizeMinCm: row?.size_min_cm, sizeMaxCm: row?.size_max_cm, priceCents: tier?.price_cents };
     })),
     onReorder: setLayersWithRef, onAddClick: () => fileInputRef.current?.click(), onAddText: addTextLayer,
     onTextChange: (id: string, patch: Partial<Pick<PrintLayer, "textContent" | "textFont" | "textColor" | "textFontSize" | "textAlign" | "textCurve">>) => setLayersWithRef((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l))),
@@ -201,6 +208,7 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
       onLayerDelete={(id) => { setLayersWithRef((prev) => prev.filter((l) => l.id !== id)); if (activeLayerId === id) setActiveLayerId(null); }}
       onLayerDuplicate={(layer) => { setLayersWithRef((prev) => [...prev, layer]); setActiveLayerId(layer.id); }}
       onLayerTransformChange={(id, transform) => { setLayerScales((prev) => ({ ...prev, [id]: transform.scaleX })); setLayersWithRef((prev) => prev.map((l) => (l.id === id ? { ...l, transform } : l))); }}
+      onAIGenerate={() => setAiDrawerOpen(true)}
     />
   );
 
@@ -227,6 +235,19 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
             <p className="text-xs font-semibold truncate max-w-[140px]">{product.name}</p>
             <p className="text-xs font-bold text-primary shrink-0">{((discounted + printCostPerUnit) * quantity).toFixed(0)} ₴</p>
           </div>
+          <GenerationDrawer
+            open={aiDrawerOpen}
+            onClose={() => setAiDrawerOpen(false)}
+            addLayer={addLayerForAI}
+            activeSide={activeSide}
+            printPricing={printPricing}
+            captureRef={captureRef}
+            layers={layers}
+            mockups={mockups}
+            selectedColor={selectedColor}
+            productImages={productImages}
+            productName={product.name}
+          />
           {canvasPanel}
         </div>
         <div className="hidden lg:flex lg:flex-col h-full overflow-y-auto overflow-x-hidden border-l border-border bg-card p-4">

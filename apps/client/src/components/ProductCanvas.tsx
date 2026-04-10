@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { fabric } from "fabric";
 import { Product, PrintZone, PRINT_TYPES, TEXT_FONTS, type PrintLayer, type PrintTypeId, type TextFontId } from "@udo-craft/shared";
-import { Trash2, ZoomIn, ZoomOut, Move, FlipHorizontal, Plus, Layers, Eraser, Loader2 } from "lucide-react";
+import { Trash2, Focus, Eraser, Loader2, Sparkles } from "lucide-react";
 import { removeBgClient } from "@/lib/remove-bg-client";
 import { toast } from "sonner";
 
@@ -42,6 +42,7 @@ interface ProductCanvasProps {
   onLayerDelete?: (layerId: string) => void;
   onLayerDuplicate?: (layer: PrintLayer) => void;
   onLayerTransformChange?: (layerId: string, transform: NonNullable<PrintLayer["transform"]>) => void;
+  onAIGenerate?: () => void;
 }
 
 const CANVAS_SIZE = 520;
@@ -63,6 +64,7 @@ export default function ProductCanvas({
   onLayerDelete,
   onLayerDuplicate,
   onLayerTransformChange,
+  onAIGenerate,
 }: ProductCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -72,6 +74,7 @@ export default function ProductCanvas({
   const [hasObjects, setHasObjects] = useState(false);
   const [removingBg, setRemovingBg] = useState(false);
   const [backgroundLoaded, setBackgroundLoaded] = useState(false);
+  const [isCentered, setIsCentered] = useState(false);
   const loadingIds = useRef<Set<string>>(new Set());
   const layerTransforms = useRef<Record<string, { left: number; top: number; scaleX: number; scaleY: number; angle: number; flipX: boolean }>>({});
   const backgroundUrlRef = useRef<string | null>(null);
@@ -149,7 +152,7 @@ export default function ProductCanvas({
     fabric.Object.prototype.setControlsVisibility({ ml: false, mr: false, mt: false, mb: false });
     canvas.on("selection:created", (e) => onLayerSelectRef.current?.((e as any).selected?.[0]?._layerId ?? null));
     canvas.on("selection:updated", (e) => onLayerSelectRef.current?.((e as any).selected?.[0]?._layerId ?? null));
-    canvas.on("selection:cleared", () => onLayerSelectRef.current?.(null));
+    canvas.on("selection:cleared", () => { onLayerSelectRef.current?.(null); setIsCentered(false); });
     const saveTransform = (e: any) => {
       const obj = e.target;
       if (!obj || !(obj as any)._isLayer) return;
@@ -166,8 +169,57 @@ export default function ProductCanvas({
       onLayerTransformChangeRef.current?.(id, transform);
     };
     canvas.on("object:modified", saveTransform);
-    canvas.on("object:moving", saveTransform);
     canvas.on("object:scaling", saveTransform);
+
+    // ── Snap-to-center guide lines ───────────────────────────────────────
+    const vLine = new fabric.Line([CANVAS_SIZE / 2, 0, CANVAS_SIZE / 2, CANVAS_SIZE], {
+      stroke: "#ef4444", strokeWidth: 1, selectable: false, evented: false,
+      visible: false, strokeDashArray: [4, 4],
+    });
+    const hLine = new fabric.Line([0, CANVAS_SIZE / 2, CANVAS_SIZE, CANVAS_SIZE / 2], {
+      stroke: "#ef4444", strokeWidth: 1, selectable: false, evented: false,
+      visible: false, strokeDashArray: [4, 4],
+    });
+    canvas.add(vLine);
+    canvas.add(hLine);
+    const vLineRef = { current: vLine };
+    const hLineRef = { current: hLine };
+
+    canvas.on("object:moving", (e) => {
+      const obj = e.target;
+      // Save transform
+      saveTransform(e);
+      // Snap logic
+      if (!obj || !(obj as any)._isLayer) return;
+      const SNAP = 10;
+      const cx = CANVAS_SIZE / 2;
+      const cy = CANVAS_SIZE / 2;
+      const objCx = (obj.left ?? 0) + obj.getScaledWidth() / 2;
+      const objCy = (obj.top ?? 0) + obj.getScaledHeight() / 2;
+      const snapH = Math.abs(objCx - cx) < SNAP;
+      const snapV = Math.abs(objCy - cy) < SNAP;
+      if (snapH) obj.set({ left: cx - obj.getScaledWidth() / 2 });
+      if (snapV) obj.set({ top: cy - obj.getScaledHeight() / 2 });
+      vLineRef.current.set({ visible: snapH });
+      hLineRef.current.set({ visible: snapV });
+      setIsCentered(snapH && snapV);
+      canvas.renderAll();
+    });
+
+    canvas.on("object:modified", () => {
+      vLineRef.current.set({ visible: false });
+      hLineRef.current.set({ visible: false });
+      const obj = canvas.getActiveObject();
+      if (obj) {
+        const cx = CANVAS_SIZE / 2;
+        const cy = CANVAS_SIZE / 2;
+        const centeredH = Math.abs((obj.left ?? 0) + obj.getScaledWidth() / 2 - cx) < 2;
+        const centeredV = Math.abs((obj.top ?? 0) + obj.getScaledHeight() / 2 - cy) < 2;
+        setIsCentered(centeredH && centeredV);
+      }
+      canvas.renderAll();
+    });
+
     fabricRef.current = canvas;
     backgroundUrlRef.current = null;
     setCanvasReady(true);
@@ -248,11 +300,16 @@ export default function ProductCanvas({
     const zoneLimit = Math.max(24, Math.min(zone.width, zone.height));
     const boundedTargetPx = Math.min(targetPx, zoneLimit);
     const nextScale = Math.max(0.05, Math.min(boundedTargetPx / baseWidth, boundedTargetPx / baseHeight));
+    // Preserve current center position when resizing
+    const currentCx = (obj.left ?? 0) + (obj.getScaledWidth() / 2);
+    const currentCy = (obj.top ?? 0) + (obj.getScaledHeight() / 2);
+    const newW = baseWidth * nextScale;
+    const newH = baseHeight * nextScale;
     obj.set({
       scaleX: nextScale,
       scaleY: nextScale,
-      left: (CANVAS_SIZE - baseWidth * nextScale) / 2,
-      top: (CANVAS_SIZE - baseHeight * nextScale) / 2,
+      left: currentCx - newW / 2,
+      top: currentCy - newH / 2,
     });
     obj.setCoords();
     layerSizeSignatureRef.current[layer.id] = signature;
@@ -379,9 +436,23 @@ export default function ProductCanvas({
     const sideLayers = layers.filter((layer) => layer.side === activeSide);
     const wantedIds = new Set(sideLayers.map((layer) => layer.id));
 
+    // Snapshot current positions BEFORE removing objects (side switch persistence)
     canvas.getObjects()
       .filter((obj) => (obj as any)._isLayer && !wantedIds.has((obj as any)._layerId))
-      .forEach((obj) => canvas.remove(obj));
+      .forEach((obj) => {
+        const id = (obj as any)._layerId as string;
+        if (id) {
+          layerTransforms.current[id] = {
+            left: obj.left ?? 0,
+            top: obj.top ?? 0,
+            scaleX: obj.scaleX ?? 1,
+            scaleY: obj.scaleY ?? 1,
+            angle: obj.angle ?? 0,
+            flipX: obj.flipX ?? false,
+          };
+        }
+        canvas.remove(obj);
+      });
 
     const existingIds = new Set(canvas.getObjects().filter((obj) => (obj as any)._isLayer).map((obj) => (obj as any)._layerId as string));
 
@@ -690,23 +761,18 @@ export default function ProductCanvas({
   return (
     <div className="flex flex-col items-center gap-3 w-full">
       <div className="flex items-center gap-1 bg-card border border-border rounded-xl px-2 py-1.5 shadow-sm overflow-x-auto max-w-full">
-        <ToolBtn onClick={() => handleZoom(0.05)} title="Збільшити" disabled={!hasObjects}><ZoomIn className="size-3.5" /></ToolBtn>
-        <ToolBtn onClick={() => handleZoom(-0.05)} title="Зменшити" disabled={!hasObjects}><ZoomOut className="size-3.5" /></ToolBtn>
-        <div className="w-px h-4 bg-border mx-1 shrink-0" />
-        <ToolBtn onClick={centerSelected} title="По центру" disabled={!hasObjects}><Move className="size-3.5" /></ToolBtn>
-        <ToolBtn onClick={flipSelected} title="Дзеркало" disabled={!hasObjects}><FlipHorizontal className="size-3.5" /></ToolBtn>
+        <ToolBtn onClick={centerSelected} title="По центру" label="Центр" disabled={!hasObjects || isCentered}><Focus className="size-3.5" /></ToolBtn>
         <div className="w-px h-4 bg-border mx-1 shrink-0" />
         <ToolBtn
           onClick={async () => {
-            if (!onRemoveBg) return;
             const id = activeLayerIdRef.current ?? activeLayerId ?? null;
             if (!id) return;
             const layer = layersRef.current.find((item) => item.id === id);
-            if (!layer) return;
+            if (!layer || layer.kind === "text") return;
             setRemovingBg(true);
             try {
               const objectUrl = await removeBgClient(layer.url);
-              onRemoveBg(id, objectUrl);
+              onRemoveBg?.(id, objectUrl);
             } catch (err) {
               console.error("removebg error", err);
               toast.error(`Помилка видалення фону: ${err instanceof Error ? err.message : String(err)}`);
@@ -715,12 +781,19 @@ export default function ProductCanvas({
             }
           }}
           title="Видалити фон"
-          disabled={(!hasObjects && !activeLayerId) || removingBg}
+          label="Фон"
+          disabled={(!hasObjects && !activeLayerId) || removingBg || (!!activeLayerId && layersRef.current.find(l => l.id === activeLayerId)?.kind === "text")}
         >
           {removingBg ? <Loader2 className="size-3.5 animate-spin" /> : <Eraser className="size-3.5" />}
         </ToolBtn>
+        {onAIGenerate && process.env.NEXT_PUBLIC_GEMINI_ENABLED && (
+          <>
+            <div className="w-px h-4 bg-border mx-1 shrink-0" />
+            <ToolBtn onClick={onAIGenerate} title="AI генерація" label="AI"><Sparkles className="size-3.5" /></ToolBtn>
+          </>
+        )}
         <div className="w-px h-4 bg-border mx-1" />
-        <ToolBtn onClick={deleteSelected} title="Видалити шар" disabled={!hasObjects} danger><Trash2 className="size-3.5" /></ToolBtn>
+        <ToolBtn onClick={deleteSelected} title="Видалити шар" label="Видалити" disabled={!hasObjects} danger><Trash2 className="size-3.5" /></ToolBtn>
       </div>
 
       <div ref={containerRef} className="w-full" style={{ height: canvasSize }}>
@@ -771,10 +844,11 @@ export default function ProductCanvas({
   );
 }
 
-function ToolBtn({ children, onClick, title, disabled, danger }: {
+function ToolBtn({ children, onClick, title, label, disabled, danger }: {
   children: React.ReactNode;
   onClick: () => void;
   title: string;
+  label: string;
   disabled?: boolean;
   danger?: boolean;
 }) {
@@ -784,13 +858,12 @@ function ToolBtn({ children, onClick, title, disabled, danger }: {
       title={title}
       aria-label={title}
       disabled={disabled}
-      className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+      className={`min-w-[44px] min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary px-1 ${
         danger ? "hover:bg-destructive/10 hover:text-destructive text-muted-foreground" : "hover:bg-muted text-muted-foreground hover:text-foreground"
       }`}
     >
       {children}
+      <span className="text-[9px] leading-none mt-0.5">{label}</span>
     </button>
   );
 }
-
-export { Plus, Layers };

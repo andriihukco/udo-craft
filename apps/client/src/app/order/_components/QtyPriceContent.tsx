@@ -183,10 +183,12 @@ export function QtyPriceContent({
             )}
           </div>
         )}
-        <div className="border-t border-border/60 pt-2 flex justify-between font-bold text-lg">
+        <div className="border-t border-border/60 pt-2 flex items-baseline justify-between font-bold text-lg">
           <span>Разом</span>
-          <AnimatedNumber value={total} decimals={0} className="text-primary" />
-          <span>₴</span>
+          <div className="flex items-baseline gap-1.5 ml-auto">
+            <AnimatedNumber value={total} decimals={0} className="text-primary" />
+            <span className="text-base">₴</span>
+          </div>
         </div>
       </div>
 
