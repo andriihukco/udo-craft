@@ -37,6 +37,7 @@ export function ProductCardInline({ product, variants, materials, onOpen, onAddW
   const [activeVariantId, setActiveVariantId] = useState<string | null>(variants[0]?.id ?? null);
   const [hoveredVariantId, setHoveredVariantId] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [descExpanded, setDescExpanded] = useState(false);
 
   const displayVariantId = hoveredVariantId ?? activeVariantId;
   const activeVariant = hasVariants ? variants.find((v) => v.id === displayVariantId) ?? null : null;
@@ -99,7 +100,20 @@ export function ProductCardInline({ product, variants, materials, onOpen, onAddW
             <p className="text-sm font-bold text-primary shrink-0">від ₴{(product.base_price_cents / 100).toFixed(0)}</p>
           </div>
           {product.description && (
-            <p className="text-xs text-gray-500 line-clamp-2">{product.description}</p>
+            <div className="mt-1">
+              <p className={`text-xs text-gray-500 ${descExpanded ? "" : "line-clamp-2"}`}>
+                {product.description}
+              </p>
+              {product.description.length > 80 && (
+                <button 
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setDescExpanded(!descExpanded); }}
+                  className="text-[11px] text-primary font-semibold hover:underline mt-0.5 touch-manipulation cursor-pointer"
+                >
+                  {descExpanded ? "Згорнути" : "Розгорнути"}
+                </button>
+              )}
+            </div>
           )}
         </div>
 
