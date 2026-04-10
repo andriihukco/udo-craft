@@ -10,15 +10,17 @@ interface CustomizerLayoutProps {
   mobileSheet: "config" | "price" | null;
   setMobileSheet: (v: "config" | "price" | null) => void;
   addingToCart: boolean;
+  removingBg?: boolean;
   leftPanel: React.ReactNode;
   canvas: React.ReactNode;
   rightPanel: React.ReactNode;
+  stickyButton?: React.ReactNode;
   onClose: () => void;
 }
 
 export function CustomizerLayout({
-  productName, total, mobileSheet, setMobileSheet, addingToCart,
-  leftPanel, canvas, rightPanel, onClose,
+  productName, total, mobileSheet, setMobileSheet, addingToCart, removingBg,
+  leftPanel, canvas, rightPanel, stickyButton, onClose,
 }: CustomizerLayoutProps) {
   return (
     <div className="fixed inset-0 z-[9999] bg-background flex flex-col">
@@ -44,11 +46,18 @@ export function CustomizerLayout({
         </div>
 
         {/* Right panel — desktop */}
-        <div className="hidden lg:flex lg:flex-col h-full overflow-y-auto overflow-x-hidden border-l border-border bg-card p-4">
-          <div className="space-y-5">
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Тираж та ціна</p>
-            {rightPanel}
+        <div className="hidden lg:flex lg:flex-col h-full overflow-hidden border-l border-border bg-card">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-4">
+            <div className="space-y-5">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Тираж та ціна</p>
+              {rightPanel}
+            </div>
           </div>
+          {stickyButton && (
+            <div className="shrink-0 border-t border-border bg-card p-4">
+              {stickyButton}
+            </div>
+          )}
         </div>
       </div>
 
@@ -84,6 +93,14 @@ export function CustomizerLayout({
           <div className="flex items-center gap-2.5 rounded-2xl border border-border bg-card px-5 py-3.5 shadow-xl text-sm font-semibold">
             <Loader2 className="size-4 animate-spin text-primary" />
             Додаємо...
+          </div>
+        </div>
+      )}
+      {removingBg && (
+        <div className="fixed inset-0 z-[10001] bg-background/60 backdrop-blur-sm flex items-center justify-center">
+          <div className="flex items-center gap-2.5 rounded-2xl border border-border bg-card px-5 py-3.5 shadow-xl text-sm font-semibold">
+            <Loader2 className="size-4 animate-spin text-primary" />
+            Видаляємо фон...
           </div>
         </div>
       )}

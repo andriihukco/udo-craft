@@ -9,13 +9,12 @@ import {
   Package, Tag, Ruler, Paintbrush,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAIGeneration } from "./useAIGeneration";
 import { dataUrlToFile } from "../_lib/dataUrlToFile";
 
 import type { PrintLayer } from "@udo-craft/shared";
 import type { PrintTypePricingRow } from "@udo-craft/shared";
-
-const MAX_GENERATIONS = 1;
 
 const ALL_PRESETS = [
   "команда ІТ-компанії в сучасному офісі",
@@ -45,7 +44,6 @@ const COLS = 4;
 const ROWS = 4;
 const TOTAL = COLS * ROWS;
 
-// ── Real Matrix: icons fall column-by-column from top ────────────────────────
 function MatrixIconGrid() {
   const [heads, setHeads] = useState<number[]>(() =>
     Array.from({ length: COLS }, (_, i) => -1 - i * 2)
@@ -102,15 +100,17 @@ function MatrixIconGrid() {
   );
 }
 
-// ── Preset chips — outline only, no selected state ───────────────────────────
-function RotatingPresets({ onSelect }: { onSelect: (text: string) => void }) {
+function RotatingPresets({ onSelect, selected }: { onSelect: (text: string) => void; selected: string }) {
   const [visible, setVisible] = useState<string[]>(() =>
     [...ALL_PRESETS].sort(() => Math.random() - 0.5).slice(0, 3)
   );
   const visibleRef = useRef(visible);
   visibleRef.current = visible;
 
+  const frozen = !!selected;
+
   useEffect(() => {
+    if (frozen) return;
     const id = setInterval(() => {
       const current = visibleRef.current;
       const others = ALL_PRESETS.filter((p) => !current.includes(p));
@@ -118,32 +118,44 @@ function RotatingPresets({ onSelect }: { onSelect: (text: string) => void }) {
       setVisible([...pool].sort(() => Math.random() - 0.5).slice(0, 3));
     }, 3000);
     return () => clearInterval(id);
-  }, []);
+  }, [frozen]);
+
+  useEffect(() => {
+    if (selected && !visible.includes(selected)) {
+      setVisible((prev) => [selected, ...prev.slice(0, 2)]);
+    }
+  }, [selected]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="flex gap-1.5 flex-wrap">
       <AnimatePresence mode="popLayout">
-        {visible.map((preset) => (
-          <motion.button
-            key={preset}
-            type="button"
-            layout
-            initial={{ opacity: 0, scale: 0.85 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.85 }}
-            transition={{ duration: 0.25 }}
-            onClick={() => onSelect(preset)}
-            className="rounded-full border border-border bg-transparent px-2.5 py-1 text-xs text-muted-foreground hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            {preset}
-          </motion.button>
-        ))}
+        {visible.map((preset) => {
+          const isActive = preset === selected;
+          return (
+            <motion.button
+              key={preset}
+              type="button"
+              layout
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.85 }}
+              transition={{ duration: 0.25 }}
+              onClick={() => onSelect(isActive ? "" : preset)}
+              className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                isActive
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+              }`}
+            >
+              {preset}
+            </motion.button>
+          );
+        })}
       </AnimatePresence>
     </div>
   );
 }
 
-// ── In-progress thumbnail ─────────────────────────────────────────────────────
 function GeneratingThumbnail({ onClick }: { onClick: () => void }) {
   return (
     <motion.button
@@ -153,7 +165,7 @@ function GeneratingThumbnail({ onClick }: { onClick: () => void }) {
       exit={{ opacity: 0, y: -6 }}
       transition={{ duration: 0.2 }}
       onClick={onClick}
-      className="w-full flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2.5 text-left hover:bg-primary/10 transition-colors"
+      className="w-full flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2.5 text-left hover:bg-primary/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     >
       <div className="shrink-0 w-10 h-10 rounded-lg bg-muted border border-border overflow-hidden flex items-center justify-center">
         <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 1.4 }}>
@@ -162,17 +174,14 @@ function GeneratingThumbnail({ onClick }: { onClick: () => void }) {
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-xs font-medium text-primary">Генерація в процесі…</p>
-        <p className="text-[11px] text-muted-foreground truncate">Натисніть, щоб переглянути</p>
+        <p className="text-xs text-muted-foreground truncate">Натисніть, щоб переглянути</p>
       </div>
     </motion.button>
   );
 }
 
-// ── Selfie upload ─────────────────────────────────────────────────────────────
 function SelfieUpload({
-  selfieDataUrl,
-  onUpload,
-  onClear,
+  selfieDataUrl, onUpload, onClear,
 }: {
   selfieDataUrl: string | null;
   onUpload: (dataUrl: string) => void;
@@ -189,30 +198,30 @@ function SelfieUpload({
   };
 
   return (
-    <div className="space-y-1.5">
-      <p className="text-xs text-muted-foreground font-medium">Ваше фото (необов&apos;язково)</p>
+    <div className="w-full h-[140px]">
       {selfieDataUrl ? (
-        <div className="flex items-center gap-2">
+        <div className="relative w-full h-full rounded-xl border border-border overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={selfieDataUrl} alt="Ваше фото" className="w-12 h-12 rounded-lg object-cover border border-border" />
-          <div className="flex-1 min-w-0">
-            <p className="text-xs text-foreground font-medium">Фото завантажено</p>
-            <p className="text-[11px] text-muted-foreground">AI покаже мерч на вас</p>
+          <img src={selfieDataUrl} alt="Ваше фото" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center">
+            <p className="text-xs text-white/90 font-medium mb-3">Фото завантажено</p>
+            <Button variant="secondary" size="sm" onClick={onClear} aria-label="Видалити фото">
+              <X className="size-3.5 mr-1.5" /> Видалити
+            </Button>
           </div>
-          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={onClear} aria-label="Видалити фото">
-            <X className="size-3.5" />
-          </Button>
         </div>
       ) : (
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="w-full flex items-center gap-2.5 rounded-lg border border-dashed border-border/70 bg-muted/30 px-3 py-2.5 text-left hover:bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="w-full h-full flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border/70 bg-muted/30 hover:bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <Upload className="size-4 text-muted-foreground shrink-0" />
-          <div>
-            <p className="text-xs text-foreground">Завантажте своє фото</p>
-            <p className="text-[11px] text-muted-foreground">Побачте мерч на собі</p>
+          <div className="bg-background rounded-full p-2.5 shadow-sm border border-border">
+            <Upload className="size-4 text-muted-foreground" />
+          </div>
+          <div className="text-center px-4">
+            <p className="text-xs font-semibold text-foreground">Завантажте своє фото</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Відкриє камеру або галерею</p>
           </div>
         </button>
       )}
@@ -220,7 +229,6 @@ function SelfieUpload({
         ref={inputRef}
         type="file"
         accept="image/*"
-        capture="user"
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
@@ -232,7 +240,6 @@ function SelfieUpload({
   );
 }
 
-// ── Props ─────────────────────────────────────────────────────────────────────
 export interface GenerationDrawerProps {
   open: boolean;
   onClose: () => void;
@@ -252,9 +259,11 @@ export function GenerationDrawer({
   captureRef, layers, mockups, selectedColor, productImages, productName,
 }: GenerationDrawerProps) {
   const [prompt, setPrompt] = useState("");
+  // generated + previewImage persist across open/close so user can't re-generate
   const [generated, setGenerated] = useState(false);
-  const [step, setStep] = useState<1 | 2>(1);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [step, setStep] = useState<1 | 2>(1);
+  const [activeTab, setActiveTab] = useState<"selfie" | "prompt">("selfie");
   const [progressIndex, setProgressIndex] = useState(0);
   const [selfieDataUrl, setSelfieDataUrl] = useState<string | null>(null);
 
@@ -277,16 +286,16 @@ export function GenerationDrawer({
     return () => clearInterval(id);
   }, [loading]);
 
+  // On close: only reset UI state — NOT generated/previewImage/loading
   useEffect(() => {
-    if (!open) { clearError(); setPrompt(""); setStep(1); setPreviewImage(null); setGenerated(false); }
+    if (!open) { clearError(); setPrompt(""); setStep(1); }
   }, [open, clearError]);
 
-  const otherSideWithLayers = layers.find((l) => l.side !== activeSide);
   const activeSideLayers = layers.filter((l) => l.side === activeSide);
+  const otherSideWithLayers = layers.find((l) => l.side !== activeSide);
   const showHint = activeSideLayers.length === 0 && !!otherSideWithLayers && step === 1;
-  const limitReached = generated;
-  // Can generate if: not already generated, not loading, and either has prompt OR has selfie
-  const canGenerate = !limitReached && !loading && (!!prompt.trim() || !!selfieDataUrl);
+  const limitReached = generated || loading;
+  const canGenerate = !limitReached && (activeTab === "selfie" ? !!selfieDataUrl : !!prompt.trim());
 
   const handleGenerateClick = async () => {
     setStep(2);
@@ -296,12 +305,7 @@ export function GenerationDrawer({
     await generate(prompt);
   };
 
-  // kept for potential future use
-  const _handleAddToCanvas = () => {
-    if (!previewImage) return;
-    addLayer(dataUrlToFile(previewImage), activeSide, printPricing);
-    onClose();
-  };
+  void addLayer; // kept for potential future use
 
   return (
     <AnimatePresence>
@@ -327,7 +331,6 @@ export function GenerationDrawer({
               <div className="px-4 pb-5 min-h-[300px]">
                 <AnimatePresence mode="wait">
 
-                  {/* ── Step 1 ── */}
                   {step === 1 && (
                     <motion.div
                       key="step-1"
@@ -335,7 +338,6 @@ export function GenerationDrawer({
                       exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}
                       className="space-y-3"
                     >
-                      {/* Header */}
                       <div className="flex items-center justify-between">
                         <div>
                           <h2 className="text-base font-semibold">Побачте мерч на людині</h2>
@@ -346,65 +348,74 @@ export function GenerationDrawer({
                         </Button>
                       </div>
 
-                      {/* In-progress banner */}
-                      <AnimatePresence>
-                        {loading && <GeneratingThumbnail onClick={() => setStep(2)} />}
-                      </AnimatePresence>
+                      {limitReached ? (
+                        <div className="flex flex-col items-center justify-center py-6 text-center space-y-4">
+                          {loading ? (
+                            <>
+                              <GeneratingThumbnail onClick={() => setStep(2)} />
+                              <p className="text-sm text-muted-foreground">Генерація вже запущена</p>
+                            </>
+                          ) : (
+                            <>
+                              {previewImage && (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={previewImage} alt="Результат" className="w-40 h-40 rounded-xl object-cover border border-border shadow-sm" />
+                              )}
+                              <p className="text-sm font-medium text-foreground">Ви вже використали безкоштовну генерацію для цього товару.</p>
+                              <Button className="w-full" onClick={() => setStep(2)}>
+                                Переглянути результат
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      ) : (
+                        <>
+                          <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as "selfie" | "prompt")} className="w-full mt-2">
+                            <TabsList className="w-full grid grid-cols-2">
+                              <TabsTrigger value="selfie" className="text-xs">Своє фото</TabsTrigger>
+                              <TabsTrigger value="prompt" className="text-xs">Сцена</TabsTrigger>
+                            </TabsList>
+                          </Tabs>
 
-                      {/* Result thumbnail if already generated */}
-                      {previewImage && !loading && (
-                        <button
-                          type="button"
-                          onClick={() => setStep(2)}
-                          className="w-full flex items-center gap-3 rounded-xl border border-border bg-muted/30 px-3 py-2 hover:bg-muted/60 transition-colors"
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={previewImage} alt="Результат" className="w-12 h-12 rounded-lg object-cover border border-border shrink-0" />
-                          <p className="text-xs text-muted-foreground">Переглянути результат</p>
-                        </button>
+                          <div className="min-h-[140px]">
+                            {activeTab === "selfie" && (
+                              <div className="space-y-4 pt-1">
+                                <SelfieUpload
+                                  selfieDataUrl={selfieDataUrl}
+                                  onUpload={setSelfieDataUrl}
+                                  onClear={() => setSelfieDataUrl(null)}
+                                />
+                              </div>
+                            )}
+                            {activeTab === "prompt" && (
+                              <div className="space-y-3 pt-1">
+                                <textarea
+                                  aria-label="Опис сцени для генерації"
+                                  value={prompt}
+                                  onChange={(e) => setPrompt(e.target.value)}
+                                  placeholder="Опишіть сцену або оберіть пресет…"
+                                  rows={3}
+                                  className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                />
+                                <RotatingPresets onSelect={setPrompt} selected={prompt} />
+                              </div>
+                            )}
+                          </div>
+
+                          {showHint && (
+                            <p className="text-xs text-muted-foreground mt-2">
+                              Активна сторона порожня. Натхнення буде братись зі сторони «{otherSideWithLayers!.side}».
+                            </p>
+                          )}
+
+                          <Button className="w-full mt-4" disabled={!canGenerate} onClick={handleGenerateClick}>
+                            {loading ? "Генерація в процесі…" : "Згенерувати"}
+                          </Button>
+                        </>
                       )}
-
-                      {/* Selfie upload */}
-                      <SelfieUpload
-                        selfieDataUrl={selfieDataUrl}
-                        onUpload={setSelfieDataUrl}
-                        onClear={() => setSelfieDataUrl(null)}
-                      />
-
-                      {/* Prompt — optional when selfie uploaded */}
-                      <div className="space-y-1">
-                        <textarea
-                          aria-label="Опис сцени для генерації"
-                          value={prompt}
-                          onChange={(e) => setPrompt(e.target.value)}
-                          placeholder={selfieDataUrl ? "Опишіть сцену (необов'язково)…" : "Опишіть сцену або оберіть пресет…"}
-                          rows={2}
-                          className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        />
-                        {selfieDataUrl && !prompt.trim() && (
-                          <p className="text-[11px] text-muted-foreground">AI згенерує зображення з вашим обличчям та мерчем</p>
-                        )}
-                      </div>
-
-                      <RotatingPresets onSelect={setPrompt} />
-
-                      {showHint && (
-                        <p className="text-xs text-muted-foreground">
-                          Активна сторона порожня. Генерація буде базуватись на стороні «{otherSideWithLayers!.side}».
-                        </p>
-                      )}
-
-                      <Button
-                        className="w-full"
-                        disabled={!canGenerate}
-                        onClick={handleGenerateClick}
-                      >
-                        {limitReached ? "Генерацію вже використано" : loading ? "Генерація в процесі…" : "Згенерувати"}
-                      </Button>
                     </motion.div>
                   )}
 
-                  {/* ── Step 2 ── */}
                   {step === 2 && (
                     <motion.div
                       key="step-2"
@@ -414,7 +425,7 @@ export function GenerationDrawer({
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1 -ml-2">
-                          <Button variant="ghost" size="icon" onClick={() => setStep(1)} className="h-8 w-8">
+                          <Button variant="ghost" size="icon" onClick={() => setStep(1)} aria-label="Назад" className="h-8 w-8">
                             <ChevronLeft className="h-5 w-5" />
                           </Button>
                           <span className="font-semibold text-base">

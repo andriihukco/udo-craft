@@ -65,35 +65,39 @@ export default function LayersPanel({
   const [typeOpen, setTypeOpen] = useState<string | null>(null);
   const [sizeOpen, setSizeOpen] = useState<string | null>(null);
 
-  // Auto-update size when canvas scale changes
+  // Stable refs so the scale-sync effect only re-runs when layerScales actually changes
+  const pricingRef = useRef(pricing);
+  pricingRef.current = pricing;
+  const sideLayersRef = useRef(sideLayers);
+  sideLayersRef.current = sideLayers;
+  const onSizeLabelChangeRef = useRef(onSizeLabelChange);
+  onSizeLabelChangeRef.current = onSizeLabelChange;
+  const pxToMmRatioRef = useRef(pxToMmRatio);
+  pxToMmRatioRef.current = pxToMmRatio;
+
+  // Auto-update size label when canvas scale changes (canvas → dropdown)
   useEffect(() => {
-    if (!onSizeLabelChange || !pxToMmRatio) return;
-    
+    const cb = onSizeLabelChangeRef.current;
+    const ratio = pxToMmRatioRef.current;
+    if (!cb || !ratio) return;
     const CANVAS_SIZE = 520;
-    
-    sideLayers.forEach((layer) => {
+    sideLayersRef.current.forEach((layer) => {
       const scale = layerScales[layer.id];
       if (!scale) return;
-      
-      const liveCm = Math.round((scale * CANVAS_SIZE * 0.4) / (pxToMmRatio * 10) * 10) / 10;
-      
-      // Find pricing rows for this layer's print type
-      const sizePriceRows = pricing.filter((r) => r.print_type === layer.type);
-      if (sizePriceRows.length === 0) return;
-      
-      // Find closest size
-      const closest = sizePriceRows.reduce((prev, curr) => {
-        const prevDist = Math.abs((prev.size_min_cm + prev.size_max_cm) / 2 - liveCm);
-        const currDist = Math.abs((curr.size_min_cm + curr.size_max_cm) / 2 - liveCm);
-        return currDist < prevDist ? curr : prev;
-      });
-      
-      // Only update if size changed
+      const liveCm = Math.round((scale * CANVAS_SIZE * 0.4) / (ratio * 10) * 10) / 10;
+      const sizePriceRows = pricingRef.current.filter((r) => r.print_type === layer.type);
+      if (!sizePriceRows.length) return;
+      const closest = sizePriceRows.reduce((prev, curr) =>
+        Math.abs((curr.size_min_cm + curr.size_max_cm) / 2 - liveCm) <
+        Math.abs((prev.size_min_cm + prev.size_max_cm) / 2 - liveCm) ? curr : prev
+      );
       if (closest?.size_label && closest.size_label !== layer.sizeLabel) {
-        onSizeLabelChange(layer.id, closest.size_label);
+        cb(layer.id, closest.size_label);
       }
     });
-  }, [layerScales, pxToMmRatio, sideLayers, pricing, onSizeLabelChange]);
+  // Only re-run when scale values change — everything else is accessed via refs
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layerScales]);
 
   const filteredFonts = useMemo(() =>
     TEXT_FONTS.filter((f) => f.label.toLowerCase().includes(fontSearch.toLowerCase())),
@@ -284,21 +288,7 @@ export default function LayersPanel({
                           </div>
                         </div>
                         {sizePriceRows.length > 0 && onSizeLabelChange && (() => {
-                          const scale = layerScales[layer.id];
-                          const CANVAS_SIZE = 520;
-                          const liveCm = (scale && pxToMmRatio)
-                            ? Math.round((scale * CANVAS_SIZE * 0.4) / (pxToMmRatio * 10) * 10) / 10
-                            : null;
-                          let autoSelectedSize = sizeLabel;
-                          if (liveCm !== null) {
-                            const closest = sizePriceRows.reduce((prev, curr) => {
-                              const prevDist = Math.abs((prev.size_min_cm + prev.size_max_cm) / 2 - liveCm);
-                              const currDist = Math.abs((curr.size_min_cm + curr.size_max_cm) / 2 - liveCm);
-                              return currDist < prevDist ? curr : prev;
-                            });
-                            autoSelectedSize = closest?.size_label;
-                          }
-                          const selectedRow = sizePriceRows.find(r => r.size_label === autoSelectedSize);
+                          const selectedRow = sizePriceRows.find(r => r.size_label === sizeLabel);
                           return (
                             <div className="space-y-1">
                               <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Розмір нанесення</label>
@@ -316,7 +306,7 @@ export default function LayersPanel({
                                         return (
                                           <button key={r.size_label} type="button"
                                             onClick={() => { onSizeLabelChange(layer.id, r.size_label ?? ""); setSizeOpen(null); }}
-                                            className={`w-full flex items-center justify-between px-3 py-2 text-left hover:bg-muted/60 transition-colors gap-2 ${autoSelectedSize === r.size_label ? "bg-primary/5 text-primary" : ""}`}>
+                                            className={`w-full flex items-center justify-between px-3 py-2 text-left hover:bg-muted/60 transition-colors gap-2 ${sizeLabel === r.size_label ? "bg-primary/5 text-primary" : ""}`}>
                                             <span className="text-sm font-medium">{r.size_label}</span>
                                             {p ? <span className="text-xs text-muted-foreground shrink-0">{(p / 100).toFixed(0)} ₴/шт</span> : null}
                                           </button>
