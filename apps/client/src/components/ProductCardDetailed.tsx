@@ -121,7 +121,7 @@ export function ProductCardDetailed({
       {/* Image */}
       <div className="p-3 sm:p-4 w-full flex items-center justify-center aspect-square flex-shrink-0 relative overflow-hidden">
         {imageUrl ? (
-          <img src={imageUrl} alt={product.name} className="w-full h-full object-contain mx-auto" />
+          <img src={imageUrl} alt={product.name} className="w-full h-full object-contain" />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-300">
             <svg className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
