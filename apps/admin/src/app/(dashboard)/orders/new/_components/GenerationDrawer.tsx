@@ -15,7 +15,7 @@ import { dataUrlToFile } from "../_lib/dataUrlToFile";
 import type { PrintLayer } from "@udo-craft/shared";
 import type { PrintTypePricingRow } from "@udo-craft/shared";
 
-const MAX_GENERATIONS = 3;
+const MAX_GENERATIONS = 1;
 
 const ALL_PRESETS = [
   "команда ІТ-компанії в сучасному офісі",
@@ -45,11 +45,10 @@ const COLS = 4;
 const ROWS = 4;
 const TOTAL = COLS * ROWS;
 
-// ── Real Matrix: icons fall from top in columns ───────────────────────────────
+// ── Real Matrix: icons fall column-by-column from top ────────────────────────
 function MatrixIconGrid() {
-  // Each column has an independent "head" position that falls from row 0 downward
   const [heads, setHeads] = useState<number[]>(() =>
-    Array.from({ length: COLS }, (_, i) => -1 - i * 2) // stagger start
+    Array.from({ length: COLS }, (_, i) => -1 - i * 2)
   );
   const [icons, setIcons] = useState<number[]>(() =>
     Array.from({ length: TOTAL }, () => Math.floor(Math.random() * MATRIX_ICONS.length))
@@ -59,12 +58,10 @@ function MatrixIconGrid() {
     const id = setInterval(() => {
       setHeads((prev) =>
         prev.map((h) => {
-          // advance head; once past bottom, restart from random negative offset
           const next = h + 1;
           return next > ROWS + 2 ? -(1 + Math.floor(Math.random() * 4)) : next;
         })
       );
-      // randomly swap icon in each column at the head position
       setIcons((prev) => {
         const next = [...prev];
         heads.forEach((h, col) => {
@@ -84,7 +81,6 @@ function MatrixIconGrid() {
         const row = Math.floor(idx / COLS);
         const col = idx % COLS;
         const head = heads[col];
-        // brightness: head = full, trail fades over 3 rows
         const dist = row - head;
         const isHead = dist === 0;
         const isTrail = dist > 0 && dist <= 3;
@@ -106,7 +102,7 @@ function MatrixIconGrid() {
   );
 }
 
-// ── Rotating presets ──────────────────────────────────────────────────────────
+// ── Preset chips — outline only, no selected state ───────────────────────────
 function RotatingPresets({ onSelect }: { onSelect: (text: string) => void }) {
   const [visible, setVisible] = useState<string[]>(() =>
     [...ALL_PRESETS].sort(() => Math.random() - 0.5).slice(0, 3)
@@ -137,7 +133,7 @@ function RotatingPresets({ onSelect }: { onSelect: (text: string) => void }) {
             exit={{ opacity: 0, scale: 0.85 }}
             transition={{ duration: 0.25 }}
             onClick={() => onSelect(preset)}
-            className="rounded-full border border-border/60 bg-muted/50 px-2.5 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="rounded-full border border-border bg-transparent px-2.5 py-1 text-xs text-muted-foreground hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {preset}
           </motion.button>
@@ -201,7 +197,7 @@ function SelfieUpload({
           <img src={selfieDataUrl} alt="Ваше фото" className="w-12 h-12 rounded-lg object-cover border border-border" />
           <div className="flex-1 min-w-0">
             <p className="text-xs text-foreground font-medium">Фото завантажено</p>
-            <p className="text-[11px] text-muted-foreground">AI використає ваш образ</p>
+            <p className="text-[11px] text-muted-foreground">AI покаже мерч на вас</p>
           </div>
           <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={onClear} aria-label="Видалити фото">
             <X className="size-3.5" />
@@ -256,7 +252,7 @@ export function GenerationDrawer({
   captureRef, layers, mockups, selectedColor, productImages, productName,
 }: GenerationDrawerProps) {
   const [prompt, setPrompt] = useState("");
-  const [history, setHistory] = useState<string[]>([]);
+  const [generated, setGenerated] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [progressIndex, setProgressIndex] = useState(0);
@@ -264,7 +260,7 @@ export function GenerationDrawer({
 
   const handleSuccess = useCallback((dataUrl: string) => {
     setPreviewImage(dataUrl);
-    setHistory((prev) => [...prev, dataUrl]);
+    setGenerated(true);
   }, []);
 
   const { generate, loading, error, clearError } = useAIGeneration({
@@ -282,14 +278,15 @@ export function GenerationDrawer({
   }, [loading]);
 
   useEffect(() => {
-    if (!open) { clearError(); setPrompt(""); setStep(1); setPreviewImage(null); }
+    if (!open) { clearError(); setPrompt(""); setStep(1); setPreviewImage(null); setGenerated(false); }
   }, [open, clearError]);
 
   const otherSideWithLayers = layers.find((l) => l.side !== activeSide);
   const activeSideLayers = layers.filter((l) => l.side === activeSide);
   const showHint = activeSideLayers.length === 0 && !!otherSideWithLayers && step === 1;
-  const remaining = MAX_GENERATIONS - history.length;
-  const limitReached = history.length >= MAX_GENERATIONS;
+  const limitReached = generated;
+  // Can generate if: not already generated, not loading, and either has prompt OR has selfie
+  const canGenerate = !limitReached && !loading && (!!prompt.trim() || !!selfieDataUrl);
 
   const handleGenerateClick = async () => {
     setStep(2);
@@ -344,14 +341,9 @@ export function GenerationDrawer({
                           <h2 className="text-base font-semibold">Побачте мерч на людині</h2>
                           <p className="text-[11px] text-muted-foreground">AI покаже, як виглядає ваш дизайн у реальному житті</p>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0 ml-2">
-                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${limitReached ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}>
-                            {remaining}/{MAX_GENERATIONS}
-                          </span>
-                          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Закрити" className="h-8 w-8 -mr-2">
-                            <X className="h-5 w-5" />
-                          </Button>
-                        </div>
+                        <Button variant="ghost" size="icon" onClick={onClose} aria-label="Закрити" className="h-8 w-8 -mr-2 shrink-0 ml-2">
+                          <X className="h-5 w-5" />
+                        </Button>
                       </div>
 
                       {/* In-progress banner */}
@@ -359,21 +351,17 @@ export function GenerationDrawer({
                         {loading && <GeneratingThumbnail onClick={() => setStep(2)} />}
                       </AnimatePresence>
 
-                      {/* History thumbnails */}
-                      {history.length > 0 && (
-                        <div className="flex gap-2 overflow-x-auto pb-0.5">
-                          {history.map((dataUrl, i) => (
-                            <button
-                              key={i}
-                              type="button"
-                              onClick={() => { setPreviewImage(dataUrl); setStep(2); }}
-                              className="shrink-0 w-14 h-14 rounded-lg border border-border overflow-hidden hover:ring-2 hover:ring-primary transition-all"
-                            >
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={dataUrl} alt={`Генерація ${i + 1}`} className="w-full h-full object-cover" />
-                            </button>
-                          ))}
-                        </div>
+                      {/* Result thumbnail if already generated */}
+                      {previewImage && !loading && (
+                        <button
+                          type="button"
+                          onClick={() => setStep(2)}
+                          className="w-full flex items-center gap-3 rounded-xl border border-border bg-muted/30 px-3 py-2 hover:bg-muted/60 transition-colors"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={previewImage} alt="Результат" className="w-12 h-12 rounded-lg object-cover border border-border shrink-0" />
+                          <p className="text-xs text-muted-foreground">Переглянути результат</p>
+                        </button>
                       )}
 
                       {/* Selfie upload */}
@@ -383,15 +371,20 @@ export function GenerationDrawer({
                         onClear={() => setSelfieDataUrl(null)}
                       />
 
-                      {/* Prompt */}
-                      <textarea
-                        aria-label="Опис сцени для генерації"
-                        value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
-                        placeholder="Опишіть сцену або оберіть пресет…"
-                        rows={2}
-                        className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      />
+                      {/* Prompt — optional when selfie uploaded */}
+                      <div className="space-y-1">
+                        <textarea
+                          aria-label="Опис сцени для генерації"
+                          value={prompt}
+                          onChange={(e) => setPrompt(e.target.value)}
+                          placeholder={selfieDataUrl ? "Опишіть сцену (необов'язково)…" : "Опишіть сцену або оберіть пресет…"}
+                          rows={2}
+                          className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        />
+                        {selfieDataUrl && !prompt.trim() && (
+                          <p className="text-[11px] text-muted-foreground">AI згенерує зображення з вашим обличчям та мерчем</p>
+                        )}
+                      </div>
 
                       <RotatingPresets onSelect={setPrompt} />
 
@@ -403,10 +396,10 @@ export function GenerationDrawer({
 
                       <Button
                         className="w-full"
-                        disabled={!prompt.trim() || limitReached || loading}
+                        disabled={!canGenerate}
                         onClick={handleGenerateClick}
                       >
-                        {limitReached ? "Ліміт вичерпано (3/3)" : loading ? "Генерація в процесі…" : "Згенерувати"}
+                        {limitReached ? "Генерацію вже використано" : loading ? "Генерація в процесі…" : "Згенерувати"}
                       </Button>
                     </motion.div>
                   )}
