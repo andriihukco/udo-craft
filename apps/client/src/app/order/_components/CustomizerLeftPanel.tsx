@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import type { Product, Material, ProductColorVariant, PrintLayer } from "@udo-craft/shared";
 import LayersPanel, { type PrintTypePricingRow } from "@/components/LayersPanel";
 import { ArrowLeft, Check } from "lucide-react";
@@ -49,6 +49,8 @@ export function CustomizerLeftPanel({
   onLayerDuplicate, onLayerRemoveBg, onLayerTypeChange, onLayerSizeLabelChange,
   onLayerReorder, onAddClick, onAddText, onTextChange, onFileChange,
 }: CustomizerLeftPanelProps) {
+  const [descExpanded, setDescExpanded] = useState(false);
+
   return (
     <div className="space-y-5">
       <div>
@@ -59,7 +61,23 @@ export function CustomizerLeftPanel({
           <ArrowLeft className="size-3.5" /> Назад
         </button>
         <p className="text-sm font-bold leading-tight">{product.name}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">від {unitPrice.toFixed(0)} ₴ / шт</p>
+        <p className="text-xs text-muted-foreground mt-0.5 mb-2">від {unitPrice.toFixed(0)} ₴ / шт</p>
+        
+        {product.description && (
+          <div className="mt-2">
+            <p className={`text-xs text-muted-foreground ${descExpanded ? "" : "line-clamp-2"}`}>
+              {product.description}
+            </p>
+            {product.description.length > 80 && (
+              <button 
+                onClick={() => setDescExpanded(!descExpanded)}
+                className="text-[11px] text-primary font-semibold hover:underline mt-1 touch-manipulation cursor-pointer"
+              >
+                {descExpanded ? "Згорнути" : "Розгорнути"}
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="space-y-2">
