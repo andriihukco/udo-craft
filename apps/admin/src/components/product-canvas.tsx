@@ -745,7 +745,7 @@ export default function ProductCanvas({
         >
           {removingBg ? <Loader2 className="size-3.5 animate-spin" /> : <Eraser className="size-3.5" />}
         </ToolBtn>
-        {onAIGenerate && process.env.NEXT_PUBLIC_GEMINI_ENABLED && (
+        {onAIGenerate && process.env.NEXT_PUBLIC_GEMINI_ENABLED && layers.length > 0 && (
           <>
             <div className="w-px h-4 bg-border mx-1 shrink-0" />
             <ToolBtn onClick={onAIGenerate} title="AI генерація" label="AI"><Sparkles className="size-3.5" /></ToolBtn>

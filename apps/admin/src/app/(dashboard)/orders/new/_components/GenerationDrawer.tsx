@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  X, ChevronLeft,
+  X, ChevronLeft, Upload,
   Shirt, Scissors, Palette, Brush, Sparkles, Star, Wand2,
   Layers, PenTool, Printer, Zap, Gem, Crown, Heart,
   Package, Tag, Ruler, Paintbrush,
@@ -30,8 +30,9 @@ const ALL_PRESETS = [
 
 const PROGRESS_PHRASES = [
   "Аналізуємо запит...",
-  "Підбираємо матеріали...",
-  "Генеруємо дизайн...",
+  "Підбираємо образ...",
+  "Накладаємо мерч...",
+  "Фінальні штрихи...",
 ];
 
 const MATRIX_ICONS = [
@@ -40,45 +41,62 @@ const MATRIX_ICONS = [
   Package, Tag, Ruler, Paintbrush,
 ];
 
-const GRID_SIZE = 16;
+const COLS = 4;
+const ROWS = 4;
+const TOTAL = COLS * ROWS;
 
-// ── Matrix icon grid ──────────────────────────────────────────────────────────
+// ── Real Matrix: icons fall from top in columns ───────────────────────────────
 function MatrixIconGrid() {
-  const [cells, setCells] = useState<number[]>(() =>
-    Array.from({ length: GRID_SIZE }, (_, i) => i % MATRIX_ICONS.length)
+  // Each column has an independent "head" position that falls from row 0 downward
+  const [heads, setHeads] = useState<number[]>(() =>
+    Array.from({ length: COLS }, (_, i) => -1 - i * 2) // stagger start
   );
-  const [active, setActive] = useState<Set<number>>(new Set());
+  const [icons, setIcons] = useState<number[]>(() =>
+    Array.from({ length: TOTAL }, () => Math.floor(Math.random() * MATRIX_ICONS.length))
+  );
 
   useEffect(() => {
     const id = setInterval(() => {
-      const count = 2 + Math.floor(Math.random() * 3);
-      const newActive = new Set<number>();
-      setCells((prev) => {
+      setHeads((prev) =>
+        prev.map((h) => {
+          // advance head; once past bottom, restart from random negative offset
+          const next = h + 1;
+          return next > ROWS + 2 ? -(1 + Math.floor(Math.random() * 4)) : next;
+        })
+      );
+      // randomly swap icon in each column at the head position
+      setIcons((prev) => {
         const next = [...prev];
-        for (let i = 0; i < count; i++) {
-          const idx = Math.floor(Math.random() * GRID_SIZE);
-          next[idx] = Math.floor(Math.random() * MATRIX_ICONS.length);
-          newActive.add(idx);
-        }
+        heads.forEach((h, col) => {
+          if (h >= 0 && h < ROWS) {
+            next[h * COLS + col] = Math.floor(Math.random() * MATRIX_ICONS.length);
+          }
+        });
         return next;
       });
-      setActive(newActive);
-      setTimeout(() => setActive(new Set()), 150);
     }, 120);
     return () => clearInterval(id);
-  }, []);
+  }, [heads]);
 
   return (
     <div className="grid grid-cols-4 gap-2 p-2">
-      {cells.map((iconIdx, cellIdx) => {
-        const Icon = MATRIX_ICONS[iconIdx];
-        const isActive = active.has(cellIdx);
+      {Array.from({ length: TOTAL }, (_, idx) => {
+        const row = Math.floor(idx / COLS);
+        const col = idx % COLS;
+        const head = heads[col];
+        // brightness: head = full, trail fades over 3 rows
+        const dist = row - head;
+        const isHead = dist === 0;
+        const isTrail = dist > 0 && dist <= 3;
+        const opacity = isHead ? 1 : isTrail ? 1 - dist * 0.28 : 0.12;
+        const Icon = MATRIX_ICONS[icons[idx]];
         return (
           <div
-            key={cellIdx}
-            className={`flex items-center justify-center w-10 h-10 rounded-lg transition-all duration-100 ${
-              isActive ? "bg-primary/20 text-primary scale-110" : "bg-muted/60 text-muted-foreground/40"
+            key={idx}
+            className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors duration-100 ${
+              isHead ? "bg-primary/25 text-primary" : isTrail ? "bg-primary/10 text-primary/60" : "bg-muted/40 text-muted-foreground/20"
             }`}
+            style={{ opacity }}
           >
             <Icon className="size-5" />
           </div>
@@ -88,7 +106,7 @@ function MatrixIconGrid() {
   );
 }
 
-// ── Rotating presets (all 3 swap at once every 3s) ───────────────────────────
+// ── Rotating presets ──────────────────────────────────────────────────────────
 function RotatingPresets({ onSelect }: { onSelect: (text: string) => void }) {
   const [visible, setVisible] = useState<string[]>(() =>
     [...ALL_PRESETS].sort(() => Math.random() - 0.5).slice(0, 3)
@@ -129,7 +147,7 @@ function RotatingPresets({ onSelect }: { onSelect: (text: string) => void }) {
   );
 }
 
-// ── In-progress thumbnail shown on step 1 while generation runs ───────────────
+// ── In-progress thumbnail ─────────────────────────────────────────────────────
 function GeneratingThumbnail({ onClick }: { onClick: () => void }) {
   return (
     <motion.button
@@ -141,12 +159,8 @@ function GeneratingThumbnail({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       className="w-full flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2.5 text-left hover:bg-primary/10 transition-colors"
     >
-      {/* Mini matrix preview */}
       <div className="shrink-0 w-10 h-10 rounded-lg bg-muted border border-border overflow-hidden flex items-center justify-center">
-        <motion.div
-          animate={{ opacity: [0.4, 1, 0.4] }}
-          transition={{ repeat: Infinity, duration: 1.4 }}
-        >
+        <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 1.4 }}>
           <Sparkles className="size-4 text-primary" />
         </motion.div>
       </div>
@@ -155,6 +169,70 @@ function GeneratingThumbnail({ onClick }: { onClick: () => void }) {
         <p className="text-[11px] text-muted-foreground truncate">Натисніть, щоб переглянути</p>
       </div>
     </motion.button>
+  );
+}
+
+// ── Selfie upload ─────────────────────────────────────────────────────────────
+function SelfieUpload({
+  selfieDataUrl,
+  onUpload,
+  onClear,
+}: {
+  selfieDataUrl: string | null;
+  onUpload: (dataUrl: string) => void;
+  onClear: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (typeof e.target?.result === "string") onUpload(e.target.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div className="space-y-1.5">
+      <p className="text-xs text-muted-foreground font-medium">Ваше фото (необов&apos;язково)</p>
+      {selfieDataUrl ? (
+        <div className="flex items-center gap-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={selfieDataUrl} alt="Ваше фото" className="w-12 h-12 rounded-lg object-cover border border-border" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-foreground font-medium">Фото завантажено</p>
+            <p className="text-[11px] text-muted-foreground">AI використає ваш образ</p>
+          </div>
+          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={onClear} aria-label="Видалити фото">
+            <X className="size-3.5" />
+          </Button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="w-full flex items-center gap-2.5 rounded-lg border border-dashed border-border/70 bg-muted/30 px-3 py-2.5 text-left hover:bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <Upload className="size-4 text-muted-foreground shrink-0" />
+          <div>
+            <p className="text-xs text-foreground">Завантажте своє фото</p>
+            <p className="text-[11px] text-muted-foreground">Побачте мерч на собі</p>
+          </div>
+        </button>
+      )}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        capture="user"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleFile(file);
+          e.target.value = "";
+        }}
+      />
+    </div>
   );
 }
 
@@ -182,6 +260,7 @@ export function GenerationDrawer({
   const [step, setStep] = useState<1 | 2>(1);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [progressIndex, setProgressIndex] = useState(0);
+  const [selfieDataUrl, setSelfieDataUrl] = useState<string | null>(null);
 
   const handleSuccess = useCallback((dataUrl: string) => {
     setPreviewImage(dataUrl);
@@ -191,9 +270,9 @@ export function GenerationDrawer({
   const { generate, loading, error, clearError } = useAIGeneration({
     activeSide, captureRef, layers, mockups, selectedColor,
     productImages, productName, onSuccess: handleSuccess,
+    selfieDataUrl: selfieDataUrl ?? undefined,
   });
 
-  // Cycle progress phrases while loading
   useEffect(() => {
     if (!loading) return;
     const id = setInterval(() => {
@@ -202,13 +281,12 @@ export function GenerationDrawer({
     return () => clearInterval(id);
   }, [loading]);
 
-  // Reset on close (but keep history)
   useEffect(() => {
     if (!open) { clearError(); setPrompt(""); setStep(1); setPreviewImage(null); }
   }, [open, clearError]);
 
-  const activeSideLayers = layers.filter((l) => l.side === activeSide);
   const otherSideWithLayers = layers.find((l) => l.side !== activeSide);
+  const activeSideLayers = layers.filter((l) => l.side === activeSide);
   const showHint = activeSideLayers.length === 0 && !!otherSideWithLayers && step === 1;
   const remaining = MAX_GENERATIONS - history.length;
   const limitReached = history.length >= MAX_GENERATIONS;
@@ -221,7 +299,8 @@ export function GenerationDrawer({
     await generate(prompt);
   };
 
-  const handleAddToCanvas = () => {
+  // kept for potential future use
+  const _handleAddToCanvas = () => {
     if (!previewImage) return;
     addLayer(dataUrlToFile(previewImage), activeSide, printPricing);
     onClose();
@@ -261,8 +340,11 @@ export function GenerationDrawer({
                     >
                       {/* Header */}
                       <div className="flex items-center justify-between">
-                        <h2 className="text-base font-semibold">AI Генерація</h2>
-                        <div className="flex items-center gap-2">
+                        <div>
+                          <h2 className="text-base font-semibold">Побачте мерч на людині</h2>
+                          <p className="text-[11px] text-muted-foreground">AI покаже, як виглядає ваш дизайн у реальному житті</p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0 ml-2">
                           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${limitReached ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}>
                             {remaining}/{MAX_GENERATIONS}
                           </span>
@@ -274,12 +356,10 @@ export function GenerationDrawer({
 
                       {/* In-progress banner */}
                       <AnimatePresence>
-                        {loading && (
-                          <GeneratingThumbnail onClick={() => setStep(2)} />
-                        )}
+                        {loading && <GeneratingThumbnail onClick={() => setStep(2)} />}
                       </AnimatePresence>
 
-                      {/* Completed history thumbnails */}
+                      {/* History thumbnails */}
                       {history.length > 0 && (
                         <div className="flex gap-2 overflow-x-auto pb-0.5">
                           {history.map((dataUrl, i) => (
@@ -296,17 +376,23 @@ export function GenerationDrawer({
                         </div>
                       )}
 
+                      {/* Selfie upload */}
+                      <SelfieUpload
+                        selfieDataUrl={selfieDataUrl}
+                        onUpload={setSelfieDataUrl}
+                        onClear={() => setSelfieDataUrl(null)}
+                      />
+
                       {/* Prompt */}
                       <textarea
                         aria-label="Опис сцени для генерації"
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         placeholder="Опишіть сцену або оберіть пресет…"
-                        rows={3}
+                        rows={2}
                         className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       />
 
-                      {/* Rotating presets */}
                       <RotatingPresets onSelect={setPrompt} />
 
                       {showHint && (
@@ -333,7 +419,6 @@ export function GenerationDrawer({
                       exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }}
                       className="space-y-4"
                     >
-                      {/* Header — back always enabled */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1 -ml-2">
                           <Button variant="ghost" size="icon" onClick={() => setStep(1)} className="h-8 w-8">
@@ -348,7 +433,6 @@ export function GenerationDrawer({
                         </Button>
                       </div>
 
-                      {/* Result area */}
                       <div className="w-full aspect-square rounded-xl border border-border bg-muted flex flex-col items-center justify-center overflow-hidden">
                         {loading ? (
                           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
@@ -359,18 +443,16 @@ export function GenerationDrawer({
                               <motion.p
                                 key={progressIndex}
                                 initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
-                                exit={progressIndex < PROGRESS_PHRASES.length - 1 ? { opacity: 0, y: -5 } : undefined}
+                                exit={{ opacity: 0, y: -5 }}
                                 className="text-sm font-medium text-muted-foreground"
                               >
-                                {progressIndex < PROGRESS_PHRASES.length - 1
-                                  ? PROGRESS_PHRASES[progressIndex]
-                                  : "Фінальні штрихи..."}
+                                {PROGRESS_PHRASES[progressIndex % PROGRESS_PHRASES.length]}
                               </motion.p>
                             </AnimatePresence>
                           </motion.div>
                         ) : previewImage ? (
                           <motion.img initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                            src={previewImage} alt="Generated Design" className="w-full h-full object-cover"
+                            src={previewImage} alt="Generated mockup" className="w-full h-full object-cover"
                           />
                         ) : error ? (
                           <div className="p-4 text-center text-sm text-destructive bg-destructive/10 rounded-md m-4">
@@ -381,7 +463,6 @@ export function GenerationDrawer({
                           </div>
                         ) : null}
                       </div>
-
                     </motion.div>
                   )}
 
