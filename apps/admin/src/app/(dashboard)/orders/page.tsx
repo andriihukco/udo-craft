@@ -910,19 +910,63 @@ export default function OrdersPage() {
                                 const unitCents = item.unit_price_cents ?? item.technical_metadata?.unit_price_cents;
                                 const printCents = item.technical_metadata?.print_cost_cents ?? 0;
                                 if (!unitCents) return null;
-                                const total = (unitCents + printCents) * item.quantity;
+                                // Detect discount: stored discounted price vs base product price
+                                const baseCents = products[item.product_id]?.base_price_cents ?? unitCents;
+                                const hasItemDiscount = baseCents > unitCents;
+                                const itemDiscountPct = hasItemDiscount ? Math.round((1 - unitCents / baseCents) * 100) : 0;
+                                const lineTotal = (unitCents + printCents) * item.quantity;
+                                const lineTotalBase = (baseCents + printCents) * item.quantity;
+                                const savings = lineTotalBase - lineTotal;
                                 return (
-                                  <div className="space-y-0.5">
-                                    <p className="text-xs text-muted-foreground">
-                                      {(unitCents / 100).toFixed(0)} ₴/шт
-                                      {printCents > 0 && ` + ${(printCents / 100).toFixed(0)} ₴ нанесення`}
-                                    </p>
-                                    <p className="text-xs font-semibold text-primary">{(total / 100).toLocaleString("uk-UA")} ₴ разом</p>
+                                  <div className="mt-2 rounded-lg border border-border/40 bg-muted/30 overflow-hidden">
+                                    {/* Item price row */}
+                                    <div className="px-3 py-2 flex items-center justify-between gap-2">
+                                      <div>
+                                        <p className="text-xs font-medium">Товар</p>
+                                        {hasItemDiscount && (
+                                          <p className="text-[10px] text-muted-foreground">
+                                            <span className="line-through">{(baseCents / 100).toFixed(0)} ₴</span>
+                                            <span className="ml-1 text-emerald-600 font-semibold">−{itemDiscountPct}%</span>
+                                          </p>
+                                        )}
+                                      </div>
+                                      <p className="text-xs font-semibold tabular-nums">{(unitCents / 100).toFixed(0)} ₴<span className="text-muted-foreground font-normal">/шт</span></p>
+                                    </div>
+                                    {/* Per-layer rows */}
+                                    {layers.map((layer, li) => {
+                                      const lp = layer.priceCents ?? 0;
+                                      if (!lp) return null;
+                                      return (
+                                        <div key={li} className="border-t border-border/30 px-3 py-1.5 flex items-center justify-between gap-2">
+                                          <div className="flex items-center gap-1.5 flex-wrap">
+                                            <p className="text-xs font-medium">{layer.type?.toUpperCase()}</p>
+                                            {layer.sizeLabel && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">{layer.sizeLabel}</span>}
+                                            <span className="text-[10px] text-muted-foreground opacity-60">{layer.side}</span>
+                                          </div>
+                                          <p className="text-xs font-semibold tabular-nums">{(lp / 100).toFixed(0)} ₴<span className="text-muted-foreground font-normal">/шт</span></p>
+                                        </div>
+                                      );
+                                    })}
+                                    {/* Savings */}
+                                    {savings > 0 && (
+                                      <div className="border-t border-border/30 px-3 py-1.5 flex items-center justify-between bg-emerald-50/60">
+                                        <p className="text-xs text-emerald-700 font-medium">Економія</p>
+                                        <p className="text-xs font-semibold text-emerald-700">−{(savings / 100).toFixed(0)} ₴</p>
+                                      </div>
+                                    )}
+                                    {/* Total */}
+                                    <div className="border-t border-border/40 px-3 py-2 flex items-baseline justify-between bg-background/60">
+                                      <div>
+                                        <p className="text-xs font-bold">Разом</p>
+                                        {item.quantity > 1 && <p className="text-[10px] text-muted-foreground">{item.quantity} шт × {((unitCents + printCents) / 100).toFixed(0)} ₴</p>}
+                                      </div>
+                                      <p className="text-sm font-black text-primary tabular-nums">{(lineTotal / 100).toLocaleString("uk-UA")} ₴</p>
+                                    </div>
                                   </div>
                                 );
                               })()}
                               {item.technical_metadata?.item_note && (
-                                <p className="text-xs text-muted-foreground italic">"{item.technical_metadata.item_note}"</p>
+                                <p className="text-xs text-muted-foreground italic mt-1">"{item.technical_metadata.item_note}"</p>
                               )}
                             </div>
 
@@ -1016,10 +1060,7 @@ export default function OrdersPage() {
                                           </div>
                                         )}
 
-                                        {/* Row 4: price */}
-                                        {layer.priceCents != null && layer.priceCents > 0 && (
-                                          <p className="text-xs text-primary font-semibold">{(layer.priceCents / 100).toFixed(0)} ₴/шт</p>
-                                        )}
+                                        {/* Row 4: price — shown in item card above */}
 
                                         {/* Row 5: download */}
                                         {layer.url && (

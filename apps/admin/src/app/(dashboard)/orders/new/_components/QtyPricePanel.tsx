@@ -128,60 +128,107 @@ export function QtyPricePanel({
         );
       })()}
 
-      {/* Price breakdown */}
-      <div className="rounded-xl border border-border/40 bg-muted/50 p-3.5 space-y-2">
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Товар</span>
-          <div className="flex items-center gap-1.5">
-            {discountPct > 0 && (
-              <span className="text-xs text-muted-foreground line-through">{unitPrice.toFixed(0)} ₴</span>
-            )}
-            <span className="font-medium">{discounted.toFixed(0)} ₴/шт</span>
-          </div>
-        </div>
-        {discountPct > 0 && (
-          <div className="flex justify-between text-sm text-emerald-600">
-            <span>Знижка</span>
-            <span className="font-medium">−{discountPct}%</span>
-          </div>
-        )}
+      {/* Price breakdown — new hierarchy with qty-tier print discounts */}
+      {(() => {
+        const layerBreakdown = layers.map((layer) => {
+          const rows = printPricing.filter((r) => r.print_type === layer.type);
+          const sizeLabel = (layer as any).sizeLabel as string | undefined;
+          const row = rows.length && sizeLabel ? (rows.find((r) => r.size_label === sizeLabel) ?? null) : null;
+          const sortedTiers = row ? [...row.qty_tiers].sort((a, b) => b.min_qty - a.min_qty) : [];
+          const tier = sortedTiers.find((t) => quantity >= t.min_qty) ?? sortedTiers[sortedTiers.length - 1];
+          const baseTier = sortedTiers.length ? sortedTiers[sortedTiers.length - 1] : null;
+          const basePriceCents = baseTier?.price_cents ?? (layer as any).priceCents ?? 0;
+          const priceCents = tier?.price_cents ?? (layer as any).priceCents ?? 0;
+          const hasDiscount = basePriceCents > 0 && priceCents < basePriceCents;
+          const discountPctPrint = hasDiscount ? Math.round((1 - priceCents / basePriceCents) * 100) : 0;
+          return { layer, sizeLabel, priceCents, basePriceCents, hasDiscount: hasDiscount && discountPctPrint > 0, discountPctPrint, label: PRINT_TYPE_LABELS[layer.type] ?? layer.type };
+        });
 
-        {/* Per-layer breakdown */}
-        {layers.length > 0 && (
-          <div className="space-y-1 pt-1 border-t border-border/40">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Нанесення</p>
-            {layers.map((layer) => {
-              const rows = printPricing.filter((r) => r.print_type === layer.type);
-              const sizeLabel = (layer as any).sizeLabel as string | undefined;
-              const row = rows.length && sizeLabel ? (rows.find((r) => r.size_label === sizeLabel) ?? null) : null;
-              const price = resolveLayerPrice(layer);
-              return (
-                <div key={layer.id} className="flex justify-between text-xs text-muted-foreground">
-                  <span className="truncate max-w-[60%]">
-                    <span className="font-medium text-foreground">{PRINT_TYPE_LABELS[layer.type] ?? layer.type}</span>
-                    {sizeLabel ? ` · ${sizeLabel}` : " · Оберіть розмір"}
-                    <span className="text-[10px] ml-1 opacity-60">({layer.side})</span>
-                  </span>
-                  <span className="font-medium shrink-0 ml-2 text-right">
-                    {sizeLabel ? (price > 0 ? `+${(price / 100).toFixed(0)} ₴/шт` : "—") : "Оберіть розмір"}
-                  </span>
-                </div>
-              );
-            })}
-            {printCostPerUnit > 0 && (
-              <div className="flex justify-between text-xs font-medium pt-0.5 border-t border-border/30">
-                <span className="text-muted-foreground">Разом нанесення</span>
-                <span>+{printCostPerUnit.toFixed(0)} ₴/шт</span>
+        const totalPrintCents = layerBreakdown.reduce((s, l) => s + l.priceCents, 0);
+        const totalPrintBaseCents = layerBreakdown.reduce((s, l) => s + l.basePriceCents, 0);
+        const itemBaseCents = Math.round(unitPrice * 100);
+        const itemDiscountedCents = Math.round(discounted * 100);
+        const savingsPerUnit = (itemBaseCents - itemDiscountedCents) + (totalPrintBaseCents - totalPrintCents);
+        const totalSavings = savingsPerUnit * quantity;
+
+        return (
+          <div className="rounded-xl border border-border/40 bg-muted/30 overflow-hidden">
+            {/* Item row */}
+            <div className="px-3.5 py-3 flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground">Товар</p>
+                {discountPct > 0 && (
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    <span className="line-through">{unitPrice.toFixed(0)} ₴</span>
+                    <span className="ml-1.5 text-emerald-600 font-semibold">−{discountPct}%</span>
+                  </p>
+                )}
+              </div>
+              <p className="text-sm font-semibold shrink-0 tabular-nums">
+                {discounted.toFixed(0)} ₴<span className="text-muted-foreground font-normal">/шт</span>
+              </p>
+            </div>
+
+            {/* Print layers */}
+            {layerBreakdown.length > 0 && (
+              <div className="border-t border-border/40">
+                {layerBreakdown.map(({ layer, sizeLabel, priceCents, basePriceCents, hasDiscount, discountPctPrint, label }) => (
+                  <div key={layer.id} className="px-3.5 py-2.5 flex items-center justify-between gap-2 border-b border-border/20 last:border-b-0">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="text-sm font-medium text-foreground">{label}</p>
+                        {sizeLabel && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">{sizeLabel}</span>
+                        )}
+                        <span className="text-[10px] text-muted-foreground opacity-60">{layer.side}</span>
+                      </div>
+                      {hasDiscount && (
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          <span className="line-through">{(basePriceCents / 100).toFixed(0)} ₴</span>
+                          <span className="ml-1.5 text-emerald-600 font-semibold">−{discountPctPrint}%</span>
+                        </p>
+                      )}
+                      {!sizeLabel && <p className="text-[11px] text-amber-600 mt-0.5">Оберіть розмір</p>}
+                    </div>
+                    <p className="text-sm font-semibold shrink-0 tabular-nums">
+                      {sizeLabel
+                        ? priceCents > 0
+                          ? <>{(priceCents / 100).toFixed(0)} ₴<span className="text-muted-foreground font-normal">/шт</span></>
+                          : <span className="text-muted-foreground">—</span>
+                        : <span className="text-muted-foreground text-xs">—</span>
+                      }
+                    </p>
+                  </div>
+                ))}
               </div>
             )}
-          </div>
-        )}
 
-        <div className="border-t border-border/60 pt-2 flex justify-between font-bold text-lg">
-          <span>Разом</span>
-          <span className="text-primary">{total.toFixed(0)} ₴</span>
-        </div>
-      </div>
+            {/* Savings row */}
+            {totalSavings > 0 && (
+              <div className="border-t border-border/40 px-3.5 py-2.5 flex items-center justify-between gap-2 bg-emerald-50/60">
+                <p className="text-sm text-emerald-700 font-medium">Економія</p>
+                <p className="text-sm font-semibold text-emerald-700 tabular-nums">−{(totalSavings / 100).toFixed(0)} ₴</p>
+              </div>
+            )}
+
+            {/* Total row */}
+            <div className="border-t border-border/60 px-3.5 py-3 flex items-baseline justify-between gap-2 bg-background/60">
+              <div>
+                <p className="text-base font-bold">Разом</p>
+                {quantity > 1 && (
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    {quantity} шт × {(discounted + totalPrintCents / 100).toFixed(0)} ₴
+                  </p>
+                )}
+              </div>
+              <div className="flex items-baseline gap-1 ml-auto">
+                <span className="text-xl font-black text-primary tabular-nums">{total.toFixed(0)}</span>
+                <span className="text-base font-bold text-primary">₴</span>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Disclaimer — right below total */}
       <div className="rounded-lg border border-amber-200 bg-amber-50 p-2.5">
