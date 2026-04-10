@@ -49,6 +49,10 @@
 }
 
 @layer base {
+  html {
+    height: 100vh;
+    height: 100svh;
+  }
   *, *::before, *::after {
     border-color: var(--color-border);
   }
