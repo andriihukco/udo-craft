@@ -247,10 +247,11 @@ export function GenerationDrawer({
   captureRef, layers, mockups, selectedColor, productImages, productName,
 }: GenerationDrawerProps) {
   const [prompt, setPrompt] = useState("");
+  // generated + previewImage persist across open/close so user can't re-generate
   const [generated, setGenerated] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [step, setStep] = useState<1 | 2>(1);
   const [activeTab, setActiveTab] = useState<"selfie" | "prompt">("selfie");
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [progressIndex, setProgressIndex] = useState(0);
   const [selfieDataUrl, setSelfieDataUrl] = useState<string | null>(null);
 
@@ -273,14 +274,16 @@ export function GenerationDrawer({
     return () => clearInterval(id);
   }, [loading]);
 
+  // On close: only reset UI state (step, prompt, error) — NOT generated/previewImage/loading
+  // so the limit persists across open/close cycles
   useEffect(() => {
-    if (!open) { clearError(); setPrompt(""); setStep(1); setPreviewImage(null); setGenerated(false); }
+    if (!open) { clearError(); setPrompt(""); setStep(1); }
   }, [open, clearError]);
 
   const activeSideLayers = layers.filter((l) => l.side === activeSide);
   const otherSideWithLayers = layers.find((l) => l.side !== activeSide);
   const showHint = activeSideLayers.length === 0 && !!otherSideWithLayers && step === 1;
-  const limitReached = generated;
+  const limitReached = generated || loading;
   const canGenerate = !limitReached && !loading && (activeTab === "selfie" ? !!selfieDataUrl : !!prompt.trim());
 
   const handleGenerateClick = async () => {
@@ -342,19 +345,25 @@ export function GenerationDrawer({
                         </Button>
                       </div>
 
-                      <AnimatePresence>
-                        {loading && <GeneratingThumbnail onClick={() => setStep(2)} />}
-                      </AnimatePresence>
 
                       {limitReached ? (
                         <div className="flex flex-col items-center justify-center py-6 text-center space-y-4">
-                          {previewImage && (
-                            <img src={previewImage} alt="Результат" className="w-40 h-40 rounded-xl object-cover border border-border shadow-sm" />
+                          {loading ? (
+                            <>
+                              <GeneratingThumbnail onClick={() => setStep(2)} />
+                              <p className="text-sm text-muted-foreground">Генерація вже запущена</p>
+                            </>
+                          ) : (
+                            <>
+                              {previewImage && (
+                                <img src={previewImage} alt="Результат" className="w-40 h-40 rounded-xl object-cover border border-border shadow-sm" />
+                              )}
+                              <p className="text-sm font-medium text-foreground">Ви вже використали безкоштовну генерацію для цього товару.</p>
+                              <Button className="w-full" onClick={() => setStep(2)}>
+                                Переглянути результат
+                              </Button>
+                            </>
                           )}
-                          <p className="text-sm font-medium text-foreground">Ви вже використали безкоштовну генерацію для цього товару.</p>
-                          <Button className="w-full" onClick={() => setStep(2)}>
-                            Переглянути результат
-                          </Button>
                         </div>
                       ) : (
                         <>
