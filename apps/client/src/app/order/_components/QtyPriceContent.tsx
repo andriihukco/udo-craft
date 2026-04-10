@@ -176,7 +176,6 @@ export function QtyPriceContent({
                   <span className="truncate max-w-[60%]">
                     <span className="font-medium text-foreground">{printTypeLabels[layer.type] ?? layer.type}</span>
                     {sizeLabel ? ` · ${sizeLabel}` : " · Оберіть розмір"}
-                    {row?.size_min_cm && row?.size_max_cm ? ` (${row.size_min_cm}–${row.size_max_cm} см)` : ""}
                     <span className="text-[10px] ml-1 opacity-60">({layer.side})</span>
                   </span>
                   <span className="font-medium shrink-0 ml-2 text-right">

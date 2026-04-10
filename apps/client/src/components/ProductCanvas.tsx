@@ -669,6 +669,11 @@ export default function ProductCanvas({
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Never intercept when user is typing in an input, textarea, or contenteditable
+      const tag = (document.activeElement as HTMLElement)?.tagName?.toLowerCase();
+      const isEditable = tag === "input" || tag === "textarea" || (document.activeElement as HTMLElement)?.isContentEditable;
+      if (isEditable) return;
+
       const canvas = fabricRef.current;
       if (!canvas) return;
       
