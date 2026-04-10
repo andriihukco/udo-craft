@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main, develop]
   push:
-    branches: [develop]
+    branches: [develop, main]
 
 jobs:
   check:
@@ -27,3 +27,27 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build shared packages
+        run: npm run build:shared && npm run build:ui
+
+      - name: Test admin
+        run: npm run test --workspace=admin
+
+      - name: Test client
+        run: npm run test --workspace=client
