@@ -42,6 +42,7 @@ interface ProductCanvasProps {
   onLayerDelete?: (layerId: string) => void;
   onLayerDuplicate?: (layer: PrintLayer) => void;
   onLayerTransformChange?: (layerId: string, transform: NonNullable<PrintLayer["transform"]>) => void;
+  onTextChange?: (layerId: string, textContent: string) => void;
   onAIGenerate?: () => void;
 }
 
@@ -64,6 +65,7 @@ export default function ProductCanvas({
   onLayerDelete,
   onLayerDuplicate,
   onLayerTransformChange,
+  onTextChange,
   onAIGenerate,
 }: ProductCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -97,6 +99,8 @@ export default function ProductCanvas({
   useEffect(() => { onLayerDeleteRef.current = onLayerDelete; }, [onLayerDelete]);
   const onLayerDuplicateRef = useRef(onLayerDuplicate);
   useEffect(() => { onLayerDuplicateRef.current = onLayerDuplicate; }, [onLayerDuplicate]);
+  const onTextChangeRef = useRef(onTextChange);
+  useEffect(() => { onTextChangeRef.current = onTextChange; }, [onTextChange]);
 
   useEffect(() => {
     onRemoveBgStateChange?.(removingBg);
@@ -148,6 +152,9 @@ export default function ProductCanvas({
       transparentCorners: false,
       padding: 6,
       lockUniScaling: true,
+      centeredRotation: true,
+      centeredScaling: false,
+      snapAngle: 0,
     });
     fabric.Object.prototype.setControlsVisibility({ ml: false, mr: false, mt: false, mb: false });
     canvas.on("selection:created", (e) => onLayerSelectRef.current?.((e as any).selected?.[0]?._layerId ?? null));
@@ -172,12 +179,15 @@ export default function ProductCanvas({
     canvas.on("object:scaling", saveTransform);
 
     // ── Snap-to-center guide lines ───────────────────────────────────────
+    const snapColor = typeof document !== "undefined"
+      ? getComputedStyle(document.documentElement).getPropertyValue("--color-destructive").trim() || "#ef4444"
+      : "#ef4444";
     const vLine = new fabric.Line([CANVAS_SIZE / 2, 0, CANVAS_SIZE / 2, CANVAS_SIZE], {
-      stroke: "#ef4444", strokeWidth: 1, selectable: false, evented: false,
+      stroke: snapColor, strokeWidth: 1, selectable: false, evented: false,
       visible: false, strokeDashArray: [4, 4],
     });
     const hLine = new fabric.Line([0, CANVAS_SIZE / 2, CANVAS_SIZE, CANVAS_SIZE / 2], {
-      stroke: "#ef4444", strokeWidth: 1, selectable: false, evented: false,
+      stroke: snapColor, strokeWidth: 1, selectable: false, evented: false,
       visible: false, strokeDashArray: [4, 4],
     });
     canvas.add(vLine);
@@ -220,10 +230,67 @@ export default function ProductCanvas({
       canvas.renderAll();
     });
 
+    // ── 90° angle snapping while rotating ───────────────────────────────
+    canvas.on("object:rotating", (e) => {
+      const obj = e.target;
+      if (!obj || !(obj as any)._isLayer) return;
+      const SNAP_DEG = 90;
+      const SNAP_THRESHOLD = 8;
+      const raw = obj.angle ?? 0;
+      const normalized = ((raw % 360) + 360) % 360;
+      const nearest = Math.round(normalized / SNAP_DEG) * SNAP_DEG;
+      if (Math.abs(normalized - nearest) < SNAP_THRESHOLD) {
+        obj.set({ angle: nearest % 360 });
+        obj.setCoords();
+      }
+    });
+    canvas.on("mouse:dblclick", (e) => {
+      const obj = e.target;
+      if (!obj || !(obj as any)._isText) return;
+      const textObj = obj as fabric.IText;
+      if (typeof textObj.enterEditing === "function") {
+        textObj.enterEditing();
+        canvas.renderAll();
+      }
+    });
+
+    // IText inline editing → sync text content back to layer state
+    canvas.on("text:changed", (e: any) => {
+      const obj = e.target;
+      if (!obj || !(obj as any)._isText) return;
+      const layerId = (obj as any)._layerId as string;
+      if (!layerId) return;
+      // Sync the new text content to React state
+      const newText = (obj as fabric.IText).text ?? "";
+      onTextChangeRef.current?.(layerId, newText);
+    });
+
+    // Mobile double-tap detection
+    let lastTap = 0;
+    let lastTapTarget: fabric.Object | null = null;
+    const canvasEl = canvas.getElement();
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      const now = Date.now();
+      const obj = canvas.getActiveObject();
+      if (now - lastTap < 300 && obj && obj === lastTapTarget && (obj as any)._isText) {
+        e.preventDefault();
+        const textObj = obj as fabric.IText;
+        if (typeof textObj.enterEditing === "function") {
+          textObj.enterEditing();
+          canvas.renderAll();
+        }
+      }
+      lastTap = now;
+      lastTapTarget = obj ?? null;
+    };
+    canvasEl.addEventListener("touchstart", handleTouchStart, { passive: false });
+
     fabricRef.current = canvas;
     backgroundUrlRef.current = null;
     setCanvasReady(true);
     return () => {
+      canvasEl.removeEventListener("touchstart", handleTouchStart);
       canvas.dispose();
       fabricRef.current = null;
       setCanvasReady(false);
@@ -379,7 +446,7 @@ export default function ProductCanvas({
       const largeArc = arcDeg > 180 ? 1 : 0;
       const sweep = curve > 0 ? 1 : 0;
       const path = new fabric.Path(`M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} ${sweep} ${x2} ${y2}`, { visible: false });
-      return new fabric.Text(content, {
+      return new fabric.IText(content, {
         fontFamily,
         fontSize,
         fill,
@@ -394,10 +461,11 @@ export default function ProductCanvas({
         scaleX,
         scaleY,
         angle,
+        editable: true,
       } as any);
     }
 
-    return new fabric.Text(content, {
+    return new fabric.IText(content, {
       fontFamily,
       fontSize,
       fill,
@@ -410,6 +478,7 @@ export default function ProductCanvas({
       scaleY,
       angle,
       width: 400,
+      editable: true,
     });
   };
 
@@ -490,16 +559,21 @@ export default function ProductCanvas({
               canvas.add(newText);
               canvas.setActiveObject(newText);
             } else {
-              const textObj = existing as fabric.Text;
-              textObj.set({
-                text: layer.textContent ?? "Текст",
-                fill: layer.textColor ?? "#000000",
-                fontFamily: layer.textFont ?? "Montserrat",
-                fontSize: layer.textFontSize ?? 48,
-                textAlign: layer.textAlign ?? "center",
-              } as any);
-              if (typeof (textObj as any).initDimensions === "function") (textObj as any).initDimensions();
-              syncLayerSizing(textObj, layer);
+              const textObj = existing as fabric.IText;
+              // Don't overwrite text while user is editing inline on canvas
+              if ((textObj as any).isEditing) {
+                syncLayerSizing(textObj, layer);
+              } else {
+                textObj.set({
+                  text: layer.textContent ?? "Текст",
+                  fill: layer.textColor ?? "#000000",
+                  fontFamily: layer.textFont ?? "Montserrat",
+                  fontSize: layer.textFontSize ?? 48,
+                  textAlign: layer.textAlign ?? "center",
+                } as any);
+                if (typeof (textObj as any).initDimensions === "function") (textObj as any).initDimensions();
+                syncLayerSizing(textObj, layer);
+              }
             }
             try { fabricRef.current.renderAll(); } catch {}
           });
@@ -546,7 +620,15 @@ export default function ProductCanvas({
         return;
       }
 
-      if (existingIds.has(layer.id) || loadingIds.current.has(layer.id)) return;
+      if (existingIds.has(layer.id) || loadingIds.current.has(layer.id)) {
+        // Still need to sync sizing even for existing layers (e.g. dropdown size change)
+        const existingObj = canvas.getObjects().find((obj) => (obj as any)._layerId === layer.id);
+        if (existingObj) {
+          syncLayerSizing(existingObj, layer);
+          canvas.renderAll();
+        }
+        return;
+      }
       const src = layerSrc(layer.url, layer.uploadedUrl);
       const options = src.startsWith("blob:") ? {} : { crossOrigin: "anonymous" };
       loadingIds.current.add(layer.id);
@@ -669,6 +751,11 @@ export default function ProductCanvas({
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Never intercept when user is typing in an input, textarea, or contenteditable
+      const tag = (document.activeElement as HTMLElement)?.tagName?.toLowerCase();
+      const isEditable = tag === "input" || tag === "textarea" || (document.activeElement as HTMLElement)?.isContentEditable;
+      if (isEditable) return;
+
       const canvas = fabricRef.current;
       if (!canvas) return;
       
@@ -782,7 +869,22 @@ export default function ProductCanvas({
           }}
           title="Видалити фон"
           label="Фон"
-          disabled={(!hasObjects && !activeLayerId) || removingBg || (!!activeLayerId && layersRef.current.find(l => l.id === activeLayerId)?.kind === "text")}
+          disabled={(() => {
+            if (!hasObjects && !activeLayerId) return true;
+            if (removingBg) return true;
+            const layer = activeLayerId ? layersRef.current.find(l => l.id === activeLayerId) : null;
+            if (!layer) return true;
+            if (layer.kind === "text") return true;
+            // Only allow raster images — disable for svg, pdf, etc.
+            const url = layer.url ?? "";
+            const mime = layer.file?.type ?? "";
+            const ext = url.split("?")[0].split(".").pop()?.toLowerCase() ?? "";
+            const allowed = ["jpg", "jpeg", "png", "webp"];
+            const allowedMime = ["image/jpeg", "image/png", "image/webp"];
+            if (mime && !allowedMime.includes(mime)) return true;
+            if (!mime && !allowed.includes(ext)) return true;
+            return false;
+          })()}
         >
           {removingBg ? <Loader2 className="size-3.5 animate-spin" /> : <Eraser className="size-3.5" />}
         </ToolBtn>
@@ -807,14 +909,6 @@ export default function ProductCanvas({
               <div className="w-full h-full bg-muted animate-pulse" />
             </div>
           )}
-          {removingBg && (
-            <div className="absolute inset-0 rounded-2xl bg-background/60 backdrop-blur-sm flex items-center justify-center z-10">
-              <div className="flex items-center gap-2.5 rounded-2xl border border-border bg-card px-5 py-3.5 shadow-xl text-sm font-semibold">
-                <Loader2 className="size-4 animate-spin text-primary" />
-                Видаляємо фон...
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -830,6 +924,7 @@ export default function ProductCanvas({
                 key={key}
                 type="button"
                 onClick={() => onSideChange(key)}
+                aria-pressed={activeSide === key}
                 className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                   activeSide === key ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-border hover:border-primary/50"
                 }`}

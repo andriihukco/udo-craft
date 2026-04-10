@@ -9,9 +9,9 @@ import {
   Package, Tag, Ruler, Paintbrush,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAIGeneration } from "./useAIGeneration";
 import { dataUrlToFile } from "../_lib/dataUrlToFile";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import type { PrintLayer } from "@udo-craft/shared";
 import type { PrintTypePricingRow } from "@udo-craft/shared";
@@ -102,14 +102,18 @@ function MatrixIconGrid() {
   );
 }
 
-function RotatingPresets({ onSelect }: { onSelect: (text: string) => void }) {
+function RotatingPresets({ onSelect, selected }: { onSelect: (text: string) => void; selected: string }) {
   const [visible, setVisible] = useState<string[]>(() =>
     [...ALL_PRESETS].sort(() => Math.random() - 0.5).slice(0, 3)
   );
   const visibleRef = useRef(visible);
   visibleRef.current = visible;
 
+  // Stop rotating once user picks a chip
+  const frozen = !!selected;
+
   useEffect(() => {
+    if (frozen) return;
     const id = setInterval(() => {
       const current = visibleRef.current;
       const others = ALL_PRESETS.filter((p) => !current.includes(p));
@@ -117,26 +121,40 @@ function RotatingPresets({ onSelect }: { onSelect: (text: string) => void }) {
       setVisible([...pool].sort(() => Math.random() - 0.5).slice(0, 3));
     }, 3000);
     return () => clearInterval(id);
-  }, []);
+  }, [frozen]);
+
+  // When a chip is selected, ensure it's in the visible list
+  useEffect(() => {
+    if (selected && !visible.includes(selected)) {
+      setVisible((prev) => [selected, ...prev.slice(0, 2)]);
+    }
+  }, [selected]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="flex gap-1.5 flex-wrap">
       <AnimatePresence mode="popLayout">
-        {visible.map((preset) => (
-          <motion.button
-            key={preset}
-            type="button"
-            layout
-            initial={{ opacity: 0, scale: 0.85 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.85 }}
-            transition={{ duration: 0.25 }}
-            onClick={() => onSelect(preset)}
-            className="rounded-full border border-border bg-transparent px-2.5 py-1 text-xs text-muted-foreground hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            {preset}
-          </motion.button>
-        ))}
+        {visible.map((preset) => {
+          const isActive = preset === selected;
+          return (
+            <motion.button
+              key={preset}
+              type="button"
+              layout
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.85 }}
+              transition={{ duration: 0.25 }}
+              onClick={() => onSelect(isActive ? "" : preset)}
+              className={`rounded-full border px-2.5 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                isActive
+                  ? "border-primary bg-primary text-primary-foreground font-medium"
+                  : "border-border bg-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+              }`}
+            >
+              {preset}
+            </motion.button>
+          );
+        })}
       </AnimatePresence>
     </div>
   );
@@ -247,10 +265,11 @@ export function GenerationDrawer({
   captureRef, layers, mockups, selectedColor, productImages, productName,
 }: GenerationDrawerProps) {
   const [prompt, setPrompt] = useState("");
+  // generated + previewImage persist across open/close so user can't re-generate
   const [generated, setGenerated] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [step, setStep] = useState<1 | 2>(1);
   const [activeTab, setActiveTab] = useState<"selfie" | "prompt">("selfie");
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [progressIndex, setProgressIndex] = useState(0);
   const [selfieDataUrl, setSelfieDataUrl] = useState<string | null>(null);
 
@@ -273,14 +292,16 @@ export function GenerationDrawer({
     return () => clearInterval(id);
   }, [loading]);
 
+  // On close: only reset UI state (step, prompt, error) — NOT generated/previewImage/loading
+  // so the limit persists across open/close cycles
   useEffect(() => {
-    if (!open) { clearError(); setPrompt(""); setStep(1); setPreviewImage(null); setGenerated(false); }
+    if (!open) { clearError(); setPrompt(""); setStep(1); }
   }, [open, clearError]);
 
   const activeSideLayers = layers.filter((l) => l.side === activeSide);
   const otherSideWithLayers = layers.find((l) => l.side !== activeSide);
   const showHint = activeSideLayers.length === 0 && !!otherSideWithLayers && step === 1;
-  const limitReached = generated;
+  const limitReached = generated || loading;
   const canGenerate = !limitReached && !loading && (activeTab === "selfie" ? !!selfieDataUrl : !!prompt.trim());
 
   const handleGenerateClick = async () => {
@@ -342,19 +363,25 @@ export function GenerationDrawer({
                         </Button>
                       </div>
 
-                      <AnimatePresence>
-                        {loading && <GeneratingThumbnail onClick={() => setStep(2)} />}
-                      </AnimatePresence>
 
                       {limitReached ? (
                         <div className="flex flex-col items-center justify-center py-6 text-center space-y-4">
-                          {previewImage && (
-                            <img src={previewImage} alt="Результат" className="w-40 h-40 rounded-xl object-cover border border-border shadow-sm" />
+                          {loading ? (
+                            <>
+                              <GeneratingThumbnail onClick={() => setStep(2)} />
+                              <p className="text-sm text-muted-foreground">Генерація вже запущена</p>
+                            </>
+                          ) : (
+                            <>
+                              {previewImage && (
+                                <img src={previewImage} alt="Результат" className="w-40 h-40 rounded-xl object-cover border border-border shadow-sm" />
+                              )}
+                              <p className="text-sm font-medium text-foreground">Ви вже використали безкоштовну генерацію для цього товару.</p>
+                              <Button className="w-full" onClick={() => setStep(2)}>
+                                Переглянути результат
+                              </Button>
+                            </>
                           )}
-                          <p className="text-sm font-medium text-foreground">Ви вже використали безкоштовну генерацію для цього товару.</p>
-                          <Button className="w-full" onClick={() => setStep(2)}>
-                            Переглянути результат
-                          </Button>
                         </div>
                       ) : (
                         <>
@@ -386,7 +413,7 @@ export function GenerationDrawer({
                                   rows={3}
                                   className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                 />
-                                <RotatingPresets onSelect={setPrompt} />
+                                <RotatingPresets onSelect={setPrompt} selected={prompt} />
                               </div>
                             )}
                           </div>

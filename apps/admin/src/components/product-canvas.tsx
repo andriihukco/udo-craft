@@ -60,6 +60,7 @@ interface ProductCanvasProps {
   onLayerDelete?: (layerId: string) => void;
   onLayerDuplicate?: (layer: PrintLayer) => void;
   onLayerTransformChange?: (layerId: string, transform: NonNullable<PrintLayer["transform"]>) => void;
+  onTextChange?: (layerId: string, textContent: string) => void;
   onAIGenerate?: () => void;
 }
 
@@ -67,7 +68,7 @@ const CANVAS_SIZE = 520;
 
 export default function ProductCanvas({
   product, printZones, layers, activeSide, onSideChange,
-  variantImages, onSave, saveRef, fabricCanvasRef, captureRef, captureAllRef, activeLayerId, onLayerSelect, onRemoveBg, onLayerDelete, onLayerDuplicate, onLayerTransformChange, onAIGenerate,
+  variantImages, onSave, saveRef, fabricCanvasRef, captureRef, captureAllRef, activeLayerId, onLayerSelect, onRemoveBg, onLayerDelete, onLayerDuplicate, onLayerTransformChange, onTextChange, onAIGenerate,
 }: ProductCanvasProps) {
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -107,6 +108,8 @@ export default function ProductCanvas({
   useEffect(() => { onLayerDeleteRef.current = onLayerDelete; }, [onLayerDelete]);
   const onLayerDuplicateRef = useRef(onLayerDuplicate);
   useEffect(() => { onLayerDuplicateRef.current = onLayerDuplicate; }, [onLayerDuplicate]);
+  const onTextChangeRef = useRef(onTextChange);
+  useEffect(() => { onTextChangeRef.current = onTextChange; }, [onTextChange]);
 
   // ── Responsive resize ────────────────────────────────────────────────────
   useEffect(() => {
@@ -144,6 +147,7 @@ export default function ProductCanvas({
       cornerColor: "#ffffff", cornerStrokeColor: primary, cornerSize: 10,
       cornerStyle: "circle", borderColor: primary, borderScaleFactor: 1.5,
       transparentCorners: false, padding: 6, lockUniScaling: true,
+      centeredRotation: true,
     });
     fabric.Object.prototype.setControlsVisibility({ ml: false, mr: false, mt: false, mb: false });
     canvas.on("selection:created", (e) => onLayerSelect?.((e as any).selected?.[0]?._layerId ?? null));
@@ -214,11 +218,66 @@ export default function ProductCanvas({
       canvas.renderAll();
     });
 
+    // ── 90° rotation snap ────────────────────────────────────────────────
+    canvas.on("object:rotating", (e) => {
+      const obj = e.target;
+      if (!obj || !(obj as any)._isLayer) return;
+      const raw = obj.angle ?? 0;
+      const normalized = ((raw % 360) + 360) % 360;
+      const nearest = Math.round(normalized / 90) * 90;
+      if (Math.abs(normalized - nearest) < 8) {
+        obj.set({ angle: nearest % 360 });
+        obj.setCoords();
+      }
+    });
+
+    // ── Double-click / double-tap to enter IText editing ─────────────────
+    canvas.on("mouse:dblclick", (e) => {
+      const obj = e.target;
+      if (!obj || !(obj as any)._isText) return;
+      const textObj = obj as fabric.IText;
+      if (typeof textObj.enterEditing === "function") {
+        textObj.enterEditing();
+        canvas.renderAll();
+      }
+    });
+
+    // IText text:changed → sync back to React state
+    canvas.on("text:changed", (e: any) => {
+      const obj = e.target;
+      if (!obj || !(obj as any)._isText) return;
+      const layerId = (obj as any)._layerId as string;
+      if (!layerId) return;
+      onTextChangeRef.current?.(layerId, (obj as fabric.IText).text ?? "");
+    });
+
+    // Mobile double-tap
+    let lastTap = 0;
+    let lastTapTarget: fabric.Object | null = null;
+    const canvasEl = canvas.getElement();
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      const now = Date.now();
+      const obj = canvas.getActiveObject();
+      if (now - lastTap < 300 && obj && obj === lastTapTarget && (obj as any)._isText) {
+        e.preventDefault();
+        const textObj = obj as fabric.IText;
+        if (typeof textObj.enterEditing === "function") {
+          textObj.enterEditing();
+          canvas.renderAll();
+        }
+      }
+      lastTap = now;
+      lastTapTarget = obj ?? null;
+    };
+    canvasEl.addEventListener("touchstart", handleTouchStart, { passive: false });
+
     fabricRef.current = canvas;
     if (fabricCanvasRef) fabricCanvasRef.current = canvas;
-    backgroundUrlRef.current = null; // reset so background reloads on new canvas
+    backgroundUrlRef.current = null;
     setCanvasReady(true);
     return () => {
+      canvasEl.removeEventListener("touchstart", handleTouchStart);
       canvas.dispose();
       fabricRef.current = null;
       if (fabricCanvasRef) fabricCanvasRef.current = null;
@@ -378,20 +437,21 @@ export default function ProductCanvas({
       const sweep = curve > 0 ? 1 : 0;
       const pathStr = `M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} ${sweep} ${x2} ${y2}`;
       const path = new fabric.Path(pathStr, { visible: false });
-      const text = new fabric.Text(content, {
+      const text = new fabric.IText(content, {
         fontFamily, fontSize, fill, textAlign: align,
         path, pathStartOffset: 0, pathSide: "left",
         hasControls: true, hasBorders: true,
         left: baseLeft, top: baseTop, scaleX, scaleY, angle,
+        editable: true,
       } as any);
       return text;
     }
 
-    return new fabric.Text(content, {
+    return new fabric.IText(content, {
       fontFamily, fontSize, fill, textAlign: align,
       hasControls: true, hasBorders: true,
       left: baseLeft, top: baseTop, scaleX, scaleY, angle,
-      width: 400,
+      width: 400, editable: true,
     });
   };
 
@@ -469,19 +529,23 @@ export default function ProductCanvas({
               syncLayerSizing(newText, layer);
               canvas.add(newText); canvas.setActiveObject(newText);
             } else {
-              const textObj = existing as fabric.Text;
-              textObj.set({
-                text: layer.textContent ?? "Текст",
-                fill: layer.textColor ?? "#000000",
-                fontFamily,
-                fontSize: layer.textFontSize ?? 48,
-                textAlign: layer.textAlign ?? "center",
-              } as any);
-              // Force Fabric to re-measure glyph metrics with the new font
-              if (typeof (textObj as any).initDimensions === "function") {
-                (textObj as any).initDimensions();
+              const textObj = existing as fabric.IText;
+              // Don't overwrite text while user is editing inline on canvas
+              if ((textObj as any).isEditing) {
+                syncLayerSizing(textObj, layer);
+              } else {
+                textObj.set({
+                  text: layer.textContent ?? "Текст",
+                  fill: layer.textColor ?? "#000000",
+                  fontFamily,
+                  fontSize: layer.textFontSize ?? 48,
+                  textAlign: layer.textAlign ?? "center",
+                } as any);
+                if (typeof (textObj as any).initDimensions === "function") {
+                  (textObj as any).initDimensions();
+                }
+                syncLayerSizing(textObj, layer);
               }
-              syncLayerSizing(textObj, layer);
             }
             try { fabricRef.current.renderAll(); } catch { /* disposed */ }
           });
@@ -626,6 +690,11 @@ export default function ProductCanvas({
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Never intercept when user is typing in an input, textarea, or contenteditable
+      const tag = (document.activeElement as HTMLElement)?.tagName?.toLowerCase();
+      const isEditable = tag === "input" || tag === "textarea" || (document.activeElement as HTMLElement)?.isContentEditable;
+      if (isEditable) return;
+
       const canvas = fabricRef.current;
       if (!canvas) return;
       

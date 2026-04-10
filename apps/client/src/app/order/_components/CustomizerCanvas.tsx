@@ -29,6 +29,7 @@ interface CustomizerCanvasProps {
   onLayerDelete: (id: string) => void;
   onLayerDuplicate: (layer: PrintLayer) => void;
   onLayerTransformChange: (id: string, transform: { left: number; top: number; scaleX: number; scaleY: number; angle: number; flipX: boolean }) => void;
+  onTextChange: (id: string, textContent: string) => void;
   onAIGenerate?: () => void;
 }
 
@@ -36,7 +37,7 @@ export function CustomizerCanvas({
   product, printZones, layers, activeSide, activeLayerId,
   selectedVariantImages, canvasSaveRef, captureRef,
   onSideChange, onSave, onOffsetChange, onLayerSelect,
-  onRemoveBg, onRemoveBgStateChange, onLayerDelete, onLayerDuplicate, onLayerTransformChange, onAIGenerate,
+  onRemoveBg, onRemoveBgStateChange, onLayerDelete, onLayerDuplicate, onLayerTransformChange, onTextChange, onAIGenerate,
 }: CustomizerCanvasProps) {
   return (
     <ProductCanvas
@@ -57,6 +58,7 @@ export function CustomizerCanvas({
       onLayerDelete={onLayerDelete}
       onLayerDuplicate={onLayerDuplicate}
       onLayerTransformChange={onLayerTransformChange}
+      onTextChange={onTextChange}
       onAIGenerate={onAIGenerate}
     />
   );
