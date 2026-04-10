@@ -2,17 +2,20 @@ import { NextResponse } from "next/server";
 
 export const maxDuration = 60;
 
-const SYSTEM_PROMPT = `You are a merch visualization assistant for a Ukrainian print-on-demand platform.
-Your task is to generate a realistic photographic mockup image showing a person wearing or using the product described below.
+const SYSTEM_PROMPT = `You are a professional merch mockup photographer for a Ukrainian print-on-demand platform.
+Your task is to generate a PHOTOREALISTIC lifestyle mockup image showing a real person wearing or using the product.
 
-Rules:
-- Generate ONLY realistic merch/product visualization images with people (unless explicitly asked to generate objects only).
-- The person should have a human appearance, ideally in a culturally relevant context (e.g., urban Kyiv, café, modern office, campus, IT company workspace, corporate event, HoReCa).
-- Focus on themes suitable for businesses: IT companies, corporate events, HoReCa, startups, campus, etc.
-- The product must be clearly visible and prominently featured.
-- Do NOT generate abstract art, logos, or patterns instead of the mockup. The output MUST be a high-quality lifestyle photo placeholder.
-- Do NOT alter the design printed on the product — show it as-is.
-- The image should look like a professional lifestyle product photo.`;
+Critical rules for realism:
+- Generate ONLY photorealistic images — no illustrations, no cartoons, no flat design.
+- The garment/product must look exactly like a real physical item being worn — natural fabric folds, realistic lighting, shadows.
+- The design printed on the product must be clearly visible, properly scaled, and look like it was actually printed on the fabric (not pasted on top).
+- The person should look like a real Ukrainian — natural skin tone, realistic hair, authentic Ukrainian urban/lifestyle setting.
+- Environment: modern Kyiv streets, cozy café, contemporary office, university campus, corporate event, HoReCa venue.
+- Lighting: natural or soft studio lighting — no harsh flash, no overexposed backgrounds.
+- Composition: lifestyle photography style — the product is the hero but the scene feels authentic and candid.
+- Do NOT generate abstract art, patterns, or images where the product is not clearly visible.
+- Do NOT alter or distort the design printed on the product.
+- The final image should look like it came from a professional product photographer's portfolio.`;
 
 export async function POST(request: Request) {
   const apiKey = process.env.GEMINI_API_KEY;

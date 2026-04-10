@@ -675,8 +675,10 @@ export default function ProductCanvas({
       const activeObj = canvas.getActiveObject();
       if (!activeObj || !(activeObj as any)._isLayer) return;
 
-      // Delete key (works on Mac and Windows)
+      // Delete key — only when NOT editing text
       if (e.key === "Delete" || e.key === "Backspace") {
+        // If the active object is a text layer in editing mode, let the browser handle it
+        if ((activeObj as any).isEditing) return;
         e.preventDefault();
         const layerId = (activeObj as any)._layerId;
         canvas.remove(activeObj);
@@ -782,7 +784,7 @@ export default function ProductCanvas({
           }}
           title="Видалити фон"
           label="Фон"
-          disabled={(!hasObjects && !activeLayerId) || removingBg || (!!activeLayerId && layersRef.current.find(l => l.id === activeLayerId)?.kind === "text")}
+          disabled={(!hasObjects && !activeLayerId) || removingBg || (!!activeLayerId && layersRef.current.find(l => l.id === activeLayerId)?.kind === "text") || (!!activeLayerId && (layersRef.current.find(l => l.id === activeLayerId)?.url ?? "").toLowerCase().includes(".svg"))}
         >
           {removingBg ? <Loader2 className="size-3.5 animate-spin" /> : <Eraser className="size-3.5" />}
         </ToolBtn>

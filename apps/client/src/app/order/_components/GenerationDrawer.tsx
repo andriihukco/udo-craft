@@ -331,12 +331,13 @@ export function GenerationDrawer({
                       exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}
                       className="space-y-3"
                     >
-                      <div className="flex items-center justify-between">
+                      {/* Header */}
+                      <div className="flex items-start justify-between gap-2">
                         <div>
                           <h2 className="text-base font-semibold">Побачте мерч на людині</h2>
-                          <p className="text-[11px] text-muted-foreground">AI покаже, як виглядає ваш дизайн у реальному житті</p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">1 безкоштовна генерація — побачте свій дизайн у реальному житті</p>
                         </div>
-                        <Button variant="ghost" size="icon" onClick={onClose} aria-label="Закрити" className="h-8 w-8 -mr-2 shrink-0 ml-2">
+                        <Button variant="ghost" size="icon" onClick={onClose} aria-label="Закрити" className="h-8 w-8 shrink-0 -mt-0.5 -mr-2">
                           <X className="h-5 w-5" />
                         </Button>
                       </div>

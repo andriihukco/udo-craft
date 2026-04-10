@@ -151,27 +151,37 @@ export function QtyPriceContent({
         </div>
         {discountPct > 0 && (
           <div className="flex justify-between text-sm text-emerald-600">
-            <span>Знижка</span>
+            <span>Знижка на товар</span>
             <span className="font-medium">−{discountPct}%</span>
           </div>
         )}
-        {layers.length > 0 && (
-          <div className="space-y-1 pt-1 border-t border-border/40">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Нанесення</p>
-            {layers.map((layer) => {
-              const rows = pricing.filter((r) => r.print_type === layer.type);
-              const sizeLabel = layer.sizeLabel as string | undefined;
-              const row = rows.length && sizeLabel
-                ? (rows.find((r) => r.size_label === sizeLabel) ?? null)
-                : null;
-              const sorted = row ? [...row.qty_tiers].sort((a, b) => b.min_qty - a.min_qty) : [];
-              const tier = sorted.find((t) => quantity >= t.min_qty) ?? sorted[sorted.length - 1];
-              const price = sizeLabel ? (((tier?.price_cents ?? layer.priceCents) ?? 0) / 100) : 0;
-              const printTypeLabels: Record<string, string> = {
-                dtf: "DTF", embroidery: "Вишивка", screen: "Шовкодрук",
-                sublimation: "Сублімація", patch: "Нашивка",
-              };
-              return (
+        {layers.length > 0 && (() => {
+          const printTypeLabels: Record<string, string> = {
+            dtf: "DTF", embroidery: "Вишивка", screen: "Шовкодрук",
+            sublimation: "Сублімація", patch: "Нашивка",
+          };
+          // Compute base print cost (at qty=1) and current print cost for discount display
+          let basePrintTotal = 0;
+          let currentPrintTotal = 0;
+          const layerRows = layers.map((layer) => {
+            const rows = pricing.filter((r) => r.print_type === layer.type);
+            const sizeLabel = layer.sizeLabel as string | undefined;
+            const row = rows.length && sizeLabel ? (rows.find((r) => r.size_label === sizeLabel) ?? null) : null;
+            const sortedTiers = row ? [...row.qty_tiers].sort((a, b) => b.min_qty - a.min_qty) : [];
+            const currentTier = sortedTiers.find((t) => quantity >= t.min_qty) ?? sortedTiers[sortedTiers.length - 1];
+            const baseTier = sortedTiers[sortedTiers.length - 1]; // lowest qty tier = base price
+            const currentPrice = sizeLabel ? (((currentTier?.price_cents ?? layer.priceCents) ?? 0) / 100) : 0;
+            const basePrice = sizeLabel ? (((baseTier?.price_cents ?? layer.priceCents) ?? 0) / 100) : 0;
+            if (sizeLabel) { basePrintTotal += basePrice; currentPrintTotal += currentPrice; }
+            return { layer, row, sizeLabel, currentPrice, basePrice };
+          });
+          const printDiscountPct = basePrintTotal > 0 && currentPrintTotal < basePrintTotal
+            ? Math.round((1 - currentPrintTotal / basePrintTotal) * 100)
+            : 0;
+          return (
+            <div className="space-y-1 pt-1 border-t border-border/40">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Нанесення</p>
+              {layerRows.map(({ layer, row, sizeLabel, currentPrice, basePrice }) => (
                 <div key={layer.id} className="flex justify-between text-xs text-muted-foreground">
                   <span className="truncate max-w-[60%]">
                     <span className="font-medium text-foreground">{printTypeLabels[layer.type] ?? layer.type}</span>
@@ -180,19 +190,53 @@ export function QtyPriceContent({
                     <span className="text-[10px] ml-1 opacity-60">({layer.side})</span>
                   </span>
                   <span className="font-medium shrink-0 ml-2 text-right">
-                    {sizeLabel ? (price > 0 ? `+${price.toFixed(0)} ₴/шт` : "—") : "Оберіть розмір"}
+                    {sizeLabel ? (
+                      currentPrice > 0 ? (
+                        <span className="flex items-center gap-1">
+                          {basePrice > currentPrice && <span className="line-through opacity-50">{basePrice.toFixed(0)}</span>}
+                          +{currentPrice.toFixed(0)} ₴/шт
+                        </span>
+                      ) : "—"
+                    ) : "Оберіть розмір"}
                   </span>
                 </div>
-              );
-            })}
-            {printCostPerUnit > 0 && (
-              <div className="flex justify-between text-xs font-medium pt-0.5 border-t border-border/30">
-                <span className="text-muted-foreground">Разом нанесення</span>
-                <span>+{printCostPerUnit.toFixed(0)} ₴/шт</span>
-              </div>
-            )}
-          </div>
-        )}
+              ))}
+              {printCostPerUnit > 0 && (
+                <div className="flex justify-between text-xs font-medium pt-0.5 border-t border-border/30">
+                  <span className="text-muted-foreground">Разом нанесення</span>
+                  <span>+{printCostPerUnit.toFixed(0)} ₴/шт</span>
+                </div>
+              )}
+              {printDiscountPct > 0 && (
+                <div className="flex justify-between text-xs text-emerald-600">
+                  <span>Знижка на нанесення</span>
+                  <span className="font-medium">−{printDiscountPct}%</span>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+        {/* Total discounts summary */}
+        {(discountPct > 0 || printCostPerUnit > 0) && (() => {
+          const itemSavings = (unitPrice - discounted) * quantity;
+          const basePrintCost = layers.reduce((sum, layer) => {
+            const rows = pricing.filter((r) => r.print_type === layer.type);
+            const sizeLabel = layer.sizeLabel as string | undefined;
+            const row = rows.length && sizeLabel ? (rows.find((r) => r.size_label === sizeLabel) ?? null) : null;
+            const sortedTiers = row ? [...row.qty_tiers].sort((a, b) => b.min_qty - a.min_qty) : [];
+            const baseTier = sortedTiers[sortedTiers.length - 1];
+            return sum + (sizeLabel ? (((baseTier?.price_cents ?? layer.priceCents) ?? 0) / 100) : 0);
+          }, 0);
+          const printSavings = (basePrintCost - printCostPerUnit) * quantity;
+          const totalSavings = itemSavings + printSavings;
+          if (totalSavings <= 0) return null;
+          return (
+            <div className="flex justify-between text-xs text-emerald-600 font-medium pt-0.5 border-t border-emerald-100">
+              <span>Загальна економія</span>
+              <span>−{totalSavings.toFixed(0)} ₴</span>
+            </div>
+          );
+        })()}
         <div className="border-t border-border/60 pt-2 flex items-baseline justify-between font-bold text-lg">
           <span>Разом</span>
           <div className="flex items-baseline gap-1.5 ml-auto">
