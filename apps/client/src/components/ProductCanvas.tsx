@@ -223,7 +223,21 @@ export default function ProductCanvas({
       canvas.renderAll();
     });
 
-    // ── Double-click / double-tap to enter text editing ──────────────────
+    // ── 90° angle snapping while rotating ───────────────────────────────
+    canvas.on("object:rotating", (e) => {
+      const obj = e.target;
+      if (!obj || !(obj as any)._isLayer) return;
+      const SNAP_DEG = 90;
+      const SNAP_THRESHOLD = 8; // degrees within which to snap
+      const raw = obj.angle ?? 0;
+      const normalized = ((raw % 360) + 360) % 360;
+      const nearest = Math.round(normalized / SNAP_DEG) * SNAP_DEG;
+      if (Math.abs(normalized - nearest) < SNAP_THRESHOLD) {
+        obj.set({ angle: nearest % 360 });
+      }
+      saveTransform(e);
+      canvas.renderAll();
+    });
     canvas.on("mouse:dblclick", (e) => {
       const obj = e.target;
       if (!obj || !(obj as any)._isText) return;
@@ -861,14 +875,6 @@ export default function ProductCanvas({
           {!backgroundLoaded && (
             <div className="absolute inset-0 rounded-2xl overflow-hidden z-10 pointer-events-none">
               <div className="w-full h-full bg-muted animate-pulse" />
-            </div>
-          )}
-          {removingBg && (
-            <div className="absolute inset-0 rounded-2xl bg-background/60 backdrop-blur-sm flex items-center justify-center z-10">
-              <div className="flex items-center gap-2.5 rounded-2xl border border-border bg-card px-5 py-3.5 shadow-xl text-sm font-semibold">
-                <Loader2 className="size-4 animate-spin text-primary" />
-                Видаляємо фон...
-              </div>
             </div>
           )}
         </div>

@@ -201,6 +201,7 @@ export function Customizer({
       mobileSheet={s.mobileSheet}
       setMobileSheet={s.setMobileSheet}
       addingToCart={s.addingToCart}
+      removingBg={s.removingBg}
       leftPanel={leftPanel}
       canvas={canvas}
       rightPanel={rightPanel}

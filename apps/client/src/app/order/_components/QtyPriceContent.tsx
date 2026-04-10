@@ -247,7 +247,7 @@ export function QtyPriceContent({
       {/* Add to cart button */}
       {onAddToCart && (
         <>
-          {addDisabledReason && (
+          {addDisabledReason && !loading && (
             <p className="text-xs text-amber-600">{addDisabledReason}</p>
           )}
           <Button

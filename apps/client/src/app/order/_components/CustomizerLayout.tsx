@@ -10,6 +10,7 @@ interface CustomizerLayoutProps {
   mobileSheet: "config" | "price" | null;
   setMobileSheet: (v: "config" | "price" | null) => void;
   addingToCart: boolean;
+  removingBg?: boolean;
   leftPanel: React.ReactNode;
   canvas: React.ReactNode;
   rightPanel: React.ReactNode;
@@ -17,7 +18,7 @@ interface CustomizerLayoutProps {
 }
 
 export function CustomizerLayout({
-  productName, total, mobileSheet, setMobileSheet, addingToCart,
+  productName, total, mobileSheet, setMobileSheet, addingToCart, removingBg,
   leftPanel, canvas, rightPanel, onClose,
 }: CustomizerLayoutProps) {
   return (
@@ -84,6 +85,14 @@ export function CustomizerLayout({
           <div className="flex items-center gap-2.5 rounded-2xl border border-border bg-card px-5 py-3.5 shadow-xl text-sm font-semibold">
             <Loader2 className="size-4 animate-spin text-primary" />
             Додаємо...
+          </div>
+        </div>
+      )}
+      {removingBg && (
+        <div className="fixed inset-0 z-[10001] bg-background/60 backdrop-blur-sm flex items-center justify-center">
+          <div className="flex items-center gap-2.5 rounded-2xl border border-border bg-card px-5 py-3.5 shadow-xl text-sm font-semibold">
+            <Loader2 className="size-4 animate-spin text-primary" />
+            Видаляємо фон...
           </div>
         </div>
       )}
