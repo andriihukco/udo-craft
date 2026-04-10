@@ -102,14 +102,18 @@ function MatrixIconGrid() {
   );
 }
 
-function RotatingPresets({ onSelect }: { onSelect: (text: string) => void }) {
+function RotatingPresets({ onSelect, selected }: { onSelect: (text: string) => void; selected: string }) {
   const [visible, setVisible] = useState<string[]>(() =>
     [...ALL_PRESETS].sort(() => Math.random() - 0.5).slice(0, 3)
   );
   const visibleRef = useRef(visible);
   visibleRef.current = visible;
 
+  // Stop rotating once user picks a chip
+  const frozen = !!selected;
+
   useEffect(() => {
+    if (frozen) return;
     const id = setInterval(() => {
       const current = visibleRef.current;
       const others = ALL_PRESETS.filter((p) => !current.includes(p));
@@ -117,25 +121,38 @@ function RotatingPresets({ onSelect }: { onSelect: (text: string) => void }) {
       setVisible([...pool].sort(() => Math.random() - 0.5).slice(0, 3));
     }, 3000);
     return () => clearInterval(id);
-  }, []);
+  }, [frozen]);
+
+  // When a chip is selected, ensure it's in the visible list
+  useEffect(() => {
+    if (selected && !visible.includes(selected)) {
+      setVisible((prev) => [selected, ...prev.slice(0, 2)]);
+    }
+  }, [selected]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="flex gap-1.5 flex-wrap">
       <AnimatePresence mode="popLayout">
-        {visible.map((preset) => (
-          <motion.button
-            key={preset}
-            type="button"
-            layout
-            initial={{ opacity: 0, scale: 0.85 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.85 }}
-            transition={{ duration: 0.25 }}
-            onClick={() => onSelect(preset)}
-            className="rounded-full border border-border bg-transparent px-2.5 py-1 text-xs text-muted-foreground hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            {preset}
-          </motion.button>
+        {visible.map((preset) => {
+          const isActive = preset === selected;
+          return (
+            <motion.button
+              key={preset}
+              type="button"
+              layout
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.85 }}
+              transition={{ duration: 0.25 }}
+              onClick={() => onSelect(isActive ? "" : preset)}
+              className={`rounded-full border px-2.5 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                isActive
+                  ? "border-primary bg-primary text-primary-foreground font-medium"
+                  : "border-border bg-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+              }`}
+            >
+              {preset}
+            </motion.button>
         ))}
       </AnimatePresence>
     </div>
@@ -395,7 +412,7 @@ export function GenerationDrawer({
                                   rows={3}
                                   className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                 />
-                                <RotatingPresets onSelect={setPrompt} />
+                                <RotatingPresets onSelect={setPrompt} selected={prompt} />
                               </div>
                             )}
                           </div>
