@@ -13,7 +13,7 @@ if (!window.__SENTRY_INITIALIZED__) {
   window.__SENTRY_INITIALIZED__ = true;
 
   Sentry.init({
-    dsn: "https://d3e0ec76b9e05bdb6e38db0cb95a84d3@o4511174947045376.ingest.de.sentry.io/4511174949470288",
+    dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
     // Add optional integrations for additional features
     integrations: [Sentry.replayIntegration()],

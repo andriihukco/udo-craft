@@ -8,13 +8,14 @@ if (!window.__SENTRY_INITIALIZED__) {
   window.__SENTRY_INITIALIZED__ = true;
 
   Sentry.init({
-    dsn: "https://c4499391bcf9562150350326d96bbdfd@o4511174947045376.ingest.de.sentry.io/4511186651906128",
+    dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
     integrations: [Sentry.replayIntegration()],
     tracesSampleRate: 1,
+    enableLogs: true,
+    sendDefaultPii: true,
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1.0,
-    debug: false,
   });
 }
 
-// onRouterTransitionStart is not available in the installed Sentry version
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
