@@ -241,11 +241,26 @@ export default function ProductCanvas({
     canvas.on("mouse:dblclick", (e) => {
       const obj = e.target;
       if (!obj || !(obj as any)._isText) return;
-      const textObj = obj as fabric.Text;
-      if (typeof (textObj as any).enterEditing === "function") {
-        (textObj as any).enterEditing();
+      const textObj = obj as fabric.IText;
+      if (typeof textObj.enterEditing === "function") {
+        textObj.enterEditing();
         canvas.renderAll();
       }
+    });
+
+    // IText inline editing → sync text content back to layer state
+    canvas.on("text:changed", (e: any) => {
+      const obj = e.target;
+      if (!obj || !(obj as any)._isText) return;
+      const layerId = (obj as any)._layerId as string;
+      if (!layerId) return;
+      const transform = {
+        left: obj.left ?? 0, top: obj.top ?? 0,
+        scaleX: obj.scaleX ?? 1, scaleY: obj.scaleY ?? 1,
+        angle: obj.angle ?? 0, flipX: obj.flipX ?? false,
+      };
+      layerTransforms.current[layerId] = transform;
+      onLayerTransformChangeRef.current?.(layerId, transform);
     });
 
     // Mobile double-tap detection
@@ -258,9 +273,9 @@ export default function ProductCanvas({
       const obj = canvas.getActiveObject();
       if (now - lastTap < 300 && obj && obj === lastTapTarget && (obj as any)._isText) {
         e.preventDefault();
-        const textObj = obj as fabric.Text;
-        if (typeof (textObj as any).enterEditing === "function") {
-          (textObj as any).enterEditing();
+        const textObj = obj as fabric.IText;
+        if (typeof textObj.enterEditing === "function") {
+          textObj.enterEditing();
           canvas.renderAll();
         }
       }
@@ -429,7 +444,7 @@ export default function ProductCanvas({
       const largeArc = arcDeg > 180 ? 1 : 0;
       const sweep = curve > 0 ? 1 : 0;
       const path = new fabric.Path(`M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} ${sweep} ${x2} ${y2}`, { visible: false });
-      return new fabric.Text(content, {
+      return new fabric.IText(content, {
         fontFamily,
         fontSize,
         fill,
@@ -444,10 +459,11 @@ export default function ProductCanvas({
         scaleX,
         scaleY,
         angle,
+        editable: true,
       } as any);
     }
 
-    return new fabric.Text(content, {
+    return new fabric.IText(content, {
       fontFamily,
       fontSize,
       fill,
@@ -460,6 +476,7 @@ export default function ProductCanvas({
       scaleY,
       angle,
       width: 400,
+      editable: true,
     });
   };
 
@@ -540,7 +557,7 @@ export default function ProductCanvas({
               canvas.add(newText);
               canvas.setActiveObject(newText);
             } else {
-              const textObj = existing as fabric.Text;
+              const textObj = existing as fabric.IText;
               textObj.set({
                 text: layer.textContent ?? "Текст",
                 fill: layer.textColor ?? "#000000",
@@ -596,7 +613,15 @@ export default function ProductCanvas({
         return;
       }
 
-      if (existingIds.has(layer.id) || loadingIds.current.has(layer.id)) return;
+      if (existingIds.has(layer.id) || loadingIds.current.has(layer.id)) {
+        // Still need to sync sizing even for existing layers (e.g. dropdown size change)
+        const existingObj = canvas.getObjects().find((obj) => (obj as any)._layerId === layer.id);
+        if (existingObj) {
+          syncLayerSizing(existingObj, layer);
+          canvas.renderAll();
+        }
+        return;
+      }
       const src = layerSrc(layer.url, layer.uploadedUrl);
       const options = src.startsWith("blob:") ? {} : { crossOrigin: "anonymous" };
       loadingIds.current.add(layer.id);
