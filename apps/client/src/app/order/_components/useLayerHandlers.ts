@@ -68,7 +68,7 @@ export function useLayerHandlers({
       const row = rows.find((r) => r.size_label === sizeLabel) ?? rows[0];
       const sorted = row ? [...row.qty_tiers].sort((a, b) => b.min_qty - a.min_qty) : [];
       const tier = sorted.find((t) => quantity >= t.min_qty) ?? sorted[sorted.length - 1];
-      return { ...l, sizeLabel, sizeMinCm: row?.size_min_cm, sizeMaxCm: row?.size_max_cm, priceCents: tier?.price_cents, transform: undefined };
+      return { ...l, sizeLabel, sizeMinCm: row?.size_min_cm, sizeMaxCm: row?.size_max_cm, priceCents: tier?.price_cents };
     }));
   };
 
