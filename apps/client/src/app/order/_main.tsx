@@ -222,8 +222,8 @@ export function OrderPageInner({
 
         {/* Body */}
         <div className="flex-1 min-h-0 flex overflow-hidden">
-          <div className="flex-1 overflow-y-auto">
-            <div className={`mx-auto px-4 py-6 space-y-6 ${step === "select" ? `max-w-full ${cart.length > 0 ? "lg:pr-80" : ""}` : "max-w-4xl pb-20"}`}>
+          <div className="flex-1 overflow-y-auto lg:pr-80">
+            <div className="mx-auto px-4 py-6 space-y-6 max-w-full">
               {step === "select" && (
                 <ProductGrid
                   products={products}
@@ -270,25 +270,21 @@ export function OrderPageInner({
           </div>
 
           {/* Desktop cart side panel */}
-          {step === "select" && cart.length > 0 && (
-            <DesktopCartPanel
-              cart={cart}
-              totalCents={totalCents}
-              onCheckout={() => setStep("contact")}
-              onEdit={(i) => { const prod = products.find((p) => p.id === cart[i]?.productId); if (!prod) return; setCustomizerInitialSize(null); setCustomizerInitialColor(null); setEditingCartIndex(i); setCustomizing(prod); }}
-              onRemove={(i) => setCart((prev) => prev.filter((_, idx) => idx !== i))}
-            />
-          )}
+          <DesktopCartPanel
+            cart={cart}
+            totalCents={totalCents}
+            onCheckout={() => setStep("contact")}
+            onEdit={(i) => { const prod = products.find((p) => p.id === cart[i]?.productId); if (!prod) return; setCustomizerInitialSize(null); setCustomizerInitialColor(null); setEditingCartIndex(i); setCustomizing(prod); }}
+            onRemove={(i) => setCart((prev) => prev.filter((_, idx) => idx !== i))}
+          />
 
-          {step === "select" && (
-            <MobileCartBar
-              cart={cart}
-              totalCents={totalCents}
-              onCheckout={() => setStep("contact")}
-              onRemove={(i) => setCart((prev) => prev.filter((_, idx) => idx !== i))}
-              onEdit={(i) => { const prod = products.find((p) => p.id === cart[i]?.productId); if (!prod) return; setCustomizerInitialSize(null); setCustomizerInitialColor(null); setEditingCartIndex(i); setCustomizing(prod); }}
-            />
-          )}
+          <MobileCartBar
+            cart={cart}
+            totalCents={totalCents}
+            onCheckout={() => setStep("contact")}
+            onRemove={(i) => setCart((prev) => prev.filter((_, idx) => idx !== i))}
+            onEdit={(i) => { const prod = products.find((p) => p.id === cart[i]?.productId); if (!prod) return; setCustomizerInitialSize(null); setCustomizerInitialColor(null); setEditingCartIndex(i); setCustomizing(prod); }}
+          />
         </div>
       </div>
     </>

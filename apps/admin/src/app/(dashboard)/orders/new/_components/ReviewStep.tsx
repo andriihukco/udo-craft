@@ -159,11 +159,9 @@ export function ReviewStep({ cart, totalCents, contact, orderTags, extraFiles, g
             </div>
           )}
         </div>
-        <div className="h-16" />
       </div>
 
-      {/* Sticky bottom nav — matches client */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card px-4 py-3 flex gap-2">
+      <div className="flex gap-2 pt-2">
         <Button variant="outline" className="flex-1" onClick={onBack}>Редагувати</Button>
         <Button className="flex-1 gap-1.5" onClick={onSubmit} disabled={submitting}>
           {submitting ? <><Loader2 className="size-3.5 animate-spin" /> Зберігаємо...</> : "Підтвердити замовлення"}

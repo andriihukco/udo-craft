@@ -254,8 +254,8 @@ export default function NewOrderPage() {
 
       {/* Body */}
       <div className="flex-1 min-h-0 flex overflow-hidden">
-        <div className="flex-1 overflow-y-auto">
-          <div className={`mx-auto px-4 py-6 space-y-6 ${step === "catalog" ? `max-w-full ${cart.length > 0 ? "lg:pr-80" : ""}` : "max-w-4xl pb-20"}`}>
+        <div className="flex-1 overflow-y-auto lg:pr-80">
+          <div className="mx-auto px-4 py-6 space-y-6 max-w-full">
 
             {step === "catalog" && (
               <div className="space-y-6">
@@ -314,20 +314,16 @@ export default function NewOrderPage() {
         </div>
 
         {/* Desktop cart side panel */}
-        {step === "catalog" && cart.length > 0 && (
-          <DesktopCartPanel cart={cart} totalCents={totalCents} products={products}
-            variants={variants} materials={materials} onEdit={handleEditCartItem}
-            onRemove={(i) => setCart((prev) => prev.filter((_, idx) => idx !== i))}
-            onCheckout={() => setStep("checkout")} />
-        )}
+        <DesktopCartPanel cart={cart} totalCents={totalCents} products={products}
+          variants={variants} materials={materials} onEdit={handleEditCartItem}
+          onRemove={(i) => setCart((prev) => prev.filter((_, idx) => idx !== i))}
+          onCheckout={() => setStep("checkout")} />
       </div>
 
       {/* Mobile cart bar */}
-      {step === "catalog" && (
-        <MobileAdminCart cart={cart} totalCents={totalCents} onEdit={handleEditCartItem}
-          onRemove={(i) => setCart((prev) => prev.filter((_, idx) => idx !== i))}
-          onCheckout={() => setStep("checkout")} />
-      )}
+      <MobileAdminCart cart={cart} totalCents={totalCents} onEdit={handleEditCartItem}
+        onRemove={(i) => setCart((prev) => prev.filter((_, idx) => idx !== i))}
+        onCheckout={() => setStep("checkout")} />
     </div>
   );
 }

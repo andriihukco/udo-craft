@@ -155,15 +155,13 @@ export function ContactForm({
             </div>
           </div>
         )}
-        <div className="h-4" />
-      </div>
-
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card px-4 py-3 flex gap-2">
-        <Button variant="outline" className="flex-1" onClick={onBack}>Назад</Button>
-        <Button className="flex-1" onClick={onNext}
-          disabled={!contact.name.trim() || !contact.phone.trim() || (contact.delivery === "nova_poshta" && !contact.novaPoshtaDetails.trim())}>
-          Перевірити
-        </Button>
+        <div className="flex gap-2 pt-2">
+          <Button variant="outline" className="flex-1" onClick={onBack}>Назад</Button>
+          <Button className="flex-1" onClick={onNext}
+            disabled={!contact.name.trim() || !contact.phone.trim() || (contact.delivery === "nova_poshta" && !contact.novaPoshtaDetails.trim())}>
+            Перевірити
+          </Button>
+        </div>
       </div>
     </div>
   );
