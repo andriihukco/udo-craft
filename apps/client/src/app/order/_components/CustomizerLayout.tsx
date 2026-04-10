@@ -14,12 +14,13 @@ interface CustomizerLayoutProps {
   leftPanel: React.ReactNode;
   canvas: React.ReactNode;
   rightPanel: React.ReactNode;
+  stickyButton?: React.ReactNode;
   onClose: () => void;
 }
 
 export function CustomizerLayout({
   productName, total, mobileSheet, setMobileSheet, addingToCart, removingBg,
-  leftPanel, canvas, rightPanel, onClose,
+  leftPanel, canvas, rightPanel, stickyButton, onClose,
 }: CustomizerLayoutProps) {
   return (
     <div className="fixed inset-0 z-[9999] bg-background flex flex-col">
@@ -45,11 +46,18 @@ export function CustomizerLayout({
         </div>
 
         {/* Right panel — desktop */}
-        <div className="hidden lg:flex lg:flex-col h-full overflow-y-auto overflow-x-hidden border-l border-border bg-card p-4">
-          <div className="space-y-5">
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Тираж та ціна</p>
-            {rightPanel}
+        <div className="hidden lg:flex lg:flex-col h-full overflow-hidden border-l border-border bg-card">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-4">
+            <div className="space-y-5">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Тираж та ціна</p>
+              {rightPanel}
+            </div>
           </div>
+          {stickyButton && (
+            <div className="shrink-0 border-t border-border bg-card p-4">
+              {stickyButton}
+            </div>
+          )}
         </div>
       </div>
 

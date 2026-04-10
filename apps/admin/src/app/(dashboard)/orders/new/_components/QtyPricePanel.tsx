@@ -36,6 +36,7 @@ interface QtyPricePanelProps {
   addDisabledReason: string | null;
   addingToCart: boolean;
   onAddToCart: () => void;
+  hideButton?: boolean;
 }
 
 const PRINT_TYPE_LABELS: Record<string, string> = {
@@ -62,6 +63,7 @@ export function QtyPricePanel({
   addDisabledReason,
   addingToCart,
   onAddToCart,
+  hideButton = false,
 }: QtyPricePanelProps) {
   const [qtyStr, setQtyStr] = useState(String(quantity));
   const [noteOpen, setNoteOpen] = useState(false);
@@ -271,21 +273,23 @@ export function QtyPricePanel({
         </AnimatePresence>
       </div>
 
-      {addDisabledReason && <p className="text-xs text-amber-600">{addDisabledReason}</p>}
+      {!hideButton && addDisabledReason && <p className="text-xs text-amber-600">{addDisabledReason}</p>}
 
       {/* Add-to-cart button */}
-      <Button
-        type="button"
-        className="w-full h-11 text-sm font-semibold cursor-pointer"
-        onClick={onAddToCart}
-        disabled={addingToCart || !!addDisabledReason}
-      >
-        {addingToCart ? (
-          <><Loader2 className="size-3.5 animate-spin" /> Додаємо...</>
-        ) : (
-          "Додати до замовлення"
-        )}
-      </Button>
+      {!hideButton && (
+        <Button
+          type="button"
+          className="w-full h-11 text-sm font-semibold cursor-pointer"
+          onClick={onAddToCart}
+          disabled={addingToCart || !!addDisabledReason}
+        >
+          {addingToCart ? (
+            <><Loader2 className="size-3.5 animate-spin" /> Додаємо...</>
+          ) : (
+            "Додати до замовлення"
+          )}
+        </Button>
+      )}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { Product, PrintZone, Material, ProductColorVariant, useCustomizer } from "@udo-craft/shared";
 import { ArrowLeft, X, Palette, Ruler, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { type PrintLayer } from "@/components/print-types";
 import { QtyPricePanel } from "./QtyPricePanel";
 import { LeftPanel } from "./LeftPanel";
@@ -218,7 +219,7 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
       discountPct={discountPct} unitPrice={unitPrice} discounted={discounted} layers={layers}
       printPricing={printPricing} printCostPerUnit={printCostPerUnit} resolveLayerPrice={resolveLayerPrice}
       itemNote={itemNote} setItemNote={setItemNote} addDisabledReason={addDisabledReason}
-      addingToCart={addingToCart} onAddToCart={() => void handleAddToCart()} />
+      addingToCart={addingToCart} onAddToCart={() => void handleAddToCart()} hideButton />
   );
 
   const content = (
@@ -251,8 +252,25 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
           />
           {canvasPanel}
         </div>
-        <div className="hidden lg:flex lg:flex-col h-full overflow-y-auto overflow-x-hidden border-l border-border bg-card p-4">
-          {rightPanel}
+        <div className="hidden lg:flex lg:flex-col h-full overflow-hidden border-l border-border bg-card">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-4">
+            {rightPanel}
+          </div>
+          <div className="shrink-0 border-t border-border bg-card p-4 space-y-1.5">
+            {addDisabledReason && !addingToCart && (
+              <p className="text-xs text-amber-600 text-center">{addDisabledReason}</p>
+            )}
+            <Button
+              type="button"
+              className="w-full h-11 text-sm font-semibold cursor-pointer"
+              onClick={() => void handleAddToCart()}
+              disabled={addingToCart || !!addDisabledReason}
+            >
+              {addingToCart
+                ? <><Loader2 className="size-3.5 animate-spin mr-1.5" /> Додаємо...</>
+                : "Додати до замовлення"}
+            </Button>
+          </div>
         </div>
       </div>
       <div className="lg:hidden shrink-0 border-t border-border bg-card">

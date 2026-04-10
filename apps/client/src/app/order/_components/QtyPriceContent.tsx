@@ -38,6 +38,7 @@ export interface QtyPriceContentProps {
   addDisabled?: boolean;
   addDisabledReason?: string | null;
   disabled?: boolean;
+  hideButton?: boolean;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────
@@ -63,6 +64,7 @@ export function QtyPriceContent({
   addDisabled = false,
   addDisabledReason = null,
   disabled = false,
+  hideButton = false,
 }: QtyPriceContentProps) {
   const [noteOpen, setNoteOpen] = React.useState(false);
 
@@ -307,7 +309,7 @@ export function QtyPriceContent({
       </div>
 
       {/* Add to cart button */}
-      {onAddToCart && (
+      {onAddToCart && !hideButton && (
         <>
           {addDisabledReason && !loading && (
             <p className="text-xs text-amber-600">{addDisabledReason}</p>

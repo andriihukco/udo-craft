@@ -8,6 +8,8 @@ import { QtyPriceContent } from "./QtyPriceContent";
 import { CustomizerLeftPanel } from "./CustomizerLeftPanel";
 import { CustomizerLayout } from "./CustomizerLayout";
 import { CustomizerCanvas } from "./CustomizerCanvas";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import { useCustomizerState } from "./useCustomizerState";
 import { GenerationDrawer } from "./GenerationDrawer";
 
@@ -141,7 +143,25 @@ export function Customizer({
       addDisabled={!!s.addDisabledReason || s.removingBg}
       addDisabledReason={s.addDisabledReason || (s.removingBg ? "Видаляємо фон..." : null)}
       disabled={s.removingBg}
+      hideButton
     />
+  );
+
+  const stickyButton = (
+    <div className="space-y-1.5">
+      {(s.addDisabledReason && !s.addingToCart && !s.removingBg) && (
+        <p className="text-xs text-amber-600 text-center">{s.addDisabledReason}</p>
+      )}
+      <Button
+        className="w-full h-11 text-sm font-semibold"
+        disabled={s.addingToCart || s.removingBg || !!s.addDisabledReason}
+        onClick={() => void s.handleAddToCart()}
+      >
+        {(s.addingToCart || s.removingBg)
+          ? <><Loader2 className="size-3.5 animate-spin mr-1.5" />{s.removingBg ? "Видаляємо фон..." : "Додаємо..."}</>
+          : "Додати до замовлення"}
+      </Button>
+    </div>
   );
 
   const canvas = (
@@ -206,6 +226,7 @@ export function Customizer({
       leftPanel={leftPanel}
       canvas={canvas}
       rightPanel={rightPanel}
+      stickyButton={stickyButton}
       onClose={onClose}
     />,
     document.body
