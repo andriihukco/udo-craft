@@ -63,6 +63,7 @@ export function QtyPricePanel({
   onAddToCart,
 }: QtyPricePanelProps) {
   const [qtyStr, setQtyStr] = useState(String(quantity));
+  const [noteOpen, setNoteOpen] = useState(false);
   const total = (discounted + printCostPerUnit) * quantity;
 
   return (
@@ -97,20 +98,20 @@ export function QtyPricePanel({
         >+</button>
       </div>
 
-      {/* Discount grid */}
+      {/* Discount grid — horizontal scrollable row */}
       {(() => {
         if (!discountGrid?.length) return null;
         const sorted = [...discountGrid].sort((a, b) => a.qty - b.qty);
         return (
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
             {sorted.map((tier, i) => {
               const nextQty = sorted[i + 1]?.qty;
               const active = quantity >= tier.qty && (nextQty === undefined || quantity < nextQty);
               return (
                 <button key={tier.qty}
                   onClick={() => { setQuantity(tier.qty); setQtyStr(String(tier.qty)); }}
-                  className={`cursor-pointer text-center px-1 py-2 rounded-xl border text-xs transition-all ${active ? "border-primary bg-primary/10 text-primary font-semibold" : "border-border text-muted-foreground hover:border-primary/30"}`}>
-                  <div className="font-bold">від {tier.qty}</div>
+                  className={`cursor-pointer shrink-0 text-center px-3 py-2 rounded-xl border text-xs transition-all ${active ? "border-primary bg-primary/10 text-primary font-semibold" : "border-border text-muted-foreground hover:border-primary/30"}`}>
+                  <div className="font-bold whitespace-nowrap">від {tier.qty}</div>
                   <div className="opacity-80 text-[10px]">−{tier.discount_pct}%</div>
                 </button>
               );
@@ -174,26 +175,37 @@ export function QtyPricePanel({
         </div>
       </div>
 
-      {/* Note textarea */}
-      <div className="space-y-1.5">
-        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Нотатка до позиції</p>
-        <textarea
-          value={itemNote}
-          onChange={(e) => setItemNote(e.target.value)}
-          placeholder="Особливі побажання..."
-          rows={2}
-          className="w-full resize-none rounded-xl border border-border bg-muted/30 px-3 py-2 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder:text-muted-foreground"
-        />
-      </div>
-
-      {addDisabledReason && <p className="text-xs text-amber-600">{addDisabledReason}</p>}
-
-      {/* Disclaimer — matches client */}
+      {/* Disclaimer — right below total */}
       <div className="rounded-lg border border-amber-200 bg-amber-50 p-2.5">
         <p className="text-xs text-amber-900">
           <span className="font-semibold">Важливо:</span> Ціни є орієнтовними. Остаточна вартість може змінитися після обговорення з менеджером.
         </p>
       </div>
+
+      {/* Note — collapsible accordion */}
+      <div className="rounded-xl border border-border overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setNoteOpen((v) => !v)}
+          className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-muted/40 transition-colors"
+        >
+          <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Нотатка до позиції</span>
+          <span className={`text-muted-foreground transition-transform duration-200 ${noteOpen ? "rotate-180" : ""}`}>▾</span>
+        </button>
+        {noteOpen && (
+          <div className="px-3 pb-3">
+            <textarea
+              value={itemNote}
+              onChange={(e) => setItemNote(e.target.value)}
+              placeholder="Особливі побажання..."
+              rows={2}
+              className="w-full resize-none rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder:text-muted-foreground"
+            />
+          </div>
+        )}
+      </div>
+
+      {addDisabledReason && <p className="text-xs text-amber-600">{addDisabledReason}</p>}
 
       {/* Add-to-cart button */}
       <Button

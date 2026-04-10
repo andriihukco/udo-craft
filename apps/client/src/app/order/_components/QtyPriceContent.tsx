@@ -63,6 +63,8 @@ export function QtyPriceContent({
   addDisabledReason = null,
   disabled = false,
 }: QtyPriceContentProps) {
+  const [noteOpen, setNoteOpen] = React.useState(false);
+
   return (
     <div className={`space-y-5 pb-4 ${disabled ? "opacity-50 pointer-events-none" : ""}`}>
       {showTitle && (
@@ -102,13 +104,13 @@ export function QtyPriceContent({
         >+</button>
       </div>
 
-      {/* Discount grid */}
+      {/* Discount grid — horizontal scrollable row */}
       {(() => {
         const grid = product.discount_grid;
         if (!grid?.length) return null;
         const sorted = [...grid].sort((a, b) => a.qty - b.qty);
         return (
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
             {sorted.map((tier, i) => {
               const nextQty = sorted[i + 1]?.qty;
               const active = quantity >= tier.qty && (nextQty === undefined || quantity < nextQty);
@@ -117,9 +119,9 @@ export function QtyPriceContent({
                   key={tier.qty}
                   onClick={() => { setQuantity(tier.qty); setQtyStr(String(tier.qty)); }}
                   disabled={disabled}
-                  className={`cursor-pointer text-center px-1 py-2 rounded-xl border text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed ${active ? "border-primary bg-primary/10 text-primary font-semibold" : "border-border text-muted-foreground hover:border-primary/30"}`}
+                  className={`cursor-pointer shrink-0 text-center px-3 py-2 rounded-xl border text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed ${active ? "border-primary bg-primary/10 text-primary font-semibold" : "border-border text-muted-foreground hover:border-primary/30"}`}
                 >
-                  <div className="font-bold">від {tier.qty}</div>
+                  <div className="font-bold whitespace-nowrap">від {tier.qty}</div>
                   <div className="opacity-80 text-[10px]">−{tier.discount_pct}%</div>
                 </button>
               );
@@ -192,17 +194,36 @@ export function QtyPriceContent({
         </div>
       </div>
 
-      {/* Item note */}
-      <div className="space-y-1.5">
-        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Нотатка до позиції</p>
-        <textarea
-          value={itemNote}
-          onChange={(e) => setItemNote(e.target.value)}
+      {/* Disclaimer — right below total */}
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-2.5">
+        <p className="text-xs text-amber-900">
+          <span className="font-semibold">Важливо:</span> Ціни є орієнтовними. Остаточна вартість може змінитися після обговорення з менеджером.
+        </p>
+      </div>
+
+      {/* Item note — collapsible accordion */}
+      <div className="rounded-xl border border-border overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setNoteOpen((v) => !v)}
           disabled={disabled}
-          placeholder="Особливі побажання..."
-          rows={2}
-          className="w-full resize-none rounded-xl border border-border bg-muted/30 px-3 py-2 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
-        />
+          className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-muted/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Нотатка до позиції</span>
+          <span className={`text-muted-foreground transition-transform duration-200 ${noteOpen ? "rotate-180" : ""}`}>▾</span>
+        </button>
+        {noteOpen && (
+          <div className="px-3 pb-3">
+            <textarea
+              value={itemNote}
+              onChange={(e) => setItemNote(e.target.value)}
+              disabled={disabled}
+              placeholder="Особливі побажання..."
+              rows={2}
+              className="w-full resize-none rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+          </div>
+        )}
       </div>
 
       {/* Add to cart button */}
@@ -211,11 +232,6 @@ export function QtyPriceContent({
           {addDisabledReason && (
             <p className="text-xs text-amber-600">{addDisabledReason}</p>
           )}
-          <div className="rounded-lg border border-amber-200 bg-amber-50 p-2.5">
-            <p className="text-xs text-amber-900">
-              <span className="font-semibold">Важливо:</span> Ціни є орієнтовними. Остаточна вартість може змінитися після обговорення з менеджером.
-            </p>
-          </div>
           <Button
             className="w-full h-11 text-sm font-semibold cursor-pointer"
             disabled={loading || addDisabled}
