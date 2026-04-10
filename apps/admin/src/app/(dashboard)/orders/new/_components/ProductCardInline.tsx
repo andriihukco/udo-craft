@@ -92,10 +92,15 @@ export function ProductCardInline({ product, variants, materials, onOpen, onAddW
 
       {/* Bottom */}
       <div className="px-3 pb-3 sm:px-4 sm:pb-4 flex flex-col gap-2">
-        {/* Name + price */}
-        <div className="flex items-start justify-between gap-2">
-          <p className="text-sm font-semibold text-gray-900 leading-tight line-clamp-2">{product.name}</p>
-          <p className="text-sm font-bold text-primary shrink-0">від ₴{(product.base_price_cents / 100).toFixed(0)}</p>
+        {/* Name + price + description */}
+        <div className="flex flex-col gap-1">
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-sm font-semibold text-gray-900 leading-tight line-clamp-2">{product.name}</p>
+            <p className="text-sm font-bold text-primary shrink-0">від ₴{(product.base_price_cents / 100).toFixed(0)}</p>
+          </div>
+          {product.description && (
+            <p className="text-xs text-gray-500 line-clamp-2">{product.description}</p>
+          )}
         </div>
 
         {/* Sizes + Colors — stacked like client */}
