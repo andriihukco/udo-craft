@@ -189,6 +189,7 @@ export function Customizer({
           s.setLayerScales((prev) => ({ ...prev, [id]: transform.scaleX }));
           s.setLayersWithRef((prev) => prev.map((l) => l.id === id ? { ...l, transform: transform as PrintLayer["transform"] } : l));
         }}
+        onTextChange={(id, textContent) => s.handleTextChange(id, { textContent })}
         onAIGenerate={() => setAiDrawerOpen(true)}
       />
     </>

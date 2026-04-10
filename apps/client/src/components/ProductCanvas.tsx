@@ -42,6 +42,7 @@ interface ProductCanvasProps {
   onLayerDelete?: (layerId: string) => void;
   onLayerDuplicate?: (layer: PrintLayer) => void;
   onLayerTransformChange?: (layerId: string, transform: NonNullable<PrintLayer["transform"]>) => void;
+  onTextChange?: (layerId: string, textContent: string) => void;
   onAIGenerate?: () => void;
 }
 
@@ -64,6 +65,7 @@ export default function ProductCanvas({
   onLayerDelete,
   onLayerDuplicate,
   onLayerTransformChange,
+  onTextChange,
   onAIGenerate,
 }: ProductCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -97,6 +99,8 @@ export default function ProductCanvas({
   useEffect(() => { onLayerDeleteRef.current = onLayerDelete; }, [onLayerDelete]);
   const onLayerDuplicateRef = useRef(onLayerDuplicate);
   useEffect(() => { onLayerDuplicateRef.current = onLayerDuplicate; }, [onLayerDuplicate]);
+  const onTextChangeRef = useRef(onTextChange);
+  useEffect(() => { onTextChangeRef.current = onTextChange; }, [onTextChange]);
 
   useEffect(() => {
     onRemoveBgStateChange?.(removingBg);
@@ -256,13 +260,9 @@ export default function ProductCanvas({
       if (!obj || !(obj as any)._isText) return;
       const layerId = (obj as any)._layerId as string;
       if (!layerId) return;
-      const transform = {
-        left: obj.left ?? 0, top: obj.top ?? 0,
-        scaleX: obj.scaleX ?? 1, scaleY: obj.scaleY ?? 1,
-        angle: obj.angle ?? 0, flipX: obj.flipX ?? false,
-      };
-      layerTransforms.current[layerId] = transform;
-      onLayerTransformChangeRef.current?.(layerId, transform);
+      // Sync the new text content to React state
+      const newText = (obj as fabric.IText).text ?? "";
+      onTextChangeRef.current?.(layerId, newText);
     });
 
     // Mobile double-tap detection
@@ -560,15 +560,20 @@ export default function ProductCanvas({
               canvas.setActiveObject(newText);
             } else {
               const textObj = existing as fabric.IText;
-              textObj.set({
-                text: layer.textContent ?? "Текст",
-                fill: layer.textColor ?? "#000000",
-                fontFamily: layer.textFont ?? "Montserrat",
-                fontSize: layer.textFontSize ?? 48,
-                textAlign: layer.textAlign ?? "center",
-              } as any);
-              if (typeof (textObj as any).initDimensions === "function") (textObj as any).initDimensions();
-              syncLayerSizing(textObj, layer);
+              // Don't overwrite text while user is editing inline on canvas
+              if ((textObj as any).isEditing) {
+                syncLayerSizing(textObj, layer);
+              } else {
+                textObj.set({
+                  text: layer.textContent ?? "Текст",
+                  fill: layer.textColor ?? "#000000",
+                  fontFamily: layer.textFont ?? "Montserrat",
+                  fontSize: layer.textFontSize ?? 48,
+                  textAlign: layer.textAlign ?? "center",
+                } as any);
+                if (typeof (textObj as any).initDimensions === "function") (textObj as any).initDimensions();
+                syncLayerSizing(textObj, layer);
+              }
             }
             try { fabricRef.current.renderAll(); } catch {}
           });

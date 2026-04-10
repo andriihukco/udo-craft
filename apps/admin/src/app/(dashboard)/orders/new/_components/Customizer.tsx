@@ -208,6 +208,7 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
       onLayerDelete={(id) => { setLayersWithRef((prev) => prev.filter((l) => l.id !== id)); if (activeLayerId === id) setActiveLayerId(null); }}
       onLayerDuplicate={(layer) => { setLayersWithRef((prev) => [...prev, layer]); setActiveLayerId(layer.id); }}
       onLayerTransformChange={(id, transform) => { setLayerScales((prev) => ({ ...prev, [id]: transform.scaleX })); setLayersWithRef((prev) => prev.map((l) => (l.id === id ? { ...l, transform } : l))); }}
+      onTextChange={(id, textContent) => setLayersWithRef((prev) => prev.map((l) => (l.id === id ? { ...l, textContent } : l)))}
       onAIGenerate={() => setAiDrawerOpen(true)}
     />
   );
