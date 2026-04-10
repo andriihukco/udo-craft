@@ -20,13 +20,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "AI generation is not configured" }, { status: 500 });
   }
 
-  const { prompt, contextDescription, imageDataUrl } = await request.json() as {
+  const { prompt, contextDescription, imageDataUrl, canvasDataUrl, hasSelfie } = await request.json() as {
     prompt: string;
     contextDescription: string;
     imageDataUrl: string;
+    canvasDataUrl?: string;
+    hasSelfie?: boolean;
   };
 
-  const textPart = { text: `${SYSTEM_PROMPT}\n\n${contextDescription}\n\n${prompt}` };
+  const selfieInstruction = hasSelfie
+    ? `\n\nIMPORTANT: The second image provided is a photo of the actual customer. You MUST use their face, body, and appearance — place the merch product on THIS specific person. Keep their likeness accurate.`
+    : "";
+
+  const textPart = { text: `${SYSTEM_PROMPT}${selfieInstruction}\n\n${contextDescription}\n\n${prompt}` };
 
   // Extract mimeType and base64 data from the data URL
   const commaIndex = imageDataUrl.indexOf(",");
@@ -35,16 +41,22 @@ export async function POST(request: Request) {
   const base64Data = imageDataUrl.slice(commaIndex + 1);
 
   const inlineDataPart = {
-    inlineData: {
-      mimeType,
-      data: base64Data,
-    },
+    inlineData: { mimeType, data: base64Data },
   };
+
+  // When selfie provided, also include canvas mockup as second image for context
+  const extraParts: { inlineData: { mimeType: string; data: string } }[] = [];
+  if (hasSelfie && canvasDataUrl && canvasDataUrl.includes(",")) {
+    const ci = canvasDataUrl.indexOf(",");
+    const cMime = canvasDataUrl.slice(0, ci).replace("data:", "").replace(";base64", "");
+    const cData = canvasDataUrl.slice(ci + 1);
+    extraParts.push({ inlineData: { mimeType: cMime, data: cData } });
+  }
 
   const geminiBody = {
     contents: [
       {
-        parts: [textPart, inlineDataPart],
+        parts: [textPart, inlineDataPart, ...extraParts],
       },
     ],
     generationConfig: {

@@ -47,28 +47,19 @@ export function useAIGeneration({
 
       try {
         // 1. Resolve canvas image per priority chain
-        // Selfie takes highest priority when provided
+        // When selfie provided: selfie = primary image, canvas = context image
         const activeSideLayers = layers.filter((l) => l.side === activeSide);
-        let imageDataUrl: string | undefined;
+        let canvasDataUrl: string | undefined;
 
-        if (selfieDataUrl) {
-          imageDataUrl = selfieDataUrl;
-        } else if (activeSideLayers.length >= 1 && typeof captureRef.current === "function") {
-          imageDataUrl = captureRef.current();
+        if (activeSideLayers.length >= 1 && typeof captureRef.current === "function") {
+          canvasDataUrl = captureRef.current();
         }
+        if (!canvasDataUrl && mockups[activeSide]) canvasDataUrl = mockups[activeSide];
+        if (!canvasDataUrl && productImages[activeSide]) canvasDataUrl = productImages[activeSide];
+        if (!canvasDataUrl) canvasDataUrl = Object.values(productImages).find(Boolean);
 
-        if (!imageDataUrl && mockups[activeSide]) {
-          imageDataUrl = mockups[activeSide];
-        }
-
-        if (!imageDataUrl && productImages[activeSide]) {
-          imageDataUrl = productImages[activeSide];
-        }
-
-        if (!imageDataUrl) {
-          const firstAvailable = Object.values(productImages).find(Boolean);
-          if (firstAvailable) imageDataUrl = firstAvailable;
-        }
+        // imageDataUrl sent to API: selfie takes priority, falls back to canvas
+        const imageDataUrl = selfieDataUrl ?? canvasDataUrl ?? "";
 
         // 2. Build canvas context description
         const allSides = Array.from(
@@ -94,7 +85,9 @@ export function useAIGeneration({
             body: JSON.stringify({
               prompt,
               contextDescription,
-              imageDataUrl: imageDataUrl ?? "",
+              imageDataUrl,
+              canvasDataUrl: selfieDataUrl ? (canvasDataUrl ?? "") : undefined,
+              hasSelfie: !!selfieDataUrl,
             }),
             signal: controller.signal,
           });
