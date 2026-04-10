@@ -148,6 +148,9 @@ export default function ProductCanvas({
       transparentCorners: false,
       padding: 6,
       lockUniScaling: true,
+      centeredRotation: true,
+      centeredScaling: false,
+      snapAngle: 0,
     });
     fabric.Object.prototype.setControlsVisibility({ ml: false, mr: false, mt: false, mb: false });
     canvas.on("selection:created", (e) => onLayerSelectRef.current?.((e as any).selected?.[0]?._layerId ?? null));
@@ -228,15 +231,14 @@ export default function ProductCanvas({
       const obj = e.target;
       if (!obj || !(obj as any)._isLayer) return;
       const SNAP_DEG = 90;
-      const SNAP_THRESHOLD = 8; // degrees within which to snap
+      const SNAP_THRESHOLD = 8;
       const raw = obj.angle ?? 0;
       const normalized = ((raw % 360) + 360) % 360;
       const nearest = Math.round(normalized / SNAP_DEG) * SNAP_DEG;
       if (Math.abs(normalized - nearest) < SNAP_THRESHOLD) {
         obj.set({ angle: nearest % 360 });
+        obj.setCoords();
       }
-      saveTransform(e);
-      canvas.renderAll();
     });
     canvas.on("mouse:dblclick", (e) => {
       const obj = e.target;
