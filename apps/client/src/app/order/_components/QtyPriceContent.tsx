@@ -1,9 +1,10 @@
 "use client";
 
 import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus, Minus } from "lucide-react";
 import type { PrintLayer } from "@udo-craft/shared";
 import type { PrintTypePricingRow } from "@/components/LayersPanel";
 
@@ -104,13 +105,16 @@ export function QtyPriceContent({
         >+</button>
       </div>
 
-      {/* Discount grid — horizontal scrollable row */}
+      {/* Discount chips — auto-fit grid so all chips fit without cropping */}
       {(() => {
         const grid = product.discount_grid;
         if (!grid?.length) return null;
         const sorted = [...grid].sort((a, b) => a.qty - b.qty);
         return (
-          <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
+          <div
+            className="grid gap-1.5"
+            style={{ gridTemplateColumns: `repeat(${sorted.length}, minmax(0, 1fr))` }}
+          >
             {sorted.map((tier, i) => {
               const nextQty = sorted[i + 1]?.qty;
               const active = quantity >= tier.qty && (nextQty === undefined || quantity < nextQty);
@@ -119,10 +123,14 @@ export function QtyPriceContent({
                   key={tier.qty}
                   onClick={() => { setQuantity(tier.qty); setQtyStr(String(tier.qty)); }}
                   disabled={disabled}
-                  className={`cursor-pointer shrink-0 text-center px-3 py-2 rounded-xl border text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed ${active ? "border-primary bg-primary/10 text-primary font-semibold" : "border-border text-muted-foreground hover:border-primary/30"}`}
+                  className={`cursor-pointer text-center px-1 py-2 rounded-xl border text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                    active
+                      ? "border-primary bg-primary text-primary-foreground font-semibold"
+                      : "border-primary/40 text-primary hover:border-primary hover:bg-primary/5"
+                  }`}
                 >
                   <div className="font-bold whitespace-nowrap">від {tier.qty}</div>
-                  <div className="opacity-80 text-[10px]">−{tier.discount_pct}%</div>
+                  <div className="text-[10px] opacity-80">−{tier.discount_pct}%</div>
                 </button>
               );
             })}
@@ -201,7 +209,7 @@ export function QtyPriceContent({
         </p>
       </div>
 
-      {/* Item note — collapsible accordion */}
+      {/* Item note — collapsible accordion with smooth animation */}
       <div className="rounded-xl border border-border overflow-hidden">
         <button
           type="button"
@@ -210,20 +218,31 @@ export function QtyPriceContent({
           className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-muted/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Нотатка до позиції</span>
-          <span className={`text-muted-foreground transition-transform duration-200 ${noteOpen ? "rotate-180" : ""}`}>▾</span>
+          {noteOpen ? <Minus className="size-3.5 text-muted-foreground shrink-0" /> : <Plus className="size-3.5 text-muted-foreground shrink-0" />}
         </button>
-        {noteOpen && (
-          <div className="px-3 pb-3">
-            <textarea
-              value={itemNote}
-              onChange={(e) => setItemNote(e.target.value)}
-              disabled={disabled}
-              placeholder="Особливі побажання..."
-              rows={2}
-              className="w-full resize-none rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
-            />
-          </div>
-        )}
+        <AnimatePresence initial={false}>
+          {noteOpen && (
+            <motion.div
+              key="note"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.22, ease: "easeInOut" }}
+              style={{ overflow: "hidden" }}
+            >
+              <div className="px-3 pb-3">
+                <textarea
+                  value={itemNote}
+                  onChange={(e) => setItemNote(e.target.value)}
+                  disabled={disabled}
+                  placeholder="Особливі побажання..."
+                  rows={2}
+                  className="w-full resize-none rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Add to cart button */}
