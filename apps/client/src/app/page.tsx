@@ -279,6 +279,7 @@ export default function HomePage() {
 
       {/* HERO */}
       <section className="relative overflow-hidden bg-primary">
+        <div className="absolute inset-0 bg-cover bg-center opacity-80" style={{ backgroundImage: "url('/hero-bg.jpg')"}} />
         <div className="absolute inset-0 opacity-[0.04]"
           style={{ backgroundImage: "linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px)", backgroundSize: "40px 40px" }} />
 
@@ -288,7 +289,7 @@ export default function HomePage() {
             B2B Мерч-платформа
           </div>
           <h1 className="text-white text-4xl sm:text-5xl lg:text-[3.5rem] font-black leading-[1.05] tracking-tight">
-            Одяг, який стає частиною <span className="text-white/70">вашої корпоративної ДНК.</span>
+            Одяг, який стає частиною <span className="text-white/70">вашої корпоративної ДНК</span>
           </h1>
           <p className="text-white/80 mt-5 text-base sm:text-lg leading-relaxed max-w-xl mx-auto">
             Ринок перенасичений дешевим трендовим одягом. Ми створюємо речі, які стають улюбленими в гардеробі. Ваш мерч — це інструмент стратегічної комунікації.
@@ -430,13 +431,15 @@ export default function HomePage() {
               Замовити зразки <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
-          <div className="relative rounded-2xl p-8 overflow-hidden flex flex-col justify-between min-h-[280px] border border-gray-200 bg-gradient-to-br from-[#f8f8ff] to-[#eef0ff] hover:shadow-xl transition-shadow duration-300">
-            <div>
-              <span className="inline-block text-xs font-bold uppercase tracking-widest mb-4 text-primary">Дизайн</span>
-              <h3 className="text-2xl font-black mb-3 text-gray-900">Найми дизайнера</h3>
-              <p className="text-gray-600 text-sm leading-relaxed max-w-xs">Немає готового логотипу? Наш дизайнер допоможе створити фірмовий стиль або адаптує логотип для нанесення.</p>
+          <div className="relative rounded-2xl p-8 overflow-hidden flex flex-col justify-between min-h-[280px] border border-gray-200 hover:shadow-xl transition-shadow duration-300">
+            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('/designer-bg.jpg')" }} />
+            <div className="absolute inset-0 bg-black/60" />
+            <div className="relative z-10">
+              <span className="inline-block text-xs font-bold uppercase tracking-widest mb-4 text-white/80">Дизайн</span>
+              <h3 className="text-2xl font-black mb-3 text-white">Найми дизайнера</h3>
+              <p className="text-white/90 text-sm leading-relaxed max-w-xs">Немає готового логотипу? Наш дизайнер допоможе створити фірмовий стиль або адаптує логотип для нанесення.</p>
             </div>
-            <Link href="#contact" className="mt-6 inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm font-bold px-5 py-2.5 rounded-full hover:bg-primary/90 active:scale-95 transition-all duration-200 w-fit">
+            <Link href="#contact" className="relative z-10 mt-6 inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm font-bold px-5 py-2.5 rounded-full hover:bg-primary/90 active:scale-95 transition-all duration-200 w-fit">
               Обговорити проєкт <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
