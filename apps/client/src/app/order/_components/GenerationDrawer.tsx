@@ -10,13 +10,12 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { useAIGeneration } from "./useAIGeneration";
 import { dataUrlToFile } from "../_lib/dataUrlToFile";
 
 import type { PrintLayer } from "@udo-craft/shared";
 import type { PrintTypePricingRow } from "@udo-craft/shared";
-
-const MAX_GENERATIONS = 1;
 
 const ALL_PRESETS = [
   "команда ІТ-компанії в сучасному офісі",
@@ -153,7 +152,8 @@ function RotatingPresets({ onSelect, selected }: { onSelect: (text: string) => v
             >
               {preset}
             </motion.button>
-        ))}
+          );
+        })}
       </AnimatePresence>
     </div>
   );
@@ -226,7 +226,7 @@ function SelfieUpload({
           </div>
           <div className="text-center px-4">
             <p className="text-xs font-semibold text-foreground">Завантажте своє фото</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">Відкриє камеру або галерею</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Відкриє камеру або галерею</p>
           </div>
         </button>
       )}
@@ -355,7 +355,7 @@ export function GenerationDrawer({
                       <div className="flex items-center justify-between">
                         <div>
                           <h2 className="text-base font-semibold">Побачте мерч на людині</h2>
-                          <p className="text-[11px] text-muted-foreground">AI покаже, як виглядає ваш дизайн у реальному житті</p>
+                          <p className="text-xs text-muted-foreground">AI покаже, як виглядає ваш дизайн у реальному житті</p>
                         </div>
                         <Button variant="ghost" size="icon" onClick={onClose} aria-label="Закрити" className="h-8 w-8 -mr-2 shrink-0 ml-2">
                           <X className="h-5 w-5" />
@@ -404,13 +404,13 @@ export function GenerationDrawer({
 
                             {activeTab === "prompt" && (
                               <div className="space-y-3 pt-1">
-                                <textarea
+                                <Textarea
                                   aria-label="Опис сцени для генерації"
                                   value={prompt}
                                   onChange={(e) => setPrompt(e.target.value)}
                                   placeholder="Опишіть сцену або оберіть пресет…"
                                   rows={3}
-                                  className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                  className="resize-none"
                                 />
                                 <RotatingPresets onSelect={setPrompt} selected={prompt} />
                               </div>

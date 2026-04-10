@@ -223,7 +223,38 @@ export default function ProductCanvas({
     fabricRef.current = canvas;
     backgroundUrlRef.current = null;
     setCanvasReady(true);
+
+    // ── Double-tap to edit text on mobile ────────────────────────────────
+    let lastTap = 0;
+    const handleTouchEnd = (e: TouchEvent) => {
+      const now = Date.now();
+      const DOUBLE_TAP_MS = 300;
+      if (now - lastTap < DOUBLE_TAP_MS) {
+        const touch = e.changedTouches[0];
+        const rect = (canvas.getElement() as HTMLCanvasElement).getBoundingClientRect();
+        const zoom = canvas.getZoom();
+        const x = (touch.clientX - rect.left) / zoom;
+        const y = (touch.clientY - rect.top) / zoom;
+        const obj = canvas.findTarget({ clientX: touch.clientX, clientY: touch.clientY } as any, false);
+        if (obj && (obj as any)._isText) {
+          canvas.setActiveObject(obj);
+          // fabric.IText supports enterEditing
+          if (typeof (obj as any).enterEditing === "function") {
+            (obj as any).enterEditing();
+            (obj as any).selectAll?.();
+            canvas.renderAll();
+          }
+        }
+        lastTap = 0;
+      } else {
+        lastTap = now;
+      }
+    };
+    const canvasEl = canvas.getElement() as HTMLCanvasElement;
+    canvasEl.addEventListener("touchend", handleTouchEnd, { passive: true });
+
     return () => {
+      canvasEl.removeEventListener("touchend", handleTouchEnd);
       canvas.dispose();
       fabricRef.current = null;
       setCanvasReady(false);
@@ -787,7 +818,19 @@ export default function ProductCanvas({
           }}
           title="Видалити фон"
           label="Фон"
-          disabled={(!hasObjects && !activeLayerId) || removingBg || (!!activeLayerId && layersRef.current.find(l => l.id === activeLayerId)?.kind === "text")}
+          disabled={(() => {
+            if (!hasObjects && !activeLayerId) return true;
+            if (removingBg) return true;
+            const layer = activeLayerId ? layersRef.current.find(l => l.id === activeLayerId) : null;
+            if (!layer) return true;
+            if (layer.kind === "text") return true;
+            // Only allow raster images — disable for svg, pdf, etc.
+            const ALLOWED = /\.(jpe?g|png|webp)$/i;
+            const mime = layer.file?.type ?? "";
+            const name = layer.file?.name ?? layer.url ?? "";
+            const isRaster = ALLOWED.test(name) || /^image\/(jpeg|png|webp)$/.test(mime);
+            return !isRaster;
+          })()}
         >
           {removingBg ? <Loader2 className="size-3.5 animate-spin" /> : <Eraser className="size-3.5" />}
         </ToolBtn>
