@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAIGeneration } from "./useAIGeneration";
 import { dataUrlToFile } from "../_lib/dataUrlToFile";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import type { PrintLayer } from "@udo-craft/shared";
 import type { PrintTypePricingRow } from "@udo-craft/shared";
@@ -185,30 +186,30 @@ function SelfieUpload({
   };
 
   return (
-    <div className="space-y-1.5">
-      <p className="text-xs text-muted-foreground font-medium">Ваше фото (необов&apos;язково)</p>
+    <div className="w-full h-[140px]">
       {selfieDataUrl ? (
-        <div className="flex items-center gap-2">
+        <div className="relative w-full h-full rounded-xl border border-border overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={selfieDataUrl} alt="Ваше фото" className="w-12 h-12 rounded-lg object-cover border border-border" />
-          <div className="flex-1 min-w-0">
-            <p className="text-xs text-foreground font-medium">Фото завантажено</p>
-            <p className="text-[11px] text-muted-foreground">AI покаже мерч на вас</p>
+          <img src={selfieDataUrl} alt="Ваше фото" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center">
+            <p className="text-xs text-white/90 font-medium mb-3">Фото завантажено</p>
+            <Button variant="secondary" size="sm" onClick={onClear} aria-label="Видалити фото">
+              <X className="size-3.5 mr-1.5" /> Видалити
+            </Button>
           </div>
-          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={onClear} aria-label="Видалити фото">
-            <X className="size-3.5" />
-          </Button>
         </div>
       ) : (
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="w-full flex items-center gap-2.5 rounded-lg border border-dashed border-border/70 bg-muted/30 px-3 py-2.5 text-left hover:bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="w-full h-full flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border/70 bg-muted/30 hover:bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <Upload className="size-4 text-muted-foreground shrink-0" />
-          <div>
-            <p className="text-xs text-foreground">Завантажте своє фото</p>
-            <p className="text-[11px] text-muted-foreground">Побачте мерч на собі</p>
+          <div className="bg-background rounded-full p-2.5 shadow-sm border border-border">
+            <Upload className="size-4 text-muted-foreground" />
+          </div>
+          <div className="text-center px-4">
+            <p className="text-xs font-semibold text-foreground">Завантажте своє фото</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Відкриє камеру або галерею</p>
           </div>
         </button>
       )}
@@ -357,22 +358,12 @@ export function GenerationDrawer({
                         </div>
                       ) : (
                         <>
-                          <div className="flex bg-muted/50 p-1 rounded-lg mt-2">
-                            <button
-                              type="button"
-                              className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-colors ${activeTab === "selfie" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                              onClick={() => setActiveTab("selfie")}
-                            >
-                              Своє фото
-                            </button>
-                            <button
-                              type="button"
-                              className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-colors ${activeTab === "prompt" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                              onClick={() => setActiveTab("prompt")}
-                            >
-                              Сцена
-                            </button>
-                          </div>
+                          <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as "selfie" | "prompt")} className="w-full mt-2">
+                            <TabsList className="w-full grid grid-cols-2">
+                              <TabsTrigger value="selfie" className="text-xs">Своє фото</TabsTrigger>
+                              <TabsTrigger value="prompt" className="text-xs">Сцена</TabsTrigger>
+                            </TabsList>
+                          </Tabs>
 
                           <div className="min-h-[140px]">
                             {activeTab === "selfie" && (
@@ -382,9 +373,6 @@ export function GenerationDrawer({
                                   onUpload={setSelfieDataUrl}
                                   onClear={() => setSelfieDataUrl(null)}
                                 />
-                                {selfieDataUrl && (
-                                  <p className="text-[11px] text-muted-foreground px-1">AI згенерує зображення з вашим обличчям та обраним мерчем.</p>
-                                )}
                               </div>
                             )}
 
