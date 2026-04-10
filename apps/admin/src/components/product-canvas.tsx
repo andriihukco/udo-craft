@@ -174,6 +174,18 @@ export default function ProductCanvas({
       if (!obj || !(obj as any)._isLayer) return;
       const layerId = (obj as any)._layerId as string;
       const newText = (obj as fabric.IText).text ?? "";
+      // Update the stored text on the object so the layers sync doesn't overwrite it
+      (obj as any)._lastSyncedText = newText;
+      onLayerTextChangeRef.current?.(layerId, newText);
+    });
+    // Also catch text changes via object:modified (covers mobile blur)
+    canvas.on("object:modified" as any, (e: any) => {
+      const obj = e.target;
+      if (!obj || !(obj as any)._isLayer || !(obj as any)._isText) return;
+      const layerId = (obj as any)._layerId as string;
+      const newText = (obj as fabric.IText).text ?? "";
+      if ((obj as any)._lastSyncedText === newText) return;
+      (obj as any)._lastSyncedText = newText;
       onLayerTextChangeRef.current?.(layerId, newText);
     });
 
@@ -483,19 +495,22 @@ export default function ProductCanvas({
               syncLayerSizing(newText, layer);
               canvas.add(newText); canvas.setActiveObject(newText);
             } else {
-              const textObj = existing as fabric.Text;
-              textObj.set({
-                text: layer.textContent ?? "Текст",
-                fill: layer.textColor ?? "#000000",
-                fontFamily,
-                fontSize: layer.textFontSize ?? 48,
-                textAlign: layer.textAlign ?? "center",
-              } as any);
-              // Force Fabric to re-measure glyph metrics with the new font
-              if (typeof (textObj as any).initDimensions === "function") {
-                (textObj as any).initDimensions();
+              // Don't overwrite text if the user is currently editing it on canvas
+              if (!(existing as any).isEditing) {
+                const textObj = existing as fabric.Text;
+                textObj.set({
+                  text: layer.textContent ?? "Текст",
+                  fill: layer.textColor ?? "#000000",
+                  fontFamily,
+                  fontSize: layer.textFontSize ?? 48,
+                  textAlign: layer.textAlign ?? "center",
+                } as any);
+                // Force Fabric to re-measure glyph metrics with the new font
+                if (typeof (textObj as any).initDimensions === "function") {
+                  (textObj as any).initDimensions();
+                }
+                syncLayerSizing(textObj, layer);
               }
-              syncLayerSizing(textObj, layer);
             }
             try { fabricRef.current.renderAll(); } catch { /* disposed */ }
           });

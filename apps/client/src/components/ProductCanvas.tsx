@@ -181,6 +181,16 @@ export default function ProductCanvas({
       if (!obj || !(obj as any)._isLayer) return;
       const layerId = (obj as any)._layerId as string;
       const newText = (obj as fabric.IText).text ?? "";
+      (obj as any)._lastSyncedText = newText;
+      onLayerTextChangeRef.current?.(layerId, newText);
+    });
+    canvas.on("object:modified" as any, (e: any) => {
+      const obj = e.target;
+      if (!obj || !(obj as any)._isLayer || !(obj as any)._isText) return;
+      const layerId = (obj as any)._layerId as string;
+      const newText = (obj as fabric.IText).text ?? "";
+      if ((obj as any)._lastSyncedText === newText) return;
+      (obj as any)._lastSyncedText = newText;
       onLayerTextChangeRef.current?.(layerId, newText);
     });
 
@@ -504,7 +514,7 @@ export default function ProductCanvas({
               syncLayerSizing(newText, layer);
               canvas.add(newText);
               canvas.setActiveObject(newText);
-            } else {
+            } else if (!(existing as any).isEditing) {
               const textObj = existing as fabric.Text;
               textObj.set({
                 text: layer.textContent ?? "Текст",

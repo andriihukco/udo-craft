@@ -190,7 +190,6 @@ function SelfieUpload({
 
   return (
     <div className="space-y-1.5">
-      <p className="text-xs text-muted-foreground font-medium">Ваше фото (необов&apos;язково)</p>
       {selfieDataUrl ? (
         <div className="flex items-center gap-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -211,8 +210,8 @@ function SelfieUpload({
         >
           <Upload className="size-4 text-muted-foreground shrink-0" />
           <div>
-            <p className="text-xs text-foreground">Завантажте своє фото</p>
-            <p className="text-[11px] text-muted-foreground">Побачте мерч на собі</p>
+            <p className="text-xs text-foreground">Завантажте фото або зробіть селфі</p>
+            <p className="text-[11px] text-muted-foreground">AI покаже мерч саме на вас</p>
           </div>
         </button>
       )}
@@ -220,7 +219,6 @@ function SelfieUpload({
         ref={inputRef}
         type="file"
         accept="image/*"
-        capture="user"
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
@@ -406,10 +404,10 @@ export function GenerationDrawer({
                             />
                             {selfieDataUrl && (
                               <textarea
-                                aria-label="Додатковий опис (необов'язково)"
+                                aria-label="Додатковий опис"
                                 value={prompt}
                                 onChange={(e) => setPrompt(e.target.value)}
-                                placeholder="Додатковий опис сцени (необов'язково)…"
+                                placeholder="Додатковий опис сцени…"
                                 rows={2}
                                 className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                               />
