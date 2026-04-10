@@ -14,6 +14,7 @@ export interface UseAIGenerationOptions {
   productImages: Record<string, string>;
   productName: string;
   onSuccess?: (dataUrl: string) => void;
+  selfieDataUrl?: string;
 }
 
 export interface UseAIGenerationReturn {
@@ -32,6 +33,7 @@ export function useAIGeneration({
   productImages,
   productName,
   onSuccess,
+  selfieDataUrl,
 }: UseAIGenerationOptions): UseAIGenerationReturn {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,10 +47,13 @@ export function useAIGeneration({
 
       try {
         // 1. Resolve canvas image per priority chain
+        // Selfie takes highest priority when provided
         const activeSideLayers = layers.filter((l) => l.side === activeSide);
         let imageDataUrl: string | undefined;
 
-        if (activeSideLayers.length >= 1 && typeof captureRef.current === "function") {
+        if (selfieDataUrl) {
+          imageDataUrl = selfieDataUrl;
+        } else if (activeSideLayers.length >= 1 && typeof captureRef.current === "function") {
           imageDataUrl = captureRef.current();
         }
 
@@ -122,7 +127,7 @@ export function useAIGeneration({
         setLoading(false);
       }
     },
-    [activeSide, captureRef, layers, mockups, selectedColor, productImages, productName, onSuccess]
+    [activeSide, captureRef, layers, mockups, selectedColor, productImages, productName, onSuccess, selfieDataUrl]
   );
 
   return { generate, loading, error, clearError };
