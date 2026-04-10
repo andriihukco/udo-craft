@@ -9,6 +9,7 @@ import {
   Package, Tag, Ruler, Paintbrush,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAIGeneration } from "./useAIGeneration";
 import { dataUrlToFile } from "../_lib/dataUrlToFile";
 
@@ -357,22 +358,12 @@ export function GenerationDrawer({
                         </div>
                       ) : (
                         <>
-                          <div className="flex w-full mt-2 bg-muted rounded-xl p-1 gap-1">
-                            {(["selfie", "prompt"] as const).map((tab) => (
-                              <button
-                                key={tab}
-                                type="button"
-                                onClick={() => setActiveTab(tab)}
-                                className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all duration-150 ${
-                                  activeTab === tab
-                                    ? "bg-white text-foreground shadow-sm"
-                                    : "text-muted-foreground hover:text-foreground"
-                                }`}
-                              >
-                                {tab === "selfie" ? "Своє фото" : "Сцена"}
-                              </button>
-                            ))}
-                          </div>
+                          <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as "selfie" | "prompt")} className="w-full mt-2">
+                            <TabsList className="w-full grid grid-cols-2">
+                              <TabsTrigger value="selfie" className="text-xs">Своє фото</TabsTrigger>
+                              <TabsTrigger value="prompt" className="text-xs">Сцена</TabsTrigger>
+                            </TabsList>
+                          </Tabs>
 
                           <div className="min-h-[140px]">
                             {activeTab === "selfie" && (
