@@ -772,7 +772,7 @@ export default function ProductCanvas({
             setRemovingBg(true);
             try {
               const objectUrl = await removeBgClient(layer.url);
-              onRemoveBg(id, objectUrl);
+              onRemoveBg?.(id, objectUrl);
             } catch (err) {
               console.error("removebg error", err);
               toast.error(`Помилка видалення фону: ${err instanceof Error ? err.message : String(err)}`);

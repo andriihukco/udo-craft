@@ -84,12 +84,12 @@ export default function ProductCanvas({
   const layerSizeSignatureRef = useRef<Record<string, string>>({});
 
   // Persist transforms across side switches — pre-populate from layer.transform on mount
-  const layerTransforms = useRef<Record<string, { left: number; top: number; scaleX: number; scaleY: number; flipX: boolean }>>({});
+  const layerTransforms = useRef<Record<string, { left: number; top: number; scaleX: number; scaleY: number; angle: number; flipX: boolean }>>({});
   // Initialize from layers prop (restores transforms when editing from cart)
   if (Object.keys(layerTransforms.current).length === 0) {
     for (const l of layers) {
       if (l.transform) {
-        layerTransforms.current[l.id] = { left: l.transform.left, top: l.transform.top, scaleX: l.transform.scaleX, scaleY: l.transform.scaleY, flipX: l.transform.flipX };
+        layerTransforms.current[l.id] = { left: l.transform.left, top: l.transform.top, scaleX: l.transform.scaleX, scaleY: l.transform.scaleY, angle: l.transform.angle ?? 0, flipX: l.transform.flipX };
       }
     }
   }
@@ -576,7 +576,7 @@ export default function ProductCanvas({
       if ((obj as any)._isLayer)
         layerTransforms.current[(obj as any)._layerId] = {
           left: obj.left ?? 0, top: obj.top ?? 0,
-          scaleX: obj.scaleX ?? 1, scaleY: obj.scaleY ?? 1, flipX: obj.flipX ?? false,
+          scaleX: obj.scaleX ?? 1, scaleY: obj.scaleY ?? 1, angle: (obj as any).angle ?? 0, flipX: obj.flipX ?? false,
         };
     }
   }, []);
