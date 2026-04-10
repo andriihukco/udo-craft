@@ -172,12 +172,15 @@ export default function ProductCanvas({
     canvas.on("object:scaling", saveTransform);
 
     // ── Snap-to-center guide lines ───────────────────────────────────────
+    const snapColor = typeof document !== "undefined"
+      ? getComputedStyle(document.documentElement).getPropertyValue("--color-destructive").trim() || "#ef4444"
+      : "#ef4444";
     const vLine = new fabric.Line([CANVAS_SIZE / 2, 0, CANVAS_SIZE / 2, CANVAS_SIZE], {
-      stroke: "#ef4444", strokeWidth: 1, selectable: false, evented: false,
+      stroke: snapColor, strokeWidth: 1, selectable: false, evented: false,
       visible: false, strokeDashArray: [4, 4],
     });
     const hLine = new fabric.Line([0, CANVAS_SIZE / 2, CANVAS_SIZE, CANVAS_SIZE / 2], {
-      stroke: "#ef4444", strokeWidth: 1, selectable: false, evented: false,
+      stroke: snapColor, strokeWidth: 1, selectable: false, evented: false,
       visible: false, strokeDashArray: [4, 4],
     });
     canvas.add(vLine);
@@ -220,41 +223,43 @@ export default function ProductCanvas({
       canvas.renderAll();
     });
 
+    // ── Double-click / double-tap to enter text editing ──────────────────
+    canvas.on("mouse:dblclick", (e) => {
+      const obj = e.target;
+      if (!obj || !(obj as any)._isText) return;
+      const textObj = obj as fabric.Text;
+      if (typeof (textObj as any).enterEditing === "function") {
+        (textObj as any).enterEditing();
+        canvas.renderAll();
+      }
+    });
+
+    // Mobile double-tap detection
+    let lastTap = 0;
+    let lastTapTarget: fabric.Object | null = null;
+    const canvasEl = canvas.getElement();
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      const now = Date.now();
+      const obj = canvas.getActiveObject();
+      if (now - lastTap < 300 && obj && obj === lastTapTarget && (obj as any)._isText) {
+        e.preventDefault();
+        const textObj = obj as fabric.Text;
+        if (typeof (textObj as any).enterEditing === "function") {
+          (textObj as any).enterEditing();
+          canvas.renderAll();
+        }
+      }
+      lastTap = now;
+      lastTapTarget = obj ?? null;
+    };
+    canvasEl.addEventListener("touchstart", handleTouchStart, { passive: false });
+
     fabricRef.current = canvas;
     backgroundUrlRef.current = null;
     setCanvasReady(true);
-
-    // ── Double-tap to edit text on mobile ────────────────────────────────
-    let lastTap = 0;
-    const handleTouchEnd = (e: TouchEvent) => {
-      const now = Date.now();
-      const DOUBLE_TAP_MS = 300;
-      if (now - lastTap < DOUBLE_TAP_MS) {
-        const touch = e.changedTouches[0];
-        const rect = (canvas.getElement() as HTMLCanvasElement).getBoundingClientRect();
-        const zoom = canvas.getZoom();
-        const x = (touch.clientX - rect.left) / zoom;
-        const y = (touch.clientY - rect.top) / zoom;
-        const obj = canvas.findTarget({ clientX: touch.clientX, clientY: touch.clientY } as any, false);
-        if (obj && (obj as any)._isText) {
-          canvas.setActiveObject(obj);
-          // fabric.IText supports enterEditing
-          if (typeof (obj as any).enterEditing === "function") {
-            (obj as any).enterEditing();
-            (obj as any).selectAll?.();
-            canvas.renderAll();
-          }
-        }
-        lastTap = 0;
-      } else {
-        lastTap = now;
-      }
-    };
-    const canvasEl = canvas.getElement() as HTMLCanvasElement;
-    canvasEl.addEventListener("touchend", handleTouchEnd, { passive: true });
-
     return () => {
-      canvasEl.removeEventListener("touchend", handleTouchEnd);
+      canvasEl.removeEventListener("touchstart", handleTouchStart);
       canvas.dispose();
       fabricRef.current = null;
       setCanvasReady(false);
@@ -825,11 +830,14 @@ export default function ProductCanvas({
             if (!layer) return true;
             if (layer.kind === "text") return true;
             // Only allow raster images — disable for svg, pdf, etc.
-            const ALLOWED = /\.(jpe?g|png|webp)$/i;
+            const url = layer.url ?? "";
             const mime = layer.file?.type ?? "";
-            const name = layer.file?.name ?? layer.url ?? "";
-            const isRaster = ALLOWED.test(name) || /^image\/(jpeg|png|webp)$/.test(mime);
-            return !isRaster;
+            const ext = url.split("?")[0].split(".").pop()?.toLowerCase() ?? "";
+            const allowed = ["jpg", "jpeg", "png", "webp"];
+            const allowedMime = ["image/jpeg", "image/png", "image/webp"];
+            if (mime && !allowedMime.includes(mime)) return true;
+            if (!mime && !allowed.includes(ext)) return true;
+            return false;
           })()}
         >
           {removingBg ? <Loader2 className="size-3.5 animate-spin" /> : <Eraser className="size-3.5" />}
@@ -878,6 +886,7 @@ export default function ProductCanvas({
                 key={key}
                 type="button"
                 onClick={() => onSideChange(key)}
+                aria-pressed={activeSide === key}
                 className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                   activeSide === key ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-border hover:border-primary/50"
                 }`}
