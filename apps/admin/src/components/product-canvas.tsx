@@ -60,6 +60,7 @@ interface ProductCanvasProps {
   onLayerDelete?: (layerId: string) => void;
   onLayerDuplicate?: (layer: PrintLayer) => void;
   onLayerTransformChange?: (layerId: string, transform: NonNullable<PrintLayer["transform"]>) => void;
+  onLayerTextChange?: (layerId: string, newText: string) => void;
   onAIGenerate?: () => void;
 }
 
@@ -67,7 +68,7 @@ const CANVAS_SIZE = 520;
 
 export default function ProductCanvas({
   product, printZones, layers, activeSide, onSideChange,
-  variantImages, onSave, saveRef, fabricCanvasRef, captureRef, captureAllRef, activeLayerId, onLayerSelect, onRemoveBg, onLayerDelete, onLayerDuplicate, onLayerTransformChange, onAIGenerate,
+  variantImages, onSave, saveRef, fabricCanvasRef, captureRef, captureAllRef, activeLayerId, onLayerSelect, onRemoveBg, onLayerDelete, onLayerDuplicate, onLayerTransformChange, onLayerTextChange, onAIGenerate,
 }: ProductCanvasProps) {
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -107,6 +108,8 @@ export default function ProductCanvas({
   useEffect(() => { onLayerDeleteRef.current = onLayerDelete; }, [onLayerDelete]);
   const onLayerDuplicateRef = useRef(onLayerDuplicate);
   useEffect(() => { onLayerDuplicateRef.current = onLayerDuplicate; }, [onLayerDuplicate]);
+  const onLayerTextChangeRef = useRef(onLayerTextChange);
+  useEffect(() => { onLayerTextChangeRef.current = onLayerTextChange; }, [onLayerTextChange]);
 
   // ── Responsive resize ────────────────────────────────────────────────────
   useEffect(() => {
@@ -164,6 +167,15 @@ export default function ProductCanvas({
     };
     canvas.on("object:modified", saveTransform);
     canvas.on("object:scaling",  saveTransform);
+
+    // Sync text edits back to layer state when user finishes editing on canvas
+    canvas.on("text:editing:exited" as any, (e: any) => {
+      const obj = e.target;
+      if (!obj || !(obj as any)._isLayer) return;
+      const layerId = (obj as any)._layerId as string;
+      const newText = (obj as fabric.IText).text ?? "";
+      onLayerTextChangeRef.current?.(layerId, newText);
+    });
 
     // ── Snap-to-center guide lines ───────────────────────────────────────
     const vLine = new fabric.Line([CANVAS_SIZE / 2, 0, CANVAS_SIZE / 2, CANVAS_SIZE], {
@@ -378,20 +390,22 @@ export default function ProductCanvas({
       const sweep = curve > 0 ? 1 : 0;
       const pathStr = `M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} ${sweep} ${x2} ${y2}`;
       const path = new fabric.Path(pathStr, { visible: false });
-      const text = new fabric.Text(content, {
+      const text = new fabric.IText(content, {
         fontFamily, fontSize, fill, textAlign: align,
         path, pathStartOffset: 0, pathSide: "left",
         hasControls: true, hasBorders: true,
         left: baseLeft, top: baseTop, scaleX, scaleY, angle,
+        editable: true,
       } as any);
       return text;
     }
 
-    return new fabric.Text(content, {
+    return new fabric.IText(content, {
       fontFamily, fontSize, fill, textAlign: align,
       hasControls: true, hasBorders: true,
       left: baseLeft, top: baseTop, scaleX, scaleY, angle,
       width: 400,
+      editable: true,
     });
   };
 

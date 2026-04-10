@@ -257,6 +257,7 @@ export function GenerationDrawer({
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [progressIndex, setProgressIndex] = useState(0);
   const [selfieDataUrl, setSelfieDataUrl] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"photo" | "prompt">("prompt");
 
   const handleSuccess = useCallback((dataUrl: string) => {
     setPreviewImage(dataUrl);
@@ -278,7 +279,7 @@ export function GenerationDrawer({
   }, [loading]);
 
   useEffect(() => {
-    if (!open) { clearError(); setPrompt(""); setStep(1); setPreviewImage(null); setGenerated(false); }
+    if (!open) { clearError(); setPrompt(""); setStep(1); setPreviewImage(null); setGenerated(false); setSelfieDataUrl(null); }
   }, [open, clearError]);
 
   const otherSideWithLayers = layers.find((l) => l.side !== activeSide);
@@ -364,29 +365,61 @@ export function GenerationDrawer({
                         </button>
                       )}
 
-                      {/* Selfie upload */}
-                      <SelfieUpload
-                        selfieDataUrl={selfieDataUrl}
-                        onUpload={setSelfieDataUrl}
-                        onClear={() => setSelfieDataUrl(null)}
-                      />
-
-                      {/* Prompt — optional when selfie uploaded */}
-                      <div className="space-y-1">
-                        <textarea
-                          aria-label="Опис сцени для генерації"
-                          value={prompt}
-                          onChange={(e) => setPrompt(e.target.value)}
-                          placeholder={selfieDataUrl ? "Опишіть сцену (необов'язково)…" : "Опишіть сцену або оберіть пресет…"}
-                          rows={2}
-                          className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        />
-                        {selfieDataUrl && !prompt.trim() && (
-                          <p className="text-[11px] text-muted-foreground">AI згенерує зображення з вашим обличчям та мерчем</p>
-                        )}
+                      {/* Tabs */}
+                      <div className="flex gap-1 rounded-xl bg-muted/50 p-1">
+                        {(["prompt", "photo"] as const).map((tab) => (
+                          <button
+                            key={tab}
+                            type="button"
+                            onClick={() => setActiveTab(tab)}
+                            className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                              activeTab === tab
+                                ? "bg-primary text-primary-foreground shadow-sm"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {tab === "prompt" ? "За описом" : "За фото"}
+                          </button>
+                        ))}
                       </div>
 
-                      <RotatingPresets onSelect={setPrompt} />
+                      {/* Tab content */}
+                      <AnimatePresence mode="wait">
+                        {activeTab === "prompt" ? (
+                          <motion.div key="tab-prompt" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="space-y-2">
+                            <textarea
+                              aria-label="Опис сцени для генерації"
+                              value={prompt}
+                              onChange={(e) => setPrompt(e.target.value)}
+                              placeholder="Опишіть сцену або оберіть пресет…"
+                              rows={2}
+                              className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            />
+                            <RotatingPresets onSelect={setPrompt} />
+                          </motion.div>
+                        ) : (
+                          <motion.div key="tab-photo" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="space-y-2">
+                            <SelfieUpload
+                              selfieDataUrl={selfieDataUrl}
+                              onUpload={setSelfieDataUrl}
+                              onClear={() => setSelfieDataUrl(null)}
+                            />
+                            {selfieDataUrl && (
+                              <textarea
+                                aria-label="Додатковий опис (необов'язково)"
+                                value={prompt}
+                                onChange={(e) => setPrompt(e.target.value)}
+                                placeholder="Додатковий опис сцени (необов'язково)…"
+                                rows={2}
+                                className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              />
+                            )}
+                            {!selfieDataUrl && (
+                              <p className="text-[11px] text-muted-foreground">Завантажте своє фото — AI покаже мерч саме на вас</p>
+                            )}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
 
                       {showHint && (
                         <p className="text-xs text-muted-foreground">
