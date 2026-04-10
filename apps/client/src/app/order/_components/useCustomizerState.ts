@@ -131,6 +131,8 @@ export function useCustomizerState({
     : hasIncompletePrintSizes ? "Оберіть розмір для кожного нанесення." : null;
 
   const addLayer = (file: File) => addLayerFromHook(file, activeSide, printPricing);
+  const addLayerFull = (file: File, side: string, pricing: typeof printPricing) =>
+    addLayerFromHook(file, side, pricing);
   const addTextLayer = () => addTextLayerFromHook(activeSide, printPricing);
 
   const layerHandlers = useLayerHandlers({
@@ -202,6 +204,6 @@ export function useCustomizerState({
     discountPct, unitPrice, discounted, printCostPerUnit, total,
     requiresGarmentSize, hasIncompletePrintSizes, addDisabledReason,
     // actions
-    addLayer, addTextLayer, handleAddToCart, ...layerHandlers,
+    addLayer, addLayerFull, addTextLayer, handleAddToCart, ...layerHandlers,
   };
 }

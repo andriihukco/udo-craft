@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import type { PrintLayer } from "@udo-craft/shared";
 import type { Product, PrintZone, Material, ProductColorVariant } from "@udo-craft/shared";
@@ -9,6 +9,7 @@ import { CustomizerLeftPanel } from "./CustomizerLeftPanel";
 import { CustomizerLayout } from "./CustomizerLayout";
 import { CustomizerCanvas } from "./CustomizerCanvas";
 import { useCustomizerState } from "./useCustomizerState";
+import { GenerationDrawer } from "./GenerationDrawer";
 
 interface ProductWithConfig extends Product {
   size_chart_id?: string | null;
@@ -75,6 +76,13 @@ export function Customizer({
     initialSize, initialColor, initialLayers, existingMockupUploadedUrl,
   });
 
+  const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
+
+  const productImages: Record<string, string> =
+    (s.selectedVariant?.images && Object.keys(s.selectedVariant.images).length > 0
+      ? s.selectedVariant.images
+      : product.images ?? {}) as Record<string, string>;
+
   if (!s.mounted) return null;
 
   const leftPanel = (
@@ -137,37 +145,53 @@ export function Customizer({
   );
 
   const canvas = (
-    <CustomizerCanvas
-      product={product}
-      printZones={printZones}
-      layers={s.layers}
-      activeSide={s.activeSide}
-      activeLayerId={s.activeLayerId}
-      selectedVariantImages={
-        s.selectedVariant?.images && Object.keys(s.selectedVariant.images).length > 0
-          ? s.selectedVariant.images as Record<string, string>
-          : undefined
-      }
-      canvasSaveRef={s.canvasSaveRef}
-      captureRef={s.captureRef}
-      onSideChange={(side) => {
-        const imgs = s.selectedVariant?.images && Object.keys(s.selectedVariant.images).length > 0
-          ? s.selectedVariant.images : product.images ?? {};
-        if (!(imgs as Record<string, string>)[side]) return;
-        s.setActiveSide(side);
-      }}
-      onSave={(dataUrl, side, mm) => { s.setMockups((prev) => ({ ...prev, [side]: dataUrl })); s.setOffsetTopMm(mm); }}
-      onOffsetChange={s.setOffsetTopMm}
-      onLayerSelect={s.setActiveLayerId}
-      onRemoveBg={s.handleRemoveBg}
-      onRemoveBgStateChange={s.setRemovingBg}
-      onLayerDelete={s.handleDelete}
-      onLayerDuplicate={(layer) => { s.setLayersWithRef((prev) => [...prev, layer]); s.setActiveLayerId(layer.id); }}
-      onLayerTransformChange={(id, transform) => {
-        s.setLayerScales((prev) => ({ ...prev, [id]: transform.scaleX }));
-        s.setLayersWithRef((prev) => prev.map((l) => l.id === id ? { ...l, transform: transform as PrintLayer["transform"] } : l));
-      }}
-    />
+    <>
+      <GenerationDrawer
+        open={aiDrawerOpen}
+        onClose={() => setAiDrawerOpen(false)}
+        addLayer={(file, side, pricing) => s.addLayerFull(file, side, pricing)}
+        activeSide={s.activeSide}
+        printPricing={s.printPricing}
+        captureRef={s.captureRef}
+        layers={s.layers}
+        mockups={s.mockups}
+        selectedColor={s.selectedColor}
+        productImages={productImages}
+        productName={product.name}
+      />
+      <CustomizerCanvas
+        product={product}
+        printZones={printZones}
+        layers={s.layers}
+        activeSide={s.activeSide}
+        activeLayerId={s.activeLayerId}
+        selectedVariantImages={
+          s.selectedVariant?.images && Object.keys(s.selectedVariant.images).length > 0
+            ? s.selectedVariant.images as Record<string, string>
+            : undefined
+        }
+        canvasSaveRef={s.canvasSaveRef}
+        captureRef={s.captureRef}
+        onSideChange={(side) => {
+          const imgs = s.selectedVariant?.images && Object.keys(s.selectedVariant.images).length > 0
+            ? s.selectedVariant.images : product.images ?? {};
+          if (!(imgs as Record<string, string>)[side]) return;
+          s.setActiveSide(side);
+        }}
+        onSave={(dataUrl, side, mm) => { s.setMockups((prev) => ({ ...prev, [side]: dataUrl })); s.setOffsetTopMm(mm); }}
+        onOffsetChange={s.setOffsetTopMm}
+        onLayerSelect={s.setActiveLayerId}
+        onRemoveBg={s.handleRemoveBg}
+        onRemoveBgStateChange={s.setRemovingBg}
+        onLayerDelete={s.handleDelete}
+        onLayerDuplicate={(layer) => { s.setLayersWithRef((prev) => [...prev, layer]); s.setActiveLayerId(layer.id); }}
+        onLayerTransformChange={(id, transform) => {
+          s.setLayerScales((prev) => ({ ...prev, [id]: transform.scaleX }));
+          s.setLayersWithRef((prev) => prev.map((l) => l.id === id ? { ...l, transform: transform as PrintLayer["transform"] } : l));
+        }}
+        onAIGenerate={() => setAiDrawerOpen(true)}
+      />
+    </>
   );
 
   return createPortal(

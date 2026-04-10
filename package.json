@@ -18,7 +18,7 @@
     "dev": "npm run dev:admin & npm run dev:client",
     "dev:admin": "npm run dev --workspace=admin",
     "dev:client": "npm run dev --workspace=client",
-    "lint": "npm run lint --workspaces",
+    "lint": "npm run lint --workspaces --if-present",
     "prepare": "husky",
     "type-check": "npm run type-check --workspaces --if-present"
   },

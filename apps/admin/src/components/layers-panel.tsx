@@ -3,7 +3,6 @@
 import React, { useRef, useState, useMemo, useEffect } from "react";
 import { GripVertical, Trash2, ImagePlus, Type, Copy, Search, X, ChevronDown } from "lucide-react";
 import { PRINT_TYPES, TEXT_FONTS, type PrintLayer, type PrintTypeId, type TextFontId } from "./print-types";
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 
 interface QtyTier { min_qty: number; price_cents: number; }
 interface PricingRow {
@@ -60,6 +59,8 @@ export default function LayersPanel({
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [fontSearch, setFontSearch] = useState("");
   const [fontOpen, setFontOpen] = useState<string | null>(null);
+  const [typeOpen, setTypeOpen] = useState<string | null>(null);
+  const [sizeOpen, setSizeOpen] = useState<string | null>(null);
 
   // Auto-update size when canvas scale changes
   useEffect(() => {
@@ -253,22 +254,32 @@ export default function LayersPanel({
                 </div>
 
                 {isActive && (
-                  <div className="mt-1 rounded-xl border border-border bg-card overflow-hidden" onPointerDown={(e) => e.stopPropagation()}>
+                  <div className="mt-1 rounded-xl border border-border bg-card overflow-visible">
                     {/* ── Type + Size — always first ── */}
                     <div className="p-3 space-y-2 border-b border-border">
-                      <div className="grid grid-cols-2 gap-2" onPointerDown={(e) => e.stopPropagation()}>
+                      <div className="grid grid-cols-2 gap-2">
                         <div className="space-y-1">
                           <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Тип нанесення</label>
-                          <Select value={layer.type} onValueChange={(val) => onTypeChange(layer.id, val as PrintTypeId)}>
-                            <SelectTrigger className="h-8 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {PRINT_TYPES.map((t) => (
-                                <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <div className="relative">
+                            <button type="button" onClick={() => { setTypeOpen(typeOpen === layer.id ? null : layer.id); setSizeOpen(null); }}
+                              className="w-full flex items-center justify-between gap-2 h-9 px-3 rounded-lg border border-border bg-background hover:border-primary/50 transition-colors text-left">
+                              <span className="text-sm truncate">{PRINT_TYPES.find(t => t.id === layer.type)?.label ?? layer.type}</span>
+                              <ChevronDown className={`size-3.5 text-muted-foreground transition-transform shrink-0 ${typeOpen === layer.id ? "rotate-180" : ""}`} />
+                            </button>
+                            {typeOpen === layer.id && (
+                              <div className="absolute bottom-full left-0 right-0 mb-1 rounded-xl border border-border bg-card shadow-lg overflow-hidden z-50">
+                                <div className="max-h-48 overflow-y-auto">
+                                  {PRINT_TYPES.map((t) => (
+                                    <button key={t.id} type="button"
+                                      onClick={() => { onTypeChange(layer.id, t.id as PrintTypeId); setTypeOpen(null); }}
+                                      className={`w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-muted/60 transition-colors text-sm ${layer.type === t.id ? "bg-primary/5 text-primary" : ""}`}>
+                                      {t.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
                         {sizePriceRows.length > 0 && onSizeLabelChange && (() => {
                           const scale = layerScales[layer.id];
@@ -285,24 +296,34 @@ export default function LayersPanel({
                             });
                             autoSelectedSize = closest?.size_label;
                           }
+                          const selectedRow = sizePriceRows.find(r => r.size_label === autoSelectedSize);
                           return (
                             <div className="space-y-1">
                               <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Розмір нанесення</label>
-                              <Select value={autoSelectedSize ?? ""} onValueChange={(val) => val && onSizeLabelChange(layer.id, val)}>
-                                <SelectTrigger className="h-8 text-xs">
-                                  <SelectValue placeholder="Розмір" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {sizePriceRows.map((r) => {
-                                    const p = calcPrice(r.qty_tiers, quantity);
-                                    return (
-                                      <SelectItem key={r.size_label} value={r.size_label ?? ""}>
-                                        {r.size_label} ({r.size_min_cm}–{r.size_max_cm} см){p ? ` — ${(p / 100).toFixed(0)} ₴` : ""}
-                                      </SelectItem>
-                                    );
-                                  })}
-                                </SelectContent>
-                              </Select>
+                              <div className="relative">
+                                <button type="button" onClick={() => { setSizeOpen(sizeOpen === layer.id ? null : layer.id); setTypeOpen(null); }}
+                                  className="w-full flex items-center justify-between gap-2 h-9 px-3 rounded-lg border border-border bg-background hover:border-primary/50 transition-colors text-left">
+                                  <span className="text-sm truncate">{selectedRow ? selectedRow.size_label : "Розмір"}</span>
+                                  <ChevronDown className={`size-3.5 text-muted-foreground transition-transform shrink-0 ${sizeOpen === layer.id ? "rotate-180" : ""}`} />
+                                </button>
+                                {sizeOpen === layer.id && (
+                                  <div className="absolute bottom-full left-0 right-0 mb-1 rounded-xl border border-border bg-card shadow-lg overflow-hidden z-50">
+                                    <div className="max-h-48 overflow-y-auto">
+                                      {sizePriceRows.map((r) => {
+                                        const p = calcPrice(r.qty_tiers, quantity);
+                                        return (
+                                          <button key={r.size_label} type="button"
+                                            onClick={() => { onSizeLabelChange(layer.id, r.size_label ?? ""); setSizeOpen(null); }}
+                                            className={`w-full flex items-center justify-between px-3 py-2 text-left hover:bg-muted/60 transition-colors gap-2 ${autoSelectedSize === r.size_label ? "bg-primary/5 text-primary" : ""}`}>
+                                            <span className="text-sm font-medium">{r.size_label}</span>
+                                            {p ? <span className="text-xs text-muted-foreground shrink-0">{(p / 100).toFixed(0)} ₴/шт</span> : null}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           );
                         })()}

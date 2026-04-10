@@ -17,4 +17,4 @@ if (!window.__SENTRY_INITIALIZED__) {
   });
 }
 
-export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+// onRouterTransitionStart is not available in the installed Sentry version
