@@ -180,6 +180,32 @@ function GeneratingThumbnail({ onClick }: { onClick: () => void }) {
   );
 }
 
+/** Resize + compress an image file to a canvas-derived JPEG data URL.
+ *  Max dimension 1024px, quality 0.82 — keeps detail for AI while staying well under 1MB. */
+function compressImage(file: File, maxDim = 1024, quality = 0.82): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = (e) => {
+      const src = e.target?.result as string;
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.src = src;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 function SelfieUpload({
   selfieDataUrl, onUpload, onClear,
 }: {
@@ -189,12 +215,18 @@ function SelfieUpload({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (typeof e.target?.result === "string") onUpload(e.target.result);
-    };
-    reader.readAsDataURL(file);
+  const handleFile = async (file: File) => {
+    try {
+      const compressed = await compressImage(file);
+      onUpload(compressed);
+    } catch {
+      // fallback: read as-is
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (typeof e.target?.result === "string") onUpload(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
@@ -232,7 +264,7 @@ function SelfieUpload({
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file) handleFile(file);
+          if (file) void handleFile(file);
           e.target.value = "";
         }}
       />
