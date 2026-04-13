@@ -411,8 +411,8 @@ export function Customizer({
         sidebar={sidebar}
         panel={panel}
         activeTab={s.activeTab}
-        onTabChange={s.setActiveTab}
-        onPriceOpen={() => setMobilePriceOpen(true)}
+        onTabChange={(tab) => { setMobilePriceOpen(false); s.setActiveTab(tab); }}
+        onPriceOpen={() => { s.setActiveTab(null); setMobilePriceOpen(true); }}
         canvas={canvas}
         rightPanel={rightPanel}
         stickyButton={stickyButton}

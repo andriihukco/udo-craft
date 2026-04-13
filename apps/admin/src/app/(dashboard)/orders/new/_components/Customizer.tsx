@@ -477,13 +477,13 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
         <div className="flex">
           {MOBILE_TABS.map((tab) => (
             <button key={tab.id}
-              onClick={() => setActiveTab(activeTab === tab.id ? null : tab.id)}
+              onClick={() => { setMobilePriceOpen(false); setActiveTab(activeTab === tab.id ? null : tab.id); }}
               aria-label={tab.label} aria-pressed={activeTab === tab.id}
               className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors min-h-[44px] ${activeTab === tab.id ? "text-primary border-t-2 border-primary -mt-px" : "text-muted-foreground"}`}>
               <tab.Icon className="size-4" />{tab.label}
             </button>
           ))}
-          <button onClick={() => setMobilePriceOpen((v) => !v)}
+          <button onClick={() => { setActiveTab(null); setMobilePriceOpen((v) => !v); }}
             aria-label="Тираж та ціна"
             className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors min-h-[44px] ${mobilePriceOpen ? "text-primary border-t-2 border-primary -mt-px" : "text-muted-foreground"}`}>
             <Ruler className="size-4" />Тираж
