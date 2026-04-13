@@ -417,6 +417,31 @@ export function Customizer({
         rightPanel={rightPanel}
         stickyButton={stickyButton}
         onClose={onClose}
+        mobileTabSheet={
+          <MobileSheet
+            open={!!s.activeTab && !mobilePriceOpen}
+            onClose={() => s.setActiveTab(null)}
+            title={tabLabel(s.activeTab)}
+          >
+            <div className="p-4">{panelContent(s.activeTab)}</div>
+          </MobileSheet>
+        }
+        mobilePriceSheet={mobilePriceOpen ? (
+          <div className="fixed inset-x-0 top-0 bottom-14 z-[9994] flex flex-col justify-end" onClick={() => setMobilePriceOpen(false)}>
+            <div className="absolute inset-0 bg-black/40" />
+            <div className="relative bg-background border-t border-border flex flex-col" style={{ maxHeight: "calc(100dvh - 56px - 44px)" }} onClick={(e) => e.stopPropagation()}>
+              <div className="flex justify-center pt-2.5 pb-1 shrink-0"><div className="w-10 h-1 rounded-full bg-border" /></div>
+              <div className="flex items-center justify-between px-4 pb-3 shrink-0">
+                <p className="text-sm font-semibold">Тираж та ціна</p>
+                <button onClick={() => setMobilePriceOpen(false)} className="size-7 rounded-full flex items-center justify-center hover:bg-muted transition-colors"><X className="size-4" /></button>
+              </div>
+              <div className="overflow-y-auto px-4 pb-2">{rightPanel}</div>
+              <div className="shrink-0 border-t border-border px-4 py-3 pb-[max(12px,env(safe-area-inset-bottom))]">
+                {stickyButton}
+              </div>
+            </div>
+          </div>
+        ) : null}
       />
 
       {/* GenerationDrawer — rendered at portal level so it overlays everything */}
@@ -433,33 +458,6 @@ export function Customizer({
         productImages={productImages}
         productName={product.name}
       />
-
-      {/* Mobile panel sheet — driven by activeTab, hidden when price sheet is open */}
-      <MobileSheet
-        open={!!s.activeTab && !mobilePriceOpen}
-        onClose={() => s.setActiveTab(null)}
-        title={tabLabel(s.activeTab)}
-      >
-        <div className="p-4">{panelContent(s.activeTab)}</div>
-      </MobileSheet>
-
-      {/* Mobile price sheet */}
-      {mobilePriceOpen && (
-        <div className="fixed inset-x-0 top-0 bottom-14 z-[9994] flex flex-col justify-end" onClick={() => setMobilePriceOpen(false)}>
-          <div className="absolute inset-0 bg-black/40" />
-          <div className="relative bg-background border-t border-border flex flex-col" style={{ maxHeight: "calc(100dvh - 56px - 44px)" }} onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-center pt-2.5 pb-1 shrink-0"><div className="w-10 h-1 rounded-full bg-border" /></div>
-            <div className="flex items-center justify-between px-4 pb-3 shrink-0">
-              <p className="text-sm font-semibold">Тираж та ціна</p>
-              <button onClick={() => setMobilePriceOpen(false)} className="size-7 rounded-full flex items-center justify-center hover:bg-muted transition-colors"><X className="size-4" /></button>
-            </div>
-            <div className="overflow-y-auto px-4 pb-2">{rightPanel}</div>
-            <div className="shrink-0 border-t border-border px-4 py-3 pb-[max(12px,env(safe-area-inset-bottom))]">
-              {stickyButton}
-            </div>
-          </div>
-        </div>
-      )}
     </>,
     document.body
   );

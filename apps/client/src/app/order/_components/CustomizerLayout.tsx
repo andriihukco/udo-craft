@@ -24,21 +24,19 @@ interface CustomizerLayoutProps {
   setMobileSheet: (v: "config" | "price" | null) => void;
   addingToCart: boolean;
   removingBg?: boolean;
-  /** 56px icon sidebar (EditorSidebar) — desktop only */
   sidebar?: React.ReactNode;
-  /** 0–280px animated panel column — desktop only */
   panel?: React.ReactNode;
-  /** Active tab for mobile nav (new layout only) */
   activeTab?: SidebarTabId | null;
-  /** Tab change handler for mobile nav (new layout only) */
   onTabChange?: (tab: SidebarTabId | null) => void;
-  /** Open price sheet on mobile (new layout only) */
   onPriceOpen?: () => void;
   /** @deprecated use sidebar + panel instead */
   leftPanel?: React.ReactNode;
   canvas: React.ReactNode;
   rightPanel: React.ReactNode;
   stickyButton?: React.ReactNode;
+  /** Mobile sheets rendered inside the layout stacking context */
+  mobileTabSheet?: React.ReactNode;
+  mobilePriceSheet?: React.ReactNode;
   onClose: () => void;
 }
 
@@ -47,7 +45,9 @@ interface CustomizerLayoutProps {
 export function CustomizerLayout({
   productName, total, mobileSheet, setMobileSheet, addingToCart, removingBg,
   sidebar, panel, activeTab, onTabChange, onPriceOpen,
-  leftPanel, canvas, rightPanel, stickyButton, onClose,
+  leftPanel, canvas, rightPanel, stickyButton,
+  mobileTabSheet, mobilePriceSheet,
+  onClose,
 }: CustomizerLayoutProps) {
   const isNewLayout = sidebar !== undefined || panel !== undefined;
 
@@ -180,7 +180,13 @@ export function CustomizerLayout({
         </div>
       )}
 
-      {!isNewLayout && (
+      {isNewLayout ? (
+        /* New layout: mobile sheets passed as props */
+        <>
+          {mobileTabSheet}
+          {mobilePriceSheet}
+        </>
+      ) : (
         <CustomizerMobileSheet
           activeSheet={mobileSheet}
           onClose={() => setMobileSheet(null)}
