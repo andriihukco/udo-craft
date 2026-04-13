@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import type { Product, Material, ProductColorVariant, PrintLayer } from "@udo-craft/shared";
 import LayersPanel, { type PrintTypePricingRow } from "@/components/LayersPanel";
 import { ArrowLeft, Check } from "lucide-react";
+import type { TextLayerPatch } from "./editor/TextPanel";
 
 interface ProductWithConfig extends Product {
   size_chart_id?: string | null;
@@ -38,7 +39,7 @@ export interface CustomizerLeftPanelProps {
   onLayerReorder: (layers: PrintLayer[]) => void;
   onAddClick: () => void;
   onAddText: () => void;
-  onTextChange: (id: string, patch: Partial<Pick<PrintLayer, "textContent" | "textFont" | "textColor" | "textFontSize" | "textAlign" | "textCurve">>) => void;
+  onTextChange: (id: string, patch: TextLayerPatch) => void;
   onFileChange: (file: File) => void;
 }
 
@@ -122,11 +123,9 @@ export function CustomizerLeftPanel({
           layers={layers}
           activeSide={activeSide}
           activeLayerId={activeLayerId}
-          sideLabel={activeSide}
           onSelect={onLayerSelect}
           onDelete={onLayerDelete}
           onDuplicate={onLayerDuplicate}
-          onRemoveBg={onLayerRemoveBg}
           onTypeChange={onLayerTypeChange}
           onSizeLabelChange={onLayerSizeLabelChange}
           onReorder={onLayerReorder}

@@ -13,6 +13,7 @@ import { Plus, Pencil, Trash2, RefreshCw, Shirt, Palette, Ruler, Layers, FolderT
 import { toast } from "sonner";
 import { ProductColorVariantsList } from "@/components/product-color-variants";
 import PrintTypePricingManager from "@/components/print-type-pricing-manager";
+import PrintPresetsTab from "@/components/print-presets-tab";
 
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -39,13 +40,14 @@ interface Product {
   discount_grid?: { qty: number; discount_pct: number }[];
 }
 
-type Tab = "products" | "categories" | "materials" | "print_pricing";
+type Tab = "products" | "categories" | "materials" | "print_pricing" | "prints";
 
 const TABS: { key: Tab; icon: React.ElementType; label: string }[] = [
   { key: "products",      icon: Shirt,      label: "Товари" },
   { key: "categories",   icon: FolderTree, label: "Категорії" },
   { key: "materials",    icon: Palette,    label: "Кольори" },
   { key: "print_pricing", icon: Layers,    label: "Ціни друку" },
+  { key: "prints",        icon: ImageIcon,  label: "Принти" },
 ];
 
 const EMPTY_PRODUCT = {
@@ -359,7 +361,7 @@ export default function ProductsPage() {
 
   const addActions: Record<Tab, () => void> = {
     products: openCreateProduct, categories: openCreateCategory,
-    materials: openCreateMaterial, print_pricing: () => {},
+    materials: openCreateMaterial, print_pricing: () => {}, prints: () => {},
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -377,7 +379,7 @@ export default function ProductsPage() {
             </button>
           ))}
         </nav>
-        <Button size="sm" className="ml-auto h-7 text-xs" onClick={addActions[tab]} style={{ visibility: tab === "print_pricing" ? "hidden" : undefined }}>
+        <Button size="sm" className="ml-auto h-7 text-xs" onClick={addActions[tab]} style={{ visibility: tab === "print_pricing" || tab === "prints" ? "hidden" : undefined }}>
           <Plus className="w-3.5 h-3.5 mr-1" /> Додати
         </Button>
       </div>
@@ -583,6 +585,9 @@ export default function ProductsPage() {
             <PrintTypePricingManager />
           </div>
         )}
+
+        {/* ── Print Presets ── */}
+        {tab === "prints" && <PrintPresetsTab />}
       </div>
 
       {/* ── Product Modal ── */}

@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { fabric } from "fabric";
 import { Product, PrintZone } from "@udo-craft/shared";
-import { Trash2, Focus, Eraser, Loader2, Sparkles } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, Bold, BringToFront, Copy, Eraser, FlipHorizontal, Focus, Italic, Loader2, Pencil, RotateCcw, RotateCw, SendToBack, Trash2 } from "lucide-react";
 import { removeBgClient } from "@/lib/remove-bg-client";
 import { toast } from "sonner";
 import { PRINT_TYPES, TEXT_FONTS, type PrintTypeId, type PrintLayer, type TextFontId } from "./print-types";
@@ -61,14 +61,20 @@ interface ProductCanvasProps {
   onLayerDuplicate?: (layer: PrintLayer) => void;
   onLayerTransformChange?: (layerId: string, transform: NonNullable<PrintLayer["transform"]>) => void;
   onTextChange?: (layerId: string, textContent: string) => void;
+  onLayerPatch?: (layerId: string, patch: Partial<PrintLayer>) => void;
   onAIGenerate?: () => void;
+  onOpenDrawingStudio?: (layerId: string) => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
 }
 
 const CANVAS_SIZE = 520;
 
 export default function ProductCanvas({
   product, printZones, layers, activeSide, onSideChange,
-  variantImages, onSave, saveRef, fabricCanvasRef, captureRef, captureAllRef, activeLayerId, onLayerSelect, onRemoveBg, onLayerDelete, onLayerDuplicate, onLayerTransformChange, onTextChange, onAIGenerate,
+  variantImages, onSave, saveRef, fabricCanvasRef, captureRef, captureAllRef, activeLayerId, onLayerSelect, onRemoveBg, onLayerDelete, onLayerDuplicate, onLayerTransformChange, onTextChange, onLayerPatch, onAIGenerate, onOpenDrawingStudio, onUndo, onRedo, canUndo, canRedo,
 }: ProductCanvasProps) {
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -772,11 +778,17 @@ export default function ProductCanvas({
         return;
       }
 
-      // Ctrl+Z / Cmd+Z - Undo (simple implementation)
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+      // Ctrl+Z / Cmd+Z - Undo
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "z") {
         e.preventDefault();
-        // Note: Full undo/redo would require maintaining a history stack
-        // This is a placeholder for basic undo functionality
+        onUndo?.();
+        return;
+      }
+
+      // Ctrl+Shift+Z / Cmd+Shift+Z - Redo
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        onRedo?.();
         return;
       }
     };
@@ -788,41 +800,132 @@ export default function ProductCanvas({
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col items-center gap-3 w-full">
-      <div className="flex items-center gap-1 bg-white border border-border rounded-xl px-2 py-1.5 shadow-sm overflow-x-auto max-w-full">
-        <ToolBtn onClick={centerSelected} title="По центру" label="Центр" disabled={!hasObjects || isCentered}><Focus className="size-3.5" /></ToolBtn>
-        <div className="w-px h-4 bg-border mx-1 shrink-0" />
-        <ToolBtn
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={async () => {
-            if (!onRemoveBg) return;
-            const id = activeLayerIdRef.current ?? activeLayerId ?? null;
-            if (!id) return;
-            const layer = layersRef.current.find((l) => l.id === id); if (!layer || layer.kind === "text") return;
-            setRemovingBg(true);
-            try {
-              const objectUrl = await removeBgClient(layer.url);
-              onRemoveBg(id, objectUrl);
-            } catch (err) {
-              console.error("removebg error", err);
-              toast.error(`Помилка видалення фону: ${err instanceof Error ? err.message : String(err)}`);
-            }
-            finally { setRemovingBg(false); }
-          }}
-          title="Видалити фон"
-          label="Фон"
-          disabled={(!hasObjects && !activeLayerId) || removingBg || (!!activeLayerId && layersRef.current.find(l => l.id === activeLayerId)?.kind === "text")}
-        >
-          {removingBg ? <Loader2 className="size-3.5 animate-spin" /> : <Eraser className="size-3.5" />}
-        </ToolBtn>
-        {onAIGenerate && process.env.NEXT_PUBLIC_GEMINI_ENABLED && (
-          <>
+      {/* ── Dynamic contextual toolbar — only shown when a layer is selected ── */}
+      {activeLayerId && (() => {
+        const activeLayer = layers.find(l => l.id === activeLayerId) ?? null;
+        if (!activeLayer) return null;
+
+        const isText = activeLayer.kind === "text";
+        const isDrawing = activeLayer.kind === "drawing";
+        const isSvg = !isText && !isDrawing && (
+          activeLayer.file?.type === "image/svg+xml" ||
+          activeLayer.url?.includes(".svg") ||
+          activeLayer.uploadedUrl?.includes(".svg") ||
+          (activeLayer as any).svgFillColor !== undefined
+        );
+        const isRaster = !isText && !isDrawing && !isSvg;
+
+        const canRemoveBg = isRaster && !removingBg && (() => {
+          const url = activeLayer.url ?? "";
+          const mime = activeLayer.file?.type ?? "";
+          const ext = url.split("?")[0].split(".").pop()?.toLowerCase() ?? "";
+          const allowed = ["jpg", "jpeg", "png", "webp"];
+          const allowedMime = ["image/jpeg", "image/png", "image/webp"];
+          if (mime && !allowedMime.includes(mime)) return false;
+          if (!mime && !allowed.includes(ext)) return false;
+          return true;
+        })();
+
+        const patch = (p: Partial<PrintLayer>) => onLayerPatch?.(activeLayerId, p);
+
+        return (
+          <div className="flex items-center gap-1 bg-card border border-border rounded-xl px-2 py-1.5 shadow-sm overflow-x-auto max-w-full">
+            {/* Undo / Redo */}
+            <ToolBtn onClick={() => onUndo?.()} title="Скасувати (Ctrl+Z)" label="Скасувати" disabled={!canUndo}>
+              <RotateCcw className="size-3.5" />
+            </ToolBtn>
+            <ToolBtn onClick={() => onRedo?.()} title="Повторити (Ctrl+Shift+Z)" label="Повторити" disabled={!canRedo}>
+              <RotateCw className="size-3.5" />
+            </ToolBtn>
             <div className="w-px h-4 bg-border mx-1 shrink-0" />
-            <ToolBtn onClick={onAIGenerate} title="AI генерація" label="AI"><Sparkles className="size-3.5" /></ToolBtn>
-          </>
-        )}
-        <div className="w-px h-4 bg-border mx-1" />
-        <ToolBtn onClick={deleteSelected} title="Видалити шар" label="Видалити" disabled={!hasObjects} danger><Trash2 className="size-3.5" /></ToolBtn>
-      </div>
+            {/* Generic */}
+            <ToolBtn onClick={centerSelected} title="По центру" label="Центр" disabled={isCentered}>
+              <Focus className="size-3.5" />
+            </ToolBtn>
+            <ToolBtn onClick={flipSelected} title="Відзеркалити" label="Дзеркало">
+              <FlipHorizontal className="size-3.5" />
+            </ToolBtn>
+            <ToolBtn onClick={() => { const canvas = fabricRef.current; const obj = canvas?.getActiveObject(); if (obj) { canvas?.bringForward(obj); canvas?.renderAll(); } }} title="На передній план" label="Вперед">
+              <BringToFront className="size-3.5" />
+            </ToolBtn>
+            <ToolBtn onClick={() => { const canvas = fabricRef.current; const obj = canvas?.getActiveObject(); if (obj) { canvas?.sendBackwards(obj); canvas?.renderAll(); } }} title="На задній план" label="Назад">
+              <SendToBack className="size-3.5" />
+            </ToolBtn>
+            {onLayerDuplicate && (
+              <ToolBtn onClick={() => onLayerDuplicate(activeLayer)} title="Дублювати" label="Копія">
+                <Copy className="size-3.5" />
+              </ToolBtn>
+            )}
+            <div className="w-px h-4 bg-border mx-1 shrink-0" />
+            {/* Text controls */}
+            {isText && (
+              <>
+                <select value={(activeLayer as any).textFont ?? "Montserrat"}
+                  onChange={(e) => patch({ textFont: e.target.value as any })}
+                  className="h-8 px-1.5 text-xs rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary max-w-[110px] shrink-0"
+                  style={{ fontFamily: (activeLayer as any).textFont ?? "Montserrat" }}>
+                  {TEXT_FONTS.map(f => <option key={f.id} value={f.id} style={{ fontFamily: f.id }}>{f.label}</option>)}
+                </select>
+                <div className="flex items-center gap-0.5 shrink-0">
+                  <button type="button" onClick={() => patch({ textFontSize: Math.max(8, ((activeLayer as any).textFontSize ?? 36) - 2) })} className="size-6 flex items-center justify-center rounded border border-border text-muted-foreground hover:bg-muted text-xs font-bold">−</button>
+                  <span className="w-8 text-center text-xs tabular-nums">{(activeLayer as any).textFontSize ?? 36}</span>
+                  <button type="button" onClick={() => patch({ textFontSize: Math.min(200, ((activeLayer as any).textFontSize ?? 36) + 2) })} className="size-6 flex items-center justify-center rounded border border-border text-muted-foreground hover:bg-muted text-xs font-bold">+</button>
+                </div>
+                <ToolBtn title="Жирний" label="Ж" active={!!(activeLayer as any).textBold} onClick={() => patch({ textBold: !(activeLayer as any).textBold })}><Bold className="size-3.5" /></ToolBtn>
+                <ToolBtn title="Курсив" label="К" active={!!(activeLayer as any).textItalic} onClick={() => patch({ textItalic: !(activeLayer as any).textItalic })}><Italic className="size-3.5" /></ToolBtn>
+                <div className="flex flex-col items-center gap-0.5 shrink-0 min-w-[44px] min-h-[48px] justify-center">
+                  <input type="color" value={(activeLayer as any).textColor ?? "#000000"} onChange={(e) => patch({ textColor: e.target.value })} className="w-6 h-6 rounded border border-border cursor-pointer p-0.5 bg-background" />
+                  <span className="text-[9px] leading-none text-muted-foreground">Колір</span>
+                </div>
+                <ToolBtn title="Ліво" label="←" active={((activeLayer as any).textAlign ?? "center") === "left"} onClick={() => patch({ textAlign: "left" })}><AlignLeft className="size-3.5" /></ToolBtn>
+                <ToolBtn title="Центр" label="↔" active={((activeLayer as any).textAlign ?? "center") === "center"} onClick={() => patch({ textAlign: "center" })}><AlignCenter className="size-3.5" /></ToolBtn>
+                <ToolBtn title="Право" label="→" active={((activeLayer as any).textAlign ?? "center") === "right"} onClick={() => patch({ textAlign: "right" })}><AlignRight className="size-3.5" /></ToolBtn>
+                <div className="w-px h-4 bg-border mx-1 shrink-0" />
+              </>
+            )}
+            {/* SVG controls */}
+            {isSvg && (
+              <>
+                <div className="flex flex-col items-center gap-0.5 shrink-0 min-w-[44px] min-h-[48px] justify-center">
+                  <input type="color" value={(activeLayer as any).svgFillColor ?? "#000000"} onChange={(e) => patch({ svgFillColor: e.target.value } as any)} className="w-6 h-6 rounded border border-border cursor-pointer p-0.5 bg-background" />
+                  <span className="text-[9px] leading-none text-muted-foreground">Заливка</span>
+                </div>
+                <div className="flex flex-col items-center gap-0.5 shrink-0 min-w-[44px] min-h-[48px] justify-center">
+                  <input type="color" value={(activeLayer as any).svgStrokeColor ?? "#000000"} onChange={(e) => patch({ svgStrokeColor: e.target.value } as any)} className="w-6 h-6 rounded border border-border cursor-pointer p-0.5 bg-background" />
+                  <span className="text-[9px] leading-none text-muted-foreground">Обводка</span>
+                </div>
+                <div className="w-px h-4 bg-border mx-1 shrink-0" />
+              </>
+            )}
+            {/* Raster: remove BG */}
+            {isRaster && (
+              <>
+                <ToolBtn onClick={async () => { if (!canRemoveBg || !onRemoveBg) return; setRemovingBg(true); try { const objectUrl = await removeBgClient(activeLayer.url); onRemoveBg(activeLayerId, objectUrl); } catch (err) { toast.error(`Помилка видалення фону: ${err instanceof Error ? err.message : String(err)}`); } finally { setRemovingBg(false); } }} title="Видалити фон" label="Фон" disabled={!canRemoveBg}>
+                  {removingBg ? <Loader2 className="size-3.5 animate-spin" /> : <Eraser className="size-3.5" />}
+                </ToolBtn>
+                <div className="w-px h-4 bg-border mx-1 shrink-0" />
+              </>
+            )}
+            {/* Drawing: edit */}
+            {isDrawing && onOpenDrawingStudio && (
+              <>
+                <ToolBtn onClick={() => onOpenDrawingStudio(activeLayerId)} title="Редагувати малюнок" label="Редагувати"><Pencil className="size-3.5" /></ToolBtn>
+                <div className="w-px h-4 bg-border mx-1 shrink-0" />
+              </>
+            )}
+            {/* Opacity */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-[9px] text-muted-foreground">Прозорість</span>
+              <input type="range" min={0} max={100} value={Math.round(((activeLayer as any).opacity ?? 1) * 100)}
+                onChange={(e) => { const v = Number(e.target.value) / 100; const obj = fabricRef.current?.getActiveObject(); if (obj) { obj.set("opacity", v); fabricRef.current?.renderAll(); } patch({ opacity: v } as any); }}
+                className="w-20 h-1.5 accent-primary" />
+              <span className="text-[9px] text-muted-foreground w-7 text-right tabular-nums">{Math.round(((activeLayer as any).opacity ?? 1) * 100)}%</span>
+            </div>
+            <div className="w-px h-4 bg-border mx-1 shrink-0" />
+            <ToolBtn onClick={deleteSelected} title="Видалити шар" label="Видалити" danger><Trash2 className="size-3.5" /></ToolBtn>
+          </div>
+        );
+      })()}
 
       <div ref={containerRef} className="w-full" style={{ height: canvasSize }}>
         <div className="relative mx-auto" style={{ width: canvasSize, height: canvasSize }}>
@@ -876,15 +979,16 @@ export default function ProductCanvas({
   );
 }
 
-function ToolBtn({ children, onClick, onMouseDown, title, label, disabled, danger }: {
+function ToolBtn({ children, onClick, onMouseDown, title, label, disabled, danger, active }: {
   children: React.ReactNode; onClick: () => void;
   onMouseDown?: (e: React.MouseEvent) => void;
-  title: string; label: string; disabled?: boolean; danger?: boolean;
+  title: string; label: string; disabled?: boolean; danger?: boolean; active?: boolean;
 }) {
   return (
     <button onClick={onClick} onMouseDown={onMouseDown} title={title} disabled={disabled}
       className={`min-w-[44px] min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed px-1 ${
-        danger ? "hover:bg-red-50 hover:text-red-500 text-muted-foreground"
+        active ? "bg-primary/10 text-primary"
+        : danger ? "hover:bg-red-50 hover:text-red-500 text-muted-foreground"
                : "hover:bg-muted text-muted-foreground hover:text-foreground"}`}>
       {children}
       <span className="text-[9px] leading-none mt-0.5">{label}</span>

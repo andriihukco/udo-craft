@@ -113,24 +113,29 @@ export const PRINT_TYPES = [
 export type PrintTypeId = typeof PRINT_TYPES[number]["id"];
 
 /**
- * 15 Google Fonts with full Cyrillic support — visually distinct families.
+ * Google Fonts with full Cyrillic support — visually distinct families.
  */
 export const TEXT_FONTS = [
-  { id: "Montserrat",         label: "Montserrat",          style: "sans-serif", category: "Гротеск"       },
-  { id: "PT Sans",            label: "PT Sans",              style: "sans-serif", category: "Гротеск"       },
-  { id: "PT Serif",           label: "PT Serif",             style: "serif",      category: "Антиква"       },
-  { id: "Playfair Display",   label: "Playfair Display",     style: "serif",      category: "Антиква"       },
-  { id: "Oswald",             label: "Oswald",               style: "sans-serif", category: "Конденсований" },
-  { id: "Raleway",            label: "Raleway",              style: "sans-serif", category: "Гротеск"       },
-  { id: "Lobster",            label: "Lobster",              style: "cursive",    category: "Декоративний"  },
-  { id: "Comfortaa",          label: "Comfortaa",            style: "cursive",    category: "Декоративний"  },
-  { id: "Exo 2",              label: "Exo 2",                style: "sans-serif", category: "Технічний"     },
-  { id: "Nunito",             label: "Nunito",               style: "sans-serif", category: "Гротеск"       },
-  { id: "Merriweather",       label: "Merriweather",         style: "serif",      category: "Антиква"       },
-  { id: "Cormorant Garamond", label: "Cormorant Garamond",   style: "serif",      category: "Антиква"       },
-  { id: "Unbounded",          label: "Unbounded",            style: "sans-serif", category: "Дисплейний"    },
-  { id: "Jost",               label: "Jost",                 style: "sans-serif", category: "Гротеск"       },
-  { id: "Philosopher",        label: "Philosopher",          style: "serif",      category: "Антиква"       },
+  { id: "Montserrat",       label: "Montserrat",       style: "sans-serif", category: "Гротеск"       },
+  { id: "PT Sans",          label: "PT Sans",          style: "sans-serif", category: "Гротеск"       },
+  { id: "PT Serif",         label: "PT Serif",         style: "serif",      category: "Антиква"       },
+  { id: "Playfair Display", label: "Playfair Display", style: "serif",      category: "Антиква"       },
+  { id: "Oswald",           label: "Oswald",           style: "sans-serif", category: "Конденсований" },
+  { id: "Raleway",          label: "Raleway",          style: "sans-serif", category: "Гротеск"       },
+  { id: "Comfortaa",        label: "Comfortaa",        style: "cursive",    category: "Декоративний"  },
+  { id: "Exo 2",            label: "Exo 2",            style: "sans-serif", category: "Технічний"     },
+  { id: "Nunito",           label: "Nunito",           style: "sans-serif", category: "Гротеск"       },
+  { id: "Merriweather",     label: "Merriweather",     style: "serif",      category: "Антиква"       },
+  { id: "Unbounded",        label: "Unbounded",        style: "sans-serif", category: "Дисплейний"    },
+  { id: "Jost",             label: "Jost",             style: "sans-serif", category: "Гротеск"       },
+  { id: "Philosopher",      label: "Philosopher",      style: "serif",      category: "Антиква"       },
+  { id: "Russo One",        label: "Russo One",        style: "sans-serif", category: "Дисплейний"    },
+  { id: "Marck Script",     label: "Marck Script",     style: "cursive",    category: "Рукописний"    },
+  { id: "Pacifico",         label: "Pacifico",         style: "cursive",    category: "Декоративний"  },
+  { id: "Caveat",           label: "Caveat",           style: "cursive",    category: "Рукописний"    },
+  { id: "Neucha",           label: "Neucha",           style: "cursive",    category: "Рукописний"    },
+  { id: "Stalinist One",    label: "Stalinist One",    style: "display",    category: "Дисплейний"    },
+  { id: "Press Start 2P",   label: "Press Start 2P",   style: "monospace",  category: "Технічний"     },
 ] as const;
 
 export type TextFontId = typeof TEXT_FONTS[number]["id"];
@@ -150,8 +155,13 @@ export interface PrintLayer {
   priceCents?: number;
   /** Canvas transform */
   transform?: { left: number; top: number; scaleX: number; scaleY: number; angle: number; flipX: boolean };
-  /** Text layer fields */
-  kind?: "image" | "text";
+  /** Layer kind — absent means "image" (legacy compat) */
+  kind?: "image" | "text" | "drawing";
+  /** For SVG shape layers — fill color override */
+  svgFillColor?: string;
+  /** For SVG shape layers — stroke color override */
+  svgStrokeColor?: string;
+  // ── Existing text fields (unchanged) ──────────────────────────────────
   textContent?: string;
   textFont?: TextFontId;
   textColor?: string;
@@ -159,7 +169,199 @@ export interface PrintLayer {
   textAlign?: "left" | "center" | "right";
   /** Curve radius in degrees: 0 = straight, positive = arc up, negative = arc down */
   textCurve?: number;
+  // ── New text fields ────────────────────────────────────────────────────
+  textTransform?: "none" | "uppercase" | "lowercase" | "capitalize";
+  /** Maps to Fabric.js charSpacing; range -10 to 100 */
+  textLetterSpacing?: number;
+  /** Maps to Fabric.js lineHeight; range 0.5 to 3.0 */
+  textLineHeight?: number;
+  /** Maps to Fabric.js fontWeight: "bold" | "normal" */
+  textBold?: boolean;
+  /** Maps to Fabric.js fontStyle: "italic" | "normal" */
+  textItalic?: boolean;
+  textOverflow?: "clip" | "auto";
+  /** Maps to Fabric.js backgroundColor on Textbox */
+  textBackgroundColor?: string;
+  /** Maps to Fabric.js stroke on Textbox */
+  textStrokeColor?: string;
+  /** Maps to Fabric.js strokeWidth; range 0–20 */
+  textStrokeWidth?: number;
+  /** Maps to Fabric.js Textbox width (px) */
+  textBoxWidth?: number;
+  /** Maps to Fabric.js Textbox height (px) */
+  textBoxHeight?: number;
+  /** Layer opacity 0–1 */
+  opacity?: number;
 }
+
+// ── Shape presets ───────────────────────────────────────────────────────────
+
+export const ELEMENT_PRESETS = [
+  // Basic Shapes
+  { id: "rect-01",      name: "Rectangle",     category: "Basic Shapes",   svgPath: "/shapes/basic/rect.svg",           tags: ["rectangle", "box", "square"] },
+  { id: "circle-01",    name: "Circle",         category: "Basic Shapes",   svgPath: "/shapes/basic/circle.svg",         tags: ["circle", "round", "ellipse"] },
+  { id: "triangle-01",  name: "Triangle",       category: "Basic Shapes",   svgPath: "/shapes/basic/triangle.svg",       tags: ["triangle", "arrow"] },
+  // Polygons
+  { id: "hex-01",       name: "Hexagon",        category: "Polygons",       svgPath: "/shapes/polygons/hexagon.svg",     tags: ["hexagon", "hex", "polygon"] },
+  { id: "pent-01",      name: "Pentagon",       category: "Polygons",       svgPath: "/shapes/polygons/pentagon.svg",    tags: ["pentagon", "polygon"] },
+  { id: "oct-01",       name: "Octagon",        category: "Polygons",       svgPath: "/shapes/polygons/octagon.svg",     tags: ["octagon", "polygon", "stop"] },
+  // Stars
+  { id: "star4-01",     name: "4-Point Star",   category: "Stars",          svgPath: "/shapes/stars/star4.svg",          tags: ["star", "sparkle"] },
+  { id: "star5-01",     name: "5-Point Star",   category: "Stars",          svgPath: "/shapes/stars/star5.svg",          tags: ["star", "favorite"] },
+  { id: "star6-01",     name: "6-Point Star",   category: "Stars",          svgPath: "/shapes/stars/star6.svg",          tags: ["star", "david"] },
+  // Arrows
+  { id: "arrow-r-01",   name: "Arrow Right",    category: "Arrows",         svgPath: "/shapes/arrows/arrow-right.svg",   tags: ["arrow", "direction", "right"] },
+  { id: "arrow-l-01",   name: "Arrow Left",     category: "Arrows",         svgPath: "/shapes/arrows/arrow-left.svg",    tags: ["arrow", "direction", "left"] },
+  { id: "arrow-dbl-01", name: "Double Arrow",   category: "Arrows",         svgPath: "/shapes/arrows/arrow-double.svg",  tags: ["arrow", "double", "both"] },
+  // Speech Bubbles
+  { id: "bubble-01",    name: "Speech Bubble",  category: "Speech Bubbles", svgPath: "/shapes/bubbles/bubble.svg",       tags: ["speech", "bubble", "chat", "talk"] },
+  { id: "bubble-02",    name: "Thought Bubble", category: "Speech Bubbles", svgPath: "/shapes/bubbles/thought.svg",      tags: ["thought", "bubble", "cloud"] },
+  // Clouds
+  { id: "cloud-01",     name: "Cloud",          category: "Clouds",         svgPath: "/shapes/clouds/cloud.svg",         tags: ["cloud", "sky", "weather"] },
+  { id: "cloud-02",     name: "Storm Cloud",    category: "Clouds",         svgPath: "/shapes/clouds/storm.svg",         tags: ["cloud", "storm", "rain"] },
+  // Hearts
+  { id: "heart-01",     name: "Heart",          category: "Hearts",         svgPath: "/shapes/hearts/heart.svg",         tags: ["heart", "love", "valentine"] },
+  { id: "heart-02",     name: "Heart Outline",  category: "Hearts",         svgPath: "/shapes/hearts/heart-outline.svg", tags: ["heart", "love", "outline"] },
+  // Banners
+  { id: "banner-01",    name: "Ribbon Banner",  category: "Banners",        svgPath: "/shapes/banners/ribbon.svg",       tags: ["banner", "ribbon", "label"] },
+  { id: "banner-02",    name: "Scroll Banner",  category: "Banners",        svgPath: "/shapes/banners/scroll.svg",       tags: ["banner", "scroll", "vintage"] },
+  // Frames
+  { id: "frame-01",     name: "Square Frame",   category: "Frames",         svgPath: "/shapes/frames/square.svg",        tags: ["frame", "border", "square"] },
+  { id: "frame-02",     name: "Oval Frame",     category: "Frames",         svgPath: "/shapes/frames/oval.svg",          tags: ["frame", "oval", "border"] },
+  // Decorative
+  { id: "deco-01",      name: "Sunflower",      category: "Decorative",     svgPath: "/shapes/decorative/sunflower.svg", tags: ["sunflower", "flower", "ukraine"] },
+  { id: "deco-02",      name: "Vyshyvanka",     category: "Decorative",     svgPath: "/shapes/decorative/vyshyvanka.svg",tags: ["vyshyvanka", "ukraine", "pattern", "embroidery"] },
+] as const satisfies ReadonlyArray<{ id: string; name: string; category: string; svgPath: string; tags: string[] }>;
+
+export type ElementPreset = typeof ELEMENT_PRESETS[number];
+
+export const SHAPE_CATEGORIES = [
+  "Basic Shapes",
+  "Polygons",
+  "Stars",
+  "Arrows",
+  "Speech Bubbles",
+  "Clouds",
+  "Hearts",
+  "Banners",
+  "Frames",
+  "Decorative",
+] as const;
+
+export type ShapeCategory = typeof SHAPE_CATEGORIES[number];
+
+// ── Font combo presets ──────────────────────────────────────────────────────
+
+export const FONT_COMBO_PRESETS = [
+  { id: "classic",   name: "Classic",   headingFont: "Playfair Display", bodyFont: "PT Sans"      },
+  { id: "modern",    name: "Modern",    headingFont: "Montserrat",       bodyFont: "Jost"         },
+  { id: "editorial", name: "Editorial", headingFont: "Philosopher",      bodyFont: "Raleway"      },
+  { id: "bold",      name: "Bold",      headingFont: "Unbounded",        bodyFont: "Exo 2"        },
+  { id: "elegant",   name: "Elegant",   headingFont: "Philosopher",      bodyFont: "Merriweather" },
+  { id: "playful",   name: "Playful",   headingFont: "Pacifico",         bodyFont: "Comfortaa"    },
+  { id: "condensed", name: "Condensed", headingFont: "Oswald",           bodyFont: "Nunito"       },
+] as const satisfies ReadonlyArray<{ id: string; name: string; headingFont: TextFontId; bodyFont: TextFontId }>;
+
+export type FontComboPreset = typeof FONT_COMBO_PRESETS[number];
+
+// ── Text compositions ───────────────────────────────────────────────────────
+
+export interface TextComposition {
+  id: string;
+  label: string;
+  layers: Array<{
+    textContent: string;
+    textFont: TextFontId;
+    textFontSize: number;
+    textColor: string;
+    textAlign: "left" | "center" | "right";
+    textBold?: boolean;
+    textItalic?: boolean;
+    textCurve?: number;
+    offsetY?: number;
+  }>;
+}
+
+export const TEXT_COMPOSITIONS: TextComposition[] = [
+  {
+    id: "bold-single",
+    label: "Жирний заголовок",
+    layers: [{ textContent: "ВАША КОМАНДА", textFont: "Unbounded", textFontSize: 52, textColor: "#000000", textAlign: "center", textBold: true }],
+  },
+  {
+    id: "elegant-heading",
+    label: "Елегантний заголовок",
+    layers: [{ textContent: "Ваш текст тут", textFont: "Playfair Display", textFontSize: 48, textColor: "#1a1a1a", textAlign: "center", textItalic: true }],
+  },
+  {
+    id: "corporate-combo",
+    label: "Корпоративний",
+    layers: [
+      { textContent: "НАЗВА КОМПАНІЇ", textFont: "Montserrat", textFontSize: 40, textColor: "#000000", textAlign: "center", textBold: true, offsetY: -30 },
+      { textContent: "з 2005 року", textFont: "PT Sans", textFontSize: 22, textColor: "#666666", textAlign: "center", offsetY: 30 },
+    ],
+  },
+  {
+    id: "retro-display",
+    label: "Ретро",
+    layers: [{ textContent: "РЕТРО СТИЛЬ", textFont: "Russo One", textFontSize: 48, textColor: "#c0392b", textAlign: "center" }],
+  },
+  {
+    id: "script-accent",
+    label: "Рукописний акцент",
+    layers: [{ textContent: "Ваш текст", textFont: "Marck Script", textFontSize: 56, textColor: "#2c3e50", textAlign: "center" }],
+  },
+  {
+    id: "curved-arc",
+    label: "Дуга вгору",
+    layers: [{ textContent: "ВАША КОМАНДА", textFont: "Montserrat", textFontSize: 36, textColor: "#000000", textAlign: "center", textBold: true, textCurve: 120 }],
+  },
+  {
+    id: "curved-arc-down",
+    label: "Дуга вниз",
+    layers: [{ textContent: "ВАША КОМАНДА", textFont: "Montserrat", textFontSize: 36, textColor: "#000000", textAlign: "center", textBold: true, textCurve: -120 }],
+  },
+  {
+    id: "playful-combo",
+    label: "Ігровий",
+    layers: [
+      { textContent: "ГРАЙ", textFont: "Pacifico", textFontSize: 52, textColor: "#8e44ad", textAlign: "center", offsetY: -25 },
+      { textContent: "з нами", textFont: "Comfortaa", textFontSize: 28, textColor: "#2980b9", textAlign: "center", offsetY: 35 },
+    ],
+  },
+  {
+    id: "minimal-caps",
+    label: "Мінімалістичний",
+    layers: [{ textContent: "МІНІМАЛІЗМ", textFont: "Jost", textFontSize: 44, textColor: "#000000", textAlign: "center", textBold: false }],
+  },
+  {
+    id: "handwritten-note",
+    label: "Рукописна нотатка",
+    layers: [
+      { textContent: "Зроблено з", textFont: "Caveat", textFontSize: 32, textColor: "#555555", textAlign: "center", offsetY: -20 },
+      { textContent: "❤ любов'ю", textFont: "Caveat", textFontSize: 44, textColor: "#e74c3c", textAlign: "center", offsetY: 25 },
+    ],
+  },
+];
+
+// ── Print presets ───────────────────────────────────────────────────────────
+
+export const PrintPresetSchema = z.object({
+  id:            z.string().uuid(),
+  name:          z.string(),
+  category:      z.string(),
+  thumbnail_url: z.string().url(),
+  file_url:      z.string().url(),
+  tags:          z.array(z.string()).default([]),
+  sort_order:    z.number().int().default(0),
+  is_active:     z.boolean().default(true),
+});
+
+export type PrintPreset = z.infer<typeof PrintPresetSchema>;
+
+// ── Sidebar tab IDs ─────────────────────────────────────────────────────────
+
+export type SidebarTabId = "prints" | "draw" | "text" | "upload" | "layers" | "shapes";
 
 // ── Order constants ─────────────────────────────────────────────────────────
 
