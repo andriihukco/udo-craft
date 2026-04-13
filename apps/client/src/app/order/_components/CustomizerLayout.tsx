@@ -134,7 +134,7 @@ export function CustomizerLayout({
       {/* ── Mobile bottom nav ── */}
       {isNewLayout ? (
         /* New layout: 5 tool tabs + Тираж */
-        <div className="lg:hidden relative z-[9995] shrink-0 border-t border-border bg-card">
+        <div className="lg:hidden relative z-[9999] shrink-0 border-t border-border bg-card">
           <div className="flex">
             {MOBILE_TABS.map((tab) => (
               <button
@@ -160,7 +160,7 @@ export function CustomizerLayout({
         </div>
       ) : (
         /* Legacy layout: Налаштування + Тираж */
-        <div className="lg:hidden relative z-[9995] shrink-0 border-t border-border bg-card" style={{ height: 56 }}>
+        <div className="lg:hidden relative z-[9999] shrink-0 border-t border-border bg-card" style={{ height: 56 }}>
           <div className="flex h-full">
             <button
               onClick={() => setMobileSheet(mobileSheet === "config" ? null : "config")}

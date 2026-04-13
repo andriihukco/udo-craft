@@ -543,7 +543,7 @@ export default function ContextualToolbar({
           animate={{ y: 0 }}
           exit={{ y: "100%" }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          className="md:hidden fixed bottom-0 left-0 right-0 z-[9990] bg-card border-t border-border pb-[env(safe-area-inset-bottom)]"
+          className="md:hidden fixed bottom-0 left-0 right-0 z-[9996] bg-card border-t border-border pb-[env(safe-area-inset-bottom)]"
         >
           <div className="flex justify-center pt-2 pb-1">
             <div className="w-8 h-1 rounded-full bg-border" />

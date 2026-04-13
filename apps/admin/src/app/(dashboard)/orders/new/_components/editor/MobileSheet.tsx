@@ -55,7 +55,7 @@ export default function MobileSheet({ open, onClose, title, children }: MobileSh
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="lg:hidden fixed inset-x-0 top-0 bottom-14 bg-black/40 z-[9999]"
+            className="lg:hidden fixed inset-x-0 top-0 bottom-14 bg-black/40 z-[9994]"
             aria-hidden="true"
             onClick={onClose}
           />
@@ -70,7 +70,7 @@ export default function MobileSheet({ open, onClose, title, children }: MobileSh
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="lg:hidden fixed bottom-14 left-0 right-0 z-[10000] flex flex-col bg-card rounded-t-2xl shadow-xl"
+            className="lg:hidden fixed bottom-14 left-0 right-0 z-[9996] flex flex-col bg-card rounded-t-2xl shadow-xl"
             style={{ maxHeight: "80vh" }}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
