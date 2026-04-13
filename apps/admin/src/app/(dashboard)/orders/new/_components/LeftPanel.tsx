@@ -111,8 +111,8 @@ export function LeftPanel({
         <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Нанесення</p>
         <LayersPanel
           layers={layers} activeSide={activeSide} activeLayerId={activeLayerId}
-          sideLabel={activeSide} onSelect={onLayerSelect}
-          onDelete={onLayerDelete} onDuplicate={onLayerDuplicate} onRemoveBg={onRemoveBg}
+          onSelect={onLayerSelect}
+          onDelete={onLayerDelete} onDuplicate={onLayerDuplicate}
           onTypeChange={onTypeChange} onSizeLabelChange={onSizeLabelChange}
           onReorder={onReorder} onAddClick={onAddClick} onAddText={onAddText}
           onTextChange={onTextChange} fileInputRef={fileInputRef} onFileChange={onFileChange}

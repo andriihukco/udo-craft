@@ -2,6 +2,7 @@
 
 import type { PrintLayer } from "@udo-craft/shared";
 import type { PrintTypePricingRow } from "@/components/LayersPanel";
+import type { TextLayerPatch } from "./editor/TextPanel";
 
 interface UseLayerHandlersParams {
   activeLayerId: string | null;
@@ -18,8 +19,41 @@ export function useLayerHandlers({
 }: UseLayerHandlersParams) {
   const handleTextChange = (
     id: string,
-    patch: Partial<Pick<PrintLayer, "textContent" | "textFont" | "textColor" | "textFontSize" | "textAlign" | "textCurve">>
+    patch: TextLayerPatch & { svgFillColor?: string; svgStrokeColor?: string }
   ) => {
+    // If SVG color changed, re-inject colors into the SVG blob
+    if ((patch.svgFillColor !== undefined || patch.svgStrokeColor !== undefined)) {
+      const layer = layersRef.current.find((l) => l.id === id);
+      if (layer && (layer.url.includes(".svg") || layer.file?.type === "image/svg+xml")) {
+        const srcUrl = layer.uploadedUrl ?? layer.url;
+        if (srcUrl) {
+          fetch(srcUrl)
+            .then((r) => r.text())
+            .then((svgText) => {
+              const fillColor = patch.svgFillColor ?? layer.svgFillColor ?? "currentColor";
+              const strokeColor = patch.svgStrokeColor ?? layer.svgStrokeColor ?? "";
+              // Inject fill/stroke on the root <svg> element
+              let modified = svgText
+                .replace(/(<svg[^>]*?)(\s+fill="[^"]*")?(\s+stroke="[^"]*")?(\s*>)/,
+                  (_, open, _fill, _stroke, close) => {
+                    const fillAttr = fillColor && fillColor !== "transparent" ? ` fill="${fillColor}"` : ` fill="none"`;
+                    const strokeAttr = strokeColor && strokeColor !== "transparent" ? ` stroke="${strokeColor}"` : "";
+                    return `${open}${fillAttr}${strokeAttr}${close}`;
+                  });
+              const blob = new Blob([modified], { type: "image/svg+xml" });
+              const newUrl = URL.createObjectURL(blob);
+              const newFile = new File([blob], layer.file?.name ?? "shape.svg", { type: "image/svg+xml" });
+              setLayersWithRef((prev) => prev.map((l) =>
+                l.id === id ? { ...l, ...patch, url: newUrl, file: newFile, uploadedUrl: undefined } : l
+              ));
+            })
+            .catch(() => {
+              setLayersWithRef((prev) => prev.map((l) => l.id === id ? { ...l, ...patch } : l));
+            });
+          return;
+        }
+      }
+    }
     setLayersWithRef((prev) => prev.map((l) => l.id === id ? { ...l, ...patch } : l));
   };
 

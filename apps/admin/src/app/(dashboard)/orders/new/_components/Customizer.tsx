@@ -3,14 +3,24 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
-import { Product, PrintZone, Material, ProductColorVariant, useCustomizer } from "@udo-craft/shared";
-import { ArrowLeft, X, Palette, Ruler, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { Product, PrintZone, Material, ProductColorVariant, useCustomizer, type SidebarTabId } from "@udo-craft/shared";
+import { ArrowLeft, X, Ruler, Loader2, Layers, Pencil, Type, Upload, LayoutList, Shapes, MirrorRound } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { type PrintLayer } from "@/components/print-types";
 import { QtyPricePanel } from "./QtyPricePanel";
-import { LeftPanel } from "./LeftPanel";
+import { type TextLayerPatch } from "./editor/TextPanel";
 import { GenerationDrawer } from "./GenerationDrawer";
+import EditorSidebar from "./editor/EditorSidebar";
+import PrintsPanel from "./editor/PrintsPanel";
+import DrawPanel from "./editor/DrawPanel";
+import TextPanel from "./editor/TextPanel";
+import UploadPanel from "./editor/UploadPanel";
+import ShapesPanel from "./editor/ShapesPanel";
+import MobileSheet from "./editor/MobileSheet";
+import LayersList from "@/components/layers-list";
+import type { TextComposition } from "@udo-craft/shared";
 
 const ProductCanvas = dynamic(() => import("@/components/product-canvas"), { ssr: false });
 
@@ -46,13 +56,23 @@ export interface CustomizerProps {
   onClose: () => void;
 }
 
+// ── Mobile tab config ─────────────────────────────────────────────────────
+
+const MOBILE_TABS: { id: SidebarTabId; label: string; Icon: React.ElementType }[] = [
+  { id: "prints",  label: "Принти",  Icon: Layers      },
+  { id: "shapes",  label: "Фігури",  Icon: Shapes      },
+  { id: "draw",    label: "Малюнок", Icon: Pencil      },
+  { id: "text",    label: "Текст",   Icon: Type        },
+  { id: "upload",  label: "Файл",    Icon: Upload      },
+  { id: "layers",  label: "Шари",    Icon: LayoutList  },
+];
+
 // ── Customizer ────────────────────────────────────────────────────────────
 
 export function Customizer({ product, printZones, sizeChart, materials, variants,
   initialVariant, initialLayers, initialSize, initialQuantity, initialNote, onAdd, onClose,
 }: CustomizerProps) {
   void sizeChart;
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasSaveRef = useRef<(() => void) | null>(null);
   const fabricCanvasRef = useRef<import("fabric").fabric.Canvas | null>(null);
 
@@ -83,7 +103,8 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
   const [printPricing, setPrintPricing] = useState<{ id: string; print_type: string; size_label: string; size_min_cm: number; size_max_cm: number; qty_tiers: { min_qty: number; price_cents: number }[] }[]>([]);
   const [addingToCart, setAddingToCart] = useState(false);
   const [layerScales, setLayerScales] = useState<Record<string, number>>({});
-  const [mobileSheet, setMobileSheet] = useState<"config" | "price" | null>(null);
+  const [activeTab, setActiveTab] = useState<SidebarTabId | null>(null);
+  const [mobilePriceOpen, setMobilePriceOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
 
@@ -113,6 +134,38 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
 
   const addLayer = (file: File) => addLayerFromHook(file, activeSide, printPricing);
   const addTextLayer = () => addTextLayerFromHook(activeSide, printPricing);
+
+  const handleAddComposition = (composition: TextComposition) => {
+    const now = Date.now();
+    const placeholder = new File([], "text-layer.txt", { type: "text/plain" });
+    const minSizeRow = printPricing
+      .filter((r) => r.print_type === "dtf")
+      .sort((a, b) => (a.size_min_cm + a.size_max_cm) / 2 - (b.size_min_cm + b.size_max_cm) / 2)[0];
+    const base = {
+      file: placeholder, url: "", type: "dtf" as const, side: activeSide,
+      kind: "text" as const,
+      sizeLabel: minSizeRow?.size_label, sizeMinCm: minSizeRow?.size_min_cm, sizeMaxCm: minSizeRow?.size_max_cm,
+    };
+    const newLayers = composition.layers.map((cl, i) => ({
+      ...base,
+      id: `text-${now}-${i}`,
+      textContent: cl.textContent,
+      textFont: cl.textFont,
+      textFontSize: cl.textFontSize,
+      textColor: cl.textColor,
+      textAlign: cl.textAlign,
+      textBold: cl.textBold,
+      textItalic: cl.textItalic,
+      textCurve: cl.textCurve,
+      transform: cl.offsetY
+        ? { left: 0, top: 260 + (cl.offsetY ?? 0), scaleX: 1, scaleY: 1, angle: 0, flipX: false }
+        : undefined,
+    }));
+    setLayersWithRef((prev) => [...prev, ...newLayers]);
+    setActiveLayerId(newLayers[0].id);
+  };
+
+  const selectedLayer = layers.find((l) => l.id === activeLayerId) ?? null;
 
   const handleRemoveBg = (id: string, newUrl: string) => {
     setLayersWithRef((prev) => prev.map((l) => (l.id === id ? { ...l, url: newUrl, uploadedUrl: undefined } : l)));
@@ -176,14 +229,16 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
     } finally { setAddingToCart(false); }
   };
 
-  const leftPanelProps = {
-    product, unitPrice, variants, materials, selectedVariant, selectedColor, selectedSize,
-    onColorChange: (color: string, variant: ProductColorVariant) => { setSelectedColor(color); setSelectedVariant(variant); },
-    onSizeChange: setSelectedSize, layers, activeSide, activeLayerId, printPricing, quantity,
-    layerScales, fileInputRef,
-    onLayerSelect: setActiveLayerId,
-    onLayerDelete: (id: string) => { setLayersWithRef((prev) => prev.filter((l) => l.id !== id)); if (activeLayerId === id) setActiveLayerId(null); },
-    onLayerDuplicate: duplicateLayer, onRemoveBg: handleRemoveBg,
+  // ── Shared layer handlers ─────────────────────────────────────────────
+
+  const layerHandlerProps = {
+    layers,
+    activeSide,
+    activeLayerId,
+    onSelect: setActiveLayerId,
+    onDelete: (id: string) => { setLayersWithRef((prev) => prev.filter((l) => l.id !== id)); if (activeLayerId === id) setActiveLayerId(null); },
+    onDuplicate: duplicateLayer,
+    onReorder: setLayersWithRef,
     onTypeChange: (id: string, type: string) => setLayersWithRef((prev) => prev.map((l) => l.id !== id ? l : { ...l, type: type as PrintLayer["type"], sizeLabel: undefined, sizeMinCm: undefined, sizeMaxCm: undefined, priceCents: undefined, transform: undefined })),
     onSizeLabelChange: (id: string, sizeLabel: string) => setLayersWithRef((prev) => prev.map((l) => {
       if (l.id !== id) return l;
@@ -193,10 +248,62 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
       const tier = sorted.find((t) => quantity >= t.min_qty) ?? sorted[sorted.length - 1];
       return { ...l, sizeLabel, sizeMinCm: row?.size_min_cm, sizeMaxCm: row?.size_max_cm, priceCents: tier?.price_cents };
     })),
-    onReorder: setLayersWithRef, onAddClick: () => fileInputRef.current?.click(), onAddText: addTextLayer,
-    onTextChange: (id: string, patch: Partial<Pick<PrintLayer, "textContent" | "textFont" | "textColor" | "textFontSize" | "textAlign" | "textCurve">>) => setLayersWithRef((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l))),
-    onFileChange: addLayer, onClose,
+    onTextChange: (id: string, patch: TextLayerPatch) => setLayersWithRef((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l))),
+    pricing: printPricing,
+    quantity,
+    layerScales,
+    pxToMmRatio: product.px_to_mm_ratio || 0,
   };
+
+  // ── Panel content helper ──────────────────────────────────────────────
+
+  const panelContent = (tab: SidebarTabId | null) => {
+    if (!tab) return null;
+    if (tab === "prints") return <PrintsPanel activeSide={activeSide} printPricing={printPricing} onAddLayer={addLayer} />;
+    if (tab === "shapes") return <ShapesPanel onAddLayer={addLayer} />;
+    if (tab === "draw") return (
+      <DrawPanel
+        fabricCanvasRef={fabricCanvasRef} layers={layers} activeSide={activeSide}
+        activeLayerId={activeLayerId} onAddLayer={addLayer}
+        onReplaceDrawLayer={(id, file) => setLayersWithRef((prev) => prev.map((l) => {
+          if (l.id !== id) return l;
+          return { ...l, file, url: URL.createObjectURL(file), uploadedUrl: undefined };
+        }))}
+        setLayersWithRef={setLayersWithRef}
+        printZoneBounds={{ left: 0, top: 0, width: 0, height: 0 }}
+      />
+    );
+    if (tab === "text") return (
+      <TextPanel
+        onAddTextLayer={addTextLayer}
+        onAddComposition={handleAddComposition}
+      />
+    );
+    if (tab === "upload") return <UploadPanel activeSide={activeSide} onFileAdd={addLayer} />;
+    if (tab === "layers") return (
+      <div className="p-3">
+        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-3">Шари</p>
+        {layers.filter((l) => l.side === activeSide).length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center py-8">Немає шарів. Додайте зображення або текст.</p>
+        ) : (
+          <LayersList {...layerHandlerProps} />
+        )}
+      </div>
+    );
+    return null;
+  };
+
+  const tabLabel = (tab: SidebarTabId | null) => {
+    if (tab === "prints") return "Принти";
+    if (tab === "shapes") return "Фігури";
+    if (tab === "draw") return "Малюнок";
+    if (tab === "text") return "Текст";
+    if (tab === "upload") return "Завантажити";
+    if (tab === "layers") return "Шари";
+    return "";
+  };
+
+  // ── Canvas ────────────────────────────────────────────────────────────
 
   const canvasPanel = (
     <ProductCanvas product={product} printZones={printZones} layers={layers} activeSide={activeSide}
@@ -210,25 +317,123 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
       onLayerDuplicate={(layer) => { setLayersWithRef((prev) => [...prev, layer]); setActiveLayerId(layer.id); }}
       onLayerTransformChange={(id, transform) => { setLayerScales((prev) => ({ ...prev, [id]: transform.scaleX })); setLayersWithRef((prev) => prev.map((l) => (l.id === id ? { ...l, transform } : l))); }}
       onTextChange={(id, textContent) => setLayersWithRef((prev) => prev.map((l) => (l.id === id ? { ...l, textContent } : l)))}
-      onAIGenerate={() => setAiDrawerOpen(true)}
+      onLayerPatch={(id, patch) => {
+        // SVG color patch needs special handling via layerHandlerProps.onTextChange
+        if ((patch as any).svgFillColor !== undefined || (patch as any).svgStrokeColor !== undefined) {
+          layerHandlerProps.onTextChange(id, patch as any);
+        } else {
+          setLayersWithRef((prev) => prev.map((l) => l.id === id ? { ...l, ...patch } : l));
+        }
+      }}
     />
   );
 
+  const hasColors = variants.length > 0;
+  const hasSizes = Array.isArray(product.available_sizes) && product.available_sizes.length > 0;
+
+  const colorSizeSection = (hasColors || hasSizes) ? (
+    <div className="space-y-3 pb-3 mb-3 border-b border-border">
+      {hasColors && (
+        <div className="space-y-1.5">
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Колір</p>
+          <div className="flex gap-2 flex-wrap">
+            {variants.map((v) => {
+              const mat = materials.find((m) => m.id === v.material_id);
+              if (!mat) return null;
+              const isSelected = selectedVariant?.id === v.id;
+              const isWhite = mat.hex_code.toLowerCase() === "#ffffff" || mat.hex_code.toLowerCase() === "#f5f5f5";
+              return (
+                <button key={v.id} onClick={() => { setSelectedColor(mat.name); setSelectedVariant(v); }}
+                  title={mat.name} aria-label={mat.name} aria-pressed={isSelected}
+                  className={`cursor-pointer relative size-7 rounded-full transition-all flex items-center justify-center ${isSelected ? "ring-2 ring-primary ring-offset-2 scale-110" : "hover:scale-105"} ${isWhite ? "border border-border" : ""}`}
+                  style={{ backgroundColor: mat.hex_code }}>
+                  {isSelected && <span className="size-2 rounded-full" style={{ backgroundColor: isWhite ? "#1a1a1a" : "#fff" }} />}
+                </button>
+              );
+            })}
+          </div>
+          {selectedColor && <p className="text-xs text-muted-foreground">{selectedColor}</p>}
+        </div>
+      )}
+      {hasSizes && (
+        <div className="space-y-1.5">
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Розмір</p>
+          <div className="flex gap-1.5 flex-wrap">
+            {(product.available_sizes as string[]).map((size) => (
+              <button key={size} onClick={() => setSelectedSize(size)} aria-pressed={selectedSize === size}
+                className={`cursor-pointer min-w-[36px] h-9 px-2 rounded-lg text-sm font-semibold border transition-all ${selectedSize === size ? "bg-foreground text-background border-foreground shadow-sm" : "border-border hover:border-foreground/40 hover:bg-muted/50"}`}>
+                {size}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  ) : null;
+
+  // Product thumbnail for the info card
+  const productThumb = (selectedVariant?.images && Object.keys(selectedVariant.images).length > 0
+    ? Object.values(selectedVariant.images as Record<string, string>)[0]
+    : Object.values(product.images ?? {})[0]) ?? "";
+
+  const productInfoCard = (
+    <div className="flex items-center gap-3 pb-3 mb-3 border-b border-border">
+      {productThumb && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={productThumb} alt={product.name}
+          className="size-14 rounded-xl object-cover border border-border shrink-0 bg-muted" />
+      )}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold leading-tight truncate">{product.name}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">від {(product.base_price_cents / 100).toFixed(0)} ₴</p>
+      </div>
+      <button
+        type="button"
+        onClick={onClose}
+        className="shrink-0 text-xs font-medium text-primary hover:underline focus-visible:outline-none whitespace-nowrap"
+      >
+        Змінити
+      </button>
+    </div>
+  );
+
   const rightPanel = (
-    <QtyPricePanel quantity={quantity} setQuantity={setQuantity} discountGrid={product.discount_grid}
-      discountPct={discountPct} unitPrice={unitPrice} discounted={discounted} layers={layers}
-      printPricing={printPricing} printCostPerUnit={printCostPerUnit} resolveLayerPrice={resolveLayerPrice}
-      itemNote={itemNote} setItemNote={setItemNote} addDisabledReason={addDisabledReason}
-      addingToCart={addingToCart} onAddToCart={() => void handleAddToCart()} hideButton />
+    <>
+      {productInfoCard}
+      {colorSizeSection}
+      <QtyPricePanel quantity={quantity} setQuantity={setQuantity} discountGrid={product.discount_grid}
+        discountPct={discountPct} unitPrice={unitPrice} discounted={discounted} layers={layers}
+        printPricing={printPricing} printCostPerUnit={printCostPerUnit} resolveLayerPrice={resolveLayerPrice}
+        itemNote={itemNote} setItemNote={setItemNote} addDisabledReason={addDisabledReason}
+        addingToCart={addingToCart} onAddToCart={() => void handleAddToCart()} hideButton />
+    </>
   );
 
   const content = (
     <div className="fixed inset-0 z-[9999] bg-background flex flex-col">
-      <div className="flex flex-1 min-h-0 flex-col lg:grid lg:grid-cols-[280px_1fr_280px]">
-        <div className="hidden lg:flex lg:flex-col h-full overflow-y-auto border-r border-border bg-card p-4">
-          <LeftPanel {...leftPanelProps} />
+      {/* ── Desktop layout ── */}
+      <div className="flex flex-1 min-h-0 flex-col lg:grid lg:grid-cols-[56px_auto_1fr_280px]">
+
+        {/* 56px icon sidebar — desktop only */}
+        <div className="hidden lg:block border-r border-border">
+          <EditorSidebar activeTab={activeTab} onTabChange={setActiveTab} onBack={onClose} />
         </div>
+
+        {/* Animated panel — desktop only */}
+        <motion.div
+          animate={{ width: activeTab ? 280 : 0, opacity: activeTab ? 1 : 0 }}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          className="hidden lg:block overflow-hidden border-r border-border bg-card h-full"
+          style={{ minWidth: 0 }}
+        >
+          <div className="w-[280px] h-full overflow-y-auto">
+            {panelContent(activeTab)}
+          </div>
+        </motion.div>
+
+        {/* Canvas column */}
         <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center justify-start lg:justify-center p-3 lg:p-6 bg-muted/40">
+          {/* Mobile top bar */}
           <div className="lg:hidden w-full h-11 mb-3 flex items-center justify-between bg-card rounded-xl px-3 border border-border">
             <button onClick={() => { if (!confirm("Повернутися? Незбережені зміни буде втрачено.")) return; onClose(); }}
               className="cursor-pointer flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
@@ -237,67 +442,98 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
             <p className="text-xs font-semibold truncate max-w-[140px]">{product.name}</p>
             <p className="text-xs font-bold text-primary shrink-0">{((discounted + printCostPerUnit) * quantity).toFixed(0)} ₴</p>
           </div>
-          <GenerationDrawer
-            open={aiDrawerOpen}
-            onClose={() => setAiDrawerOpen(false)}
-            addLayer={addLayerForAI}
-            activeSide={activeSide}
-            printPricing={printPricing}
-            captureRef={captureRef}
-            layers={layers}
-            mockups={mockups}
-            selectedColor={selectedColor}
-            productImages={productImages}
-            productName={product.name}
-          />
+
+          {/* Product info bar moved to right panel */}
           {canvasPanel}
         </div>
+
+        {/* Right panel — desktop */}
         <div className="hidden lg:flex lg:flex-col h-full overflow-hidden border-l border-border bg-card">
-          <div className="flex-1 overflow-y-auto overflow-x-hidden p-4">
-            {rightPanel}
-          </div>
-          <div className="shrink-0 border-t border-border bg-card p-4 space-y-1.5">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-4">{rightPanel}</div>
+          <div className="shrink-0 border-t border-border bg-card p-4 space-y-2">
+            {/* AI try-on button */}
+            <button type="button" onClick={() => setAiDrawerOpen(true)}
+              disabled={layers.length === 0}
+              className="w-full flex items-center gap-3 h-12 px-4 rounded-full border border-border bg-muted/40 hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-muted/40">
+              <MirrorRound className="size-5 text-primary shrink-0" />
+              <div className="text-left">
+                <p className="text-sm font-medium text-foreground leading-tight">Приміряти на людину</p>
+                <p className="text-[10px] text-muted-foreground leading-tight">З допомогою AI</p>
+              </div>
+            </button>
             {addDisabledReason && !addingToCart && (
               <p className="text-xs text-amber-600 text-center">{addDisabledReason}</p>
             )}
-            <Button
-              type="button"
-              className="w-full h-11 text-sm font-semibold cursor-pointer"
-              onClick={() => void handleAddToCart()}
-              disabled={addingToCart || !!addDisabledReason}
-            >
-              {addingToCart
-                ? <><Loader2 className="size-3.5 animate-spin mr-1.5" /> Додаємо...</>
-                : "Додати до замовлення"}
+            <Button type="button" className="w-full h-11 text-sm font-semibold cursor-pointer"
+              onClick={() => void handleAddToCart()} disabled={addingToCart || !!addDisabledReason}>
+              {addingToCart ? <><Loader2 className="size-3.5 animate-spin mr-1.5" /> Додаємо...</> : "Додати до замовлення"}
             </Button>
           </div>
         </div>
       </div>
+
+      {/* ── Mobile bottom nav — single source of truth ── */}
       <div className="lg:hidden shrink-0 border-t border-border bg-card">
         <div className="flex">
-          {(["config", "price"] as const).map((tab) => (
-            <button key={tab} onClick={() => setMobileSheet(mobileSheet === tab ? null : tab)}
-              className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors ${mobileSheet === tab ? "text-primary border-t-2 border-primary -mt-px" : "text-muted-foreground"}`}>
-              {tab === "config" ? <><Palette className="size-4" />Налаштування</> : <><Ruler className="size-4" />Тираж та ціна</>}
+          {MOBILE_TABS.map((tab) => (
+            <button key={tab.id}
+              onClick={() => setActiveTab(activeTab === tab.id ? null : tab.id)}
+              aria-label={tab.label} aria-pressed={activeTab === tab.id}
+              className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors min-h-[44px] ${activeTab === tab.id ? "text-primary border-t-2 border-primary -mt-px" : "text-muted-foreground"}`}>
+              <tab.Icon className="size-4" />{tab.label}
             </button>
           ))}
+          <button onClick={() => setMobilePriceOpen((v) => !v)}
+            aria-label="Тираж та ціна"
+            className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors min-h-[44px] ${mobilePriceOpen ? "text-primary border-t-2 border-primary -mt-px" : "text-muted-foreground"}`}>
+            <Ruler className="size-4" />Тираж
+          </button>
         </div>
       </div>
-      {mobileSheet && (
-        <div className="lg:hidden fixed inset-0 z-[10000] flex flex-col justify-end" onClick={() => setMobileSheet(null)}>
+
+      {/* Mobile panel sheet */}
+      <MobileSheet
+        open={!!activeTab}
+        onClose={() => setActiveTab(null)}
+        title={tabLabel(activeTab)}
+      >
+        <div className="p-4">{panelContent(activeTab)}</div>
+      </MobileSheet>
+
+      {/* Mobile price sheet */}
+      {mobilePriceOpen && (
+        <div className="lg:hidden fixed inset-0 z-[10000] flex flex-col justify-end" onClick={() => setMobilePriceOpen(false)}>
           <div className="absolute inset-0 bg-black/40" />
           <div className="relative bg-background rounded-t-2xl max-h-[80vh] flex flex-col shadow-xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-center pt-3 pb-1 shrink-0"><div className="w-10 h-1 rounded-full bg-border" /></div>
             <div className="flex items-center justify-between px-4 pb-3 shrink-0">
-              <p className="text-sm font-semibold">{mobileSheet === "config" ? "Налаштування товару" : "Тираж та ціна"}</p>
-              <button onClick={() => setMobileSheet(null)} className="size-7 rounded-full flex items-center justify-center hover:bg-muted transition-colors"><X className="size-4" /></button>
+              <p className="text-sm font-semibold">Тираж та ціна</p>
+              <button onClick={() => setMobilePriceOpen(false)} className="size-7 rounded-full flex items-center justify-center hover:bg-muted transition-colors"><X className="size-4" /></button>
             </div>
-            <div className="overflow-y-auto px-4 pb-[env(safe-area-inset-bottom,24px)] [&>div]:pb-8">
-              {mobileSheet === "config" ? <LeftPanel {...leftPanelProps} /> : rightPanel}
+            <div className="overflow-y-auto px-4 pb-2">{rightPanel}</div>
+            <div className="shrink-0 border-t border-border px-4 py-3 pb-[max(12px,env(safe-area-inset-bottom))] space-y-2">
+              <button type="button" onClick={() => { setMobilePriceOpen(false); setAiDrawerOpen(true); }}
+                disabled={layers.length === 0}
+                className="w-full flex items-center gap-3 h-12 px-4 rounded-full border border-border bg-muted/40 hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-muted/40">
+                <MirrorRound className="size-5 text-primary shrink-0" />
+                <div className="text-left">
+                  <p className="text-sm font-medium text-foreground leading-tight">Приміряти на людину</p>
+                  <p className="text-[10px] text-muted-foreground leading-tight">З допомогою AI</p>
+                </div>
+              </button>
+              {addDisabledReason && !addingToCart && (
+                <p className="text-xs text-amber-600 text-center">{addDisabledReason}</p>
+              )}
+              <Button type="button" className="w-full h-11 text-sm font-semibold cursor-pointer"
+                onClick={() => { setMobilePriceOpen(false); void handleAddToCart(); }}
+                disabled={addingToCart || !!addDisabledReason}>
+                {addingToCart ? <><Loader2 className="size-3.5 animate-spin mr-1.5" /> Додаємо...</> : "Додати до замовлення"}
+              </Button>
             </div>
           </div>
         </div>
       )}
+
       {addingToCart && (
         <div className="fixed inset-0 z-[10001] bg-background/60 backdrop-blur-sm flex items-center justify-center">
           <div className="flex items-center gap-2.5 rounded-2xl border border-border bg-card px-5 py-3.5 shadow-xl text-sm font-semibold">
@@ -305,6 +541,14 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
           </div>
         </div>
       )}
+
+      {/* GenerationDrawer — portal-level overlay */}
+      <GenerationDrawer
+        open={aiDrawerOpen} onClose={() => setAiDrawerOpen(false)}
+        addLayer={addLayerForAI} activeSide={activeSide} printPricing={printPricing}
+        captureRef={captureRef} layers={layers} mockups={mockups}
+        selectedColor={selectedColor} productImages={productImages} productName={product.name}
+      />
     </div>
   );
 
