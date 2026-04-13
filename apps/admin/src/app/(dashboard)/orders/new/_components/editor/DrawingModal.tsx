@@ -14,7 +14,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import {
-  AlertCircle, Check, Eraser, Minus, RefreshCw,
+  AlertCircle, Check, Eraser, Minus, Pencil, RefreshCw,
   RotateCcw, RotateCw, Trash2, Wand2, X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -451,9 +451,9 @@ export default function DrawingModal({ open, onClose, onPaste }: DrawingModalPro
             />
             <div className="flex flex-wrap gap-1.5">
               {STYLE_PRESETS.map((p) => (
-                <button key={p} type="button"
+                <button key={p} type="button" aria-pressed={enhancePrompt === p}
                   onClick={() => setEnhancePrompt(p)}
-                  className={["text-xs px-2.5 py-1 rounded-full border transition-all",
+                  className={["text-xs px-2.5 py-1 rounded-full border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                     enhancePrompt === p ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"].join(" ")}>
                   {p}
                 </button>
@@ -461,11 +461,11 @@ export default function DrawingModal({ open, onClose, onPaste }: DrawingModalPro
             </div>
             <div className="flex gap-2 pt-1">
               <button type="button" onClick={() => setEnhanceStep(false)}
-                className="flex-1 px-4 py-2 rounded-full border border-border text-sm font-medium text-muted-foreground hover:bg-muted transition-colors">
+                className="flex-1 px-4 py-2 rounded-full border border-border text-sm font-medium text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors">
                 Назад
               </button>
               <button type="button" onClick={handleEnhanceConfirm}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors">
                 <Wand2 className="size-4" />
                 Покращити
               </button>
