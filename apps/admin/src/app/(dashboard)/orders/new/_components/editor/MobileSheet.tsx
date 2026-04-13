@@ -70,8 +70,8 @@ export default function MobileSheet({ open, onClose, title, children }: MobileSh
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="lg:hidden fixed bottom-14 left-0 right-0 z-[9996] flex flex-col bg-card rounded-t-2xl shadow-xl"
-            style={{ maxHeight: "80vh" }}
+            className="lg:hidden fixed bottom-14 left-0 right-0 z-[9996] flex flex-col bg-card border-t border-border"
+            style={{ maxHeight: "calc(100dvh - 56px - 44px)" }}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}

@@ -473,7 +473,7 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
       </div>
 
       {/* ── Mobile bottom nav — single source of truth ── */}
-      <div className="lg:hidden relative z-[9999] shrink-0 border-t border-border bg-card">
+      <div className="lg:hidden relative z-[9999] shrink-0 border-t border-border bg-card overflow-hidden">
         <div className="flex">
           {MOBILE_TABS.map((tab) => (
             <button key={tab.id}
@@ -504,8 +504,8 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
       {mobilePriceOpen && (
         <div className="lg:hidden fixed inset-x-0 top-0 bottom-14 z-[9994] flex flex-col justify-end" onClick={() => setMobilePriceOpen(false)}>
           <div className="absolute inset-0 bg-black/40" />
-          <div className="relative bg-background rounded-t-2xl max-h-[85vh] flex flex-col shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-center pt-3 pb-1 shrink-0"><div className="w-10 h-1 rounded-full bg-border" /></div>
+          <div className="relative bg-background border-t border-border flex flex-col" style={{ maxHeight: "calc(100dvh - 56px - 44px)" }} onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-center pt-2.5 pb-1 shrink-0"><div className="w-10 h-1 rounded-full bg-border" /></div>
             <div className="flex items-center justify-between px-4 pb-3 shrink-0">
               <p className="text-sm font-semibold">Тираж та ціна</p>
               <button onClick={() => setMobilePriceOpen(false)} className="size-7 rounded-full flex items-center justify-center hover:bg-muted transition-colors"><X className="size-4" /></button>

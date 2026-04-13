@@ -74,6 +74,7 @@ function ToolBtn({
     <button
       type="button"
       title={title}
+      aria-label={title}
       onClick={onClick}
       className={[
         "size-8 flex items-center justify-center rounded-lg border transition-all shrink-0",
@@ -82,6 +83,7 @@ function ToolBtn({
           : danger
           ? "border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 hover:bg-destructive/5"
           : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 hover:bg-muted/60",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
       ].join(" ")}
     >
       {children}
@@ -140,8 +142,9 @@ function ColorSwatch({
       <button
         type="button"
         title={title}
+        aria-label={title}
         onClick={() => setOpen((v) => !v)}
-        className="size-8 rounded-lg border-2 border-border hover:border-primary/50 transition-all"
+        className="size-8 rounded-lg border-2 border-border hover:border-primary/50 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
         style={{ backgroundColor: value }}
       />
       {open && (
@@ -205,7 +208,7 @@ function FontSelect({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="h-8 px-2.5 rounded-lg border border-border bg-background hover:border-primary/50 transition-colors text-xs font-medium flex items-center gap-1.5 max-w-[120px]"
+        className="h-8 px-2.5 rounded-lg border border-border bg-background hover:border-primary/50 transition-colors text-xs font-medium flex items-center gap-1.5 max-w-[120px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
         style={{ fontFamily: current.id }}
       >
         <span className="truncate">{current.label}</span>
@@ -269,7 +272,7 @@ function TextControls({
       {/* Font size */}
       <div className="flex items-center gap-0.5 shrink-0">
         <button type="button" onClick={() => patch({ textFontSize: Math.max(8, currentSize - 2) })}
-          className="size-6 flex items-center justify-center rounded border border-border text-muted-foreground hover:text-foreground hover:bg-muted/60 text-xs font-bold transition-all">−</button>
+          className="size-6 flex items-center justify-center rounded border border-border text-muted-foreground hover:text-foreground hover:bg-muted/60 text-xs font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1">−</button>
         <input
           type="number"
           min={8}
@@ -279,7 +282,7 @@ function TextControls({
           className="w-12 text-xs text-center rounded border border-input bg-background px-1 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
         />
         <button type="button" onClick={() => patch({ textFontSize: Math.min(200, currentSize + 2) })}
-          className="size-6 flex items-center justify-center rounded border border-border text-muted-foreground hover:text-foreground hover:bg-muted/60 text-xs font-bold transition-all">+</button>
+          className="size-6 flex items-center justify-center rounded border border-border text-muted-foreground hover:text-foreground hover:bg-muted/60 text-xs font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1">+</button>
       </div>
       <ToolBtn title="Жирний" active={!!layer.textBold} onClick={() => patch({ textBold: !layer.textBold })}>
         <Bold className="size-3.5" />
@@ -388,7 +391,7 @@ function RasterControls({
         <button
           type="button"
           onClick={() => onRemoveBg(layer.id, layer.url)}
-          className="h-8 px-3 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 hover:bg-muted/60 transition-all whitespace-nowrap shrink-0"
+          className="h-8 px-3 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 hover:bg-muted/60 transition-all whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
         >
           Видалити фон
         </button>
@@ -415,7 +418,7 @@ function DrawingControls({
         <button
           type="button"
           onClick={() => onOpenDrawingStudio(layer.id)}
-          className="h-8 px-3 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 hover:bg-muted/60 transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0"
+          className="h-8 px-3 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 hover:bg-muted/60 transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
         >
           <Pencil className="size-3.5" />
           Редагувати малюнок

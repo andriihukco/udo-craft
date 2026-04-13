@@ -134,7 +134,7 @@ export function CustomizerLayout({
       {/* ── Mobile bottom nav ── */}
       {isNewLayout ? (
         /* New layout: 5 tool tabs + Тираж */
-        <div className="lg:hidden relative z-[9999] shrink-0 border-t border-border bg-card">
+        <div className="lg:hidden relative z-[9999] shrink-0 border-t border-border bg-card overflow-hidden">
           <div className="flex">
             {MOBILE_TABS.map((tab) => (
               <button
