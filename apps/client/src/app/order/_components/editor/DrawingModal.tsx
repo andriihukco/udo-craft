@@ -14,7 +14,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import {
-  AlertCircle, Check, Eraser, Minus, RefreshCw,
+  AlertCircle, Check, Eraser, Minus, Pencil, RefreshCw,
   RotateCcw, RotateCw, Trash2, Wand2, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
