@@ -1,8 +1,21 @@
 "use client";
 
 import React from "react";
-import { ArrowLeft, Palette, Ruler, Loader2 } from "lucide-react";
+import { ArrowLeft, Layers, LayoutList, Loader2, Palette, Pencil, Ruler, Type, Upload } from "lucide-react";
+import { type SidebarTabId } from "@udo-craft/shared";
 import { CustomizerMobileSheet } from "./CustomizerMobileSheet";
+
+// ── Mobile tab config ─────────────────────────────────────────────────────
+
+const MOBILE_TABS: { id: SidebarTabId; label: string; Icon: React.ElementType }[] = [
+  { id: "prints",  label: "Принти",  Icon: Layers      },
+  { id: "draw",    label: "Малюнок", Icon: Pencil      },
+  { id: "text",    label: "Текст",   Icon: Type        },
+  { id: "upload",  label: "Файл",    Icon: Upload      },
+  { id: "layers",  label: "Шари",    Icon: LayoutList  },
+];
+
+// ── Props ─────────────────────────────────────────────────────────────────
 
 interface CustomizerLayoutProps {
   productName: string;
@@ -11,82 +24,170 @@ interface CustomizerLayoutProps {
   setMobileSheet: (v: "config" | "price" | null) => void;
   addingToCart: boolean;
   removingBg?: boolean;
-  leftPanel: React.ReactNode;
+  /** 56px icon sidebar (EditorSidebar) — desktop only */
+  sidebar?: React.ReactNode;
+  /** 0–280px animated panel column — desktop only */
+  panel?: React.ReactNode;
+  /** Active tab for mobile nav (new layout only) */
+  activeTab?: SidebarTabId | null;
+  /** Tab change handler for mobile nav (new layout only) */
+  onTabChange?: (tab: SidebarTabId | null) => void;
+  /** Open price sheet on mobile (new layout only) */
+  onPriceOpen?: () => void;
+  /** @deprecated use sidebar + panel instead */
+  leftPanel?: React.ReactNode;
   canvas: React.ReactNode;
   rightPanel: React.ReactNode;
   stickyButton?: React.ReactNode;
   onClose: () => void;
 }
 
+// ── Component ─────────────────────────────────────────────────────────────
+
 export function CustomizerLayout({
   productName, total, mobileSheet, setMobileSheet, addingToCart, removingBg,
+  sidebar, panel, activeTab, onTabChange, onPriceOpen,
   leftPanel, canvas, rightPanel, stickyButton, onClose,
 }: CustomizerLayoutProps) {
+  const isNewLayout = sidebar !== undefined || panel !== undefined;
+
   return (
     <div className="fixed inset-0 z-[9999] bg-background flex flex-col">
-      <div className="flex flex-1 min-h-0 flex-col lg:grid lg:grid-cols-[280px_1fr_280px]">
-        {/* Left panel — desktop */}
-        <div className="hidden lg:flex lg:flex-col h-full overflow-y-auto border-r border-border bg-card p-4">
-          {leftPanel}
-        </div>
+      {isNewLayout ? (
+        /* ── New 4-column desktop layout ── */
+        <div className="flex flex-1 min-h-0 flex-col lg:grid lg:grid-cols-[56px_auto_1fr_280px]">
+          {/* 56px icon sidebar — desktop only */}
+          <div className="hidden lg:flex lg:flex-col h-full border-r border-border bg-card overflow-hidden">
+            {sidebar}
+          </div>
 
-        {/* Canvas */}
-        <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center justify-start lg:justify-center p-3 lg:p-6 bg-muted/40">
-          <div className="lg:hidden w-full h-11 mb-3 flex items-center justify-between bg-card rounded-xl px-3 border border-border">
+          {/* Animated panel column — desktop only */}
+          <div className="hidden lg:block h-full overflow-hidden">
+            {panel}
+          </div>
+
+          {/* Canvas */}
+          <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center justify-start lg:justify-center p-3 lg:p-6 bg-muted/40">
+            <div className="lg:hidden w-full h-11 mb-3 flex items-center justify-between bg-card rounded-xl px-3 border border-border">
+              <button
+                onClick={() => { if (!confirm("Повернутися? Незбережені зміни буде втрачено.")) return; onClose(); }}
+                className="cursor-pointer flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ArrowLeft className="size-3.5" /> Назад
+              </button>
+              <p className="text-xs font-semibold truncate max-w-[140px]">{productName}</p>
+              <p className="text-xs font-bold text-primary shrink-0">{total.toFixed(0)} ₴</p>
+            </div>
+            {canvas}
+          </div>
+
+          {/* Right panel — desktop */}
+          <div className="hidden lg:flex lg:flex-col h-full overflow-hidden border-l border-border bg-card">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden p-4">
+              <div className="space-y-5">
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Тираж та ціна</p>
+                {rightPanel}
+              </div>
+            </div>
+            {stickyButton && (
+              <div className="shrink-0 border-t border-border bg-card p-4">
+                {stickyButton}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        /* ── Legacy 3-column desktop layout ── */
+        <div className="flex flex-1 min-h-0 flex-col lg:grid lg:grid-cols-[280px_1fr_280px]">
+          <div className="hidden lg:flex lg:flex-col h-full overflow-y-auto border-r border-border bg-card p-4">
+            {leftPanel}
+          </div>
+          <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center justify-start lg:justify-center p-3 lg:p-6 bg-muted/40">
+            <div className="lg:hidden w-full h-11 mb-3 flex items-center justify-between bg-card rounded-xl px-3 border border-border">
+              <button
+                onClick={() => { if (!confirm("Повернутися? Незбережені зміни буде втрачено.")) return; onClose(); }}
+                className="cursor-pointer flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ArrowLeft className="size-3.5" /> Назад
+              </button>
+              <p className="text-xs font-semibold truncate max-w-[140px]">{productName}</p>
+              <p className="text-xs font-bold text-primary shrink-0">{total.toFixed(0)} ₴</p>
+            </div>
+            {canvas}
+          </div>
+          <div className="hidden lg:flex lg:flex-col h-full overflow-hidden border-l border-border bg-card">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden p-4">
+              <div className="space-y-5">
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Тираж та ціна</p>
+                {rightPanel}
+              </div>
+            </div>
+            {stickyButton && (
+              <div className="shrink-0 border-t border-border bg-card p-4">
+                {stickyButton}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Mobile bottom nav ── */}
+      {isNewLayout ? (
+        /* New layout: 5 tool tabs + Тираж */
+        <div className="lg:hidden relative z-[9995] shrink-0 border-t border-border bg-card">
+          <div className="flex">
+            {MOBILE_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => onTabChange?.(activeTab === tab.id ? null : tab.id)}
+                aria-label={tab.label}
+                aria-pressed={activeTab === tab.id}
+                className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors min-h-[44px] ${activeTab === tab.id ? "text-primary border-t-2 border-primary -mt-px" : "text-muted-foreground"}`}
+              >
+                <tab.Icon className="size-4" />
+                {tab.label}
+              </button>
+            ))}
             <button
-              onClick={() => { if (!confirm("Повернутися? Незбережені зміни буде втрачено.")) return; onClose(); }}
-              className="cursor-pointer flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              onClick={onPriceOpen}
+              aria-label="Тираж та ціна"
+              className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors min-h-[44px] text-muted-foreground"
             >
-              <ArrowLeft className="size-3.5" /> Назад
+              <Ruler className="size-4" />
+              Тираж
             </button>
-            <p className="text-xs font-semibold truncate max-w-[140px]">{productName}</p>
-            <p className="text-xs font-bold text-primary shrink-0">{total.toFixed(0)} ₴</p>
           </div>
-          {canvas}
         </div>
-
-        {/* Right panel — desktop */}
-        <div className="hidden lg:flex lg:flex-col h-full overflow-hidden border-l border-border bg-card">
-          <div className="flex-1 overflow-y-auto overflow-x-hidden p-4">
-            <div className="space-y-5">
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Тираж та ціна</p>
-              {rightPanel}
-            </div>
+      ) : (
+        /* Legacy layout: Налаштування + Тираж */
+        <div className="lg:hidden relative z-[9995] shrink-0 border-t border-border bg-card" style={{ height: 56 }}>
+          <div className="flex h-full">
+            <button
+              onClick={() => setMobileSheet(mobileSheet === "config" ? null : "config")}
+              className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors ${mobileSheet === "config" ? "text-primary border-t-2 border-primary -mt-px" : "text-muted-foreground"}`}
+            >
+              <Palette className="size-4" />
+              Налаштування
+            </button>
+            <button
+              onClick={() => setMobileSheet(mobileSheet === "price" ? null : "price")}
+              className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors ${mobileSheet === "price" ? "text-primary border-t-2 border-primary -mt-px" : "text-muted-foreground"}`}
+            >
+              <Ruler className="size-4" />
+              Тираж та ціна
+            </button>
           </div>
-          {stickyButton && (
-            <div className="shrink-0 border-t border-border bg-card p-4">
-              {stickyButton}
-            </div>
-          )}
         </div>
-      </div>
+      )}
 
-      {/* Mobile bottom tabs */}
-      <div className="lg:hidden shrink-0 border-t border-border bg-card">
-        <div className="flex">
-          <button
-            onClick={() => setMobileSheet(mobileSheet === "config" ? null : "config")}
-            className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors ${mobileSheet === "config" ? "text-primary border-t-2 border-primary -mt-px" : "text-muted-foreground"}`}
-          >
-            <Palette className="size-4" />
-            Налаштування
-          </button>
-          <button
-            onClick={() => setMobileSheet(mobileSheet === "price" ? null : "price")}
-            className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors ${mobileSheet === "price" ? "text-primary border-t-2 border-primary -mt-px" : "text-muted-foreground"}`}
-          >
-            <Ruler className="size-4" />
-            Тираж та ціна
-          </button>
-        </div>
-      </div>
-
-      <CustomizerMobileSheet
-        activeSheet={mobileSheet}
-        onClose={() => setMobileSheet(null)}
-        configContent={leftPanel}
-        priceContent={rightPanel}
-      />
+      {!isNewLayout && (
+        <CustomizerMobileSheet
+          activeSheet={mobileSheet}
+          onClose={() => setMobileSheet(null)}
+          configContent={leftPanel}
+          priceContent={rightPanel}
+        />
+      )}
 
       {addingToCart && (
         <div className="fixed inset-0 z-[10001] bg-background/60 backdrop-blur-sm flex items-center justify-center">

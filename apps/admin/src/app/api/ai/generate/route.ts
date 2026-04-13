@@ -2,6 +2,33 @@ import { NextResponse } from "next/server";
 
 export const maxDuration = 60;
 
+const ILLUSTRATION_SYSTEM_PROMPT = `You are a professional illustration artist for a print-on-demand platform.
+Your task is to generate standalone artwork and illustrations suitable for printing on merch products.
+
+Rules:
+- Generate ONLY standalone artwork, illustrations, patterns, or graphic designs — NO people wearing merch.
+- The output should be suitable for direct printing on products (t-shirts, hoodies, bags, etc.).
+- Focus on clean, high-contrast designs that work well on fabric.
+- Styles can include: vector-style illustration, flat design, line art, watercolor, geometric, typographic, etc.
+- Do NOT generate photorealistic mockups of people wearing products.
+- The design should have a transparent or solid background suitable for print.`;
+
+const ENHANCE_DRAWING_SYSTEM_PROMPT = `You are a professional illustration artist specializing in enhancing hand-drawn sketches.
+Your task is to transform a rough sketch or drawing into polished, print-ready illustration artwork.
+
+Rules:
+- Enhance the provided sketch into clean, professional illustration artwork.
+- Preserve the original composition, shapes, and intent of the sketch.
+- Improve line quality, add shading or color if appropriate, and make it print-ready.
+- The output should be suitable for direct printing on merch products.
+- Do NOT add people, backgrounds, or elements not present in the original sketch unless they clearly improve the design.
+- Maintain the style and character of the original drawing while elevating its quality.`;
+
+const ALLOWED_SYSTEM_PROMPTS = new Set([
+  ILLUSTRATION_SYSTEM_PROMPT,
+  ENHANCE_DRAWING_SYSTEM_PROMPT,
+]);
+
 const SYSTEM_PROMPT = `You are a merch visualization assistant for a Ukrainian print-on-demand platform.
 Your task is to generate a realistic photographic mockup image showing a person wearing or using the product described below.
 
@@ -20,19 +47,33 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "AI generation is not configured" }, { status: 500 });
   }
 
-  const { prompt, contextDescription, imageDataUrl, canvasDataUrl, hasSelfie } = await request.json() as {
+  const { prompt, contextDescription, imageDataUrl, canvasDataUrl, hasSelfie, systemPrompt, mode } = await request.json() as {
     prompt: string;
     contextDescription: string;
     imageDataUrl: string;
     canvasDataUrl?: string;
     hasSelfie?: boolean;
+    systemPrompt?: string;
+    mode?: "illustration" | "enhance" | "mockup";
   };
+
+  // Resolve system prompt: mode flag takes priority, then allowlist match, then default mockup
+  let resolvedSystemPrompt: string;
+  if (mode === "illustration") {
+    resolvedSystemPrompt = ILLUSTRATION_SYSTEM_PROMPT;
+  } else if (mode === "enhance") {
+    resolvedSystemPrompt = ENHANCE_DRAWING_SYSTEM_PROMPT;
+  } else if (systemPrompt && ALLOWED_SYSTEM_PROMPTS.has(systemPrompt.trim())) {
+    resolvedSystemPrompt = systemPrompt.trim();
+  } else {
+    resolvedSystemPrompt = SYSTEM_PROMPT;
+  }
 
   const selfieInstruction = hasSelfie
     ? `\n\nIMPORTANT: The second image provided is a photo of the actual customer. You MUST use their face, body, and appearance — place the merch product on THIS specific person. Keep their likeness accurate.`
     : "";
 
-  const textPart = { text: `${SYSTEM_PROMPT}${selfieInstruction}\n\n${contextDescription}\n\n${prompt}` };
+  const textPart = { text: `${resolvedSystemPrompt}${selfieInstruction}\n\n${contextDescription}\n\n${prompt}` };
 
   // Extract mimeType and base64 data from the data URL
   const commaIndex = imageDataUrl.indexOf(",");
