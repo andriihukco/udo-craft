@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ArrowLeft, Layers, LayoutList, Loader2, Palette, Pencil, Ruler, Type, Upload } from "lucide-react";
+import { ArrowLeft, Layers, LayoutList, Loader2, Palette, Pencil, Ruler, Shapes, Type, Upload } from "lucide-react";
 import { type SidebarTabId } from "@udo-craft/shared";
 import { CustomizerMobileSheet } from "./CustomizerMobileSheet";
 

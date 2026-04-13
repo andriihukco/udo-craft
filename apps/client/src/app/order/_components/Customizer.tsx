@@ -410,13 +410,51 @@ export function Customizer({
       {mobilePriceOpen && (
         <div className="fixed inset-0 z-[10000] flex flex-col justify-end" onClick={() => setMobilePriceOpen(false)}>
           <div className="absolute inset-0 bg-black/40" />
-          <div className="relative bg-background rounded-t-2xl max-h-[80vh] flex flex-col shadow-xl" onClick={(e) => e.stopPropagation()}>
+          <div className="relative bg-background rounded-t-2xl max-h-[85vh] flex flex-col shadow-xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-center pt-3 pb-1 shrink-0"><div className="w-10 h-1 rounded-full bg-border" /></div>
             <div className="flex items-center justify-between px-4 pb-3 shrink-0">
               <p className="text-sm font-semibold">Тираж та ціна</p>
               <button onClick={() => setMobilePriceOpen(false)} className="size-7 rounded-full flex items-center justify-center hover:bg-muted transition-colors"><X className="size-4" /></button>
             </div>
-            <div className="overflow-y-auto px-4 pb-2">{rightPanel}</div>
+            <div className="overflow-y-auto px-4 pb-2 space-y-5">
+              {/* Color picker */}
+              {variants.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Колір</p>
+                  <div className="flex gap-2 flex-wrap">
+                    {variants.map((v) => {
+                      const mat = materials.find((m) => m.id === v.material_id);
+                      if (!mat) return null;
+                      const isSelected = s.selectedVariant?.id === v.id;
+                      const isWhite = mat.hex_code.toLowerCase() === "#ffffff" || mat.hex_code.toLowerCase() === "#f5f5f5";
+                      return (
+                        <button key={v.id} onClick={() => { s.setSelectedColor(mat.name); s.setSelectedVariant(v); }} title={mat.name}
+                          className={`relative size-9 rounded-full transition-all ${isSelected ? "ring-2 ring-primary ring-offset-2 scale-110" : "hover:scale-105"} ${isWhite ? "border border-border" : ""}`}
+                          style={{ backgroundColor: mat.hex_code }}>
+                          {isSelected && <span className="absolute inset-0 flex items-center justify-center text-white text-xs">✓</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {s.selectedColor && <p className="text-xs text-muted-foreground">{s.selectedColor}</p>}
+                </div>
+              )}
+              {/* Size picker */}
+              {Array.isArray(product.available_sizes) && product.available_sizes.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Розмір</p>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {(product.available_sizes as string[]).map((size) => (
+                      <button key={size} onClick={() => s.setSelectedSize(size)}
+                        className={`min-w-[38px] px-2 py-1.5 rounded-lg text-sm font-semibold border transition-all ${s.selectedSize === size ? "bg-foreground text-background border-foreground shadow-sm" : "border-border hover:border-foreground/40 hover:bg-muted/50"}`}>
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {rightPanel}
+            </div>
             <div className="shrink-0 border-t border-border px-4 py-3 pb-[max(12px,env(safe-area-inset-bottom))]">
               {stickyButton}
             </div>
