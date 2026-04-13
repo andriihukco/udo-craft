@@ -434,9 +434,9 @@ export function Customizer({
         productName={product.name}
       />
 
-      {/* Mobile panel sheet — driven by activeTab */}
+      {/* Mobile panel sheet — driven by activeTab, hidden when price sheet is open */}
       <MobileSheet
-        open={!!s.activeTab}
+        open={!!s.activeTab && !mobilePriceOpen}
         onClose={() => s.setActiveTab(null)}
         title={tabLabel(s.activeTab)}
       >

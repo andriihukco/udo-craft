@@ -493,7 +493,7 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
 
       {/* Mobile panel sheet */}
       <MobileSheet
-        open={!!activeTab}
+        open={!!activeTab && !mobilePriceOpen}
         onClose={() => setActiveTab(null)}
         title={tabLabel(activeTab)}
       >
