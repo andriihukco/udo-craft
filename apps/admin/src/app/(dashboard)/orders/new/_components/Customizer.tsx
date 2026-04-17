@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { Product, PrintZone, Material, ProductColorVariant, useCustomizer, type SidebarTabId } from "@udo-craft/shared";
-import { ArrowLeft, X, Ruler, Loader2, Layers, Pencil, Type, Upload, LayoutList, Shapes, MirrorRound } from "lucide-react";
+import { ArrowLeft, X, Ruler, Loader2, Layers, Pencil, Type, Upload, LayoutList, Shapes, MirrorRound, Shirt } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { type PrintLayer } from "@/components/print-types";
@@ -21,6 +21,7 @@ import ShapesPanel from "./editor/ShapesPanel";
 import MobileSheet from "./editor/MobileSheet";
 import LayersList from "@/components/layers-list";
 import type { TextComposition } from "@udo-craft/shared";
+import { useLayersBadge } from "@/hooks/useLayersBadge";
 
 const ProductCanvas = dynamic(() => import("@/components/product-canvas"), { ssr: false });
 
@@ -107,6 +108,9 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
   const [mobilePriceOpen, setMobilePriceOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
+
+  // Tab title badge
+  useLayersBadge(layers.length, `${product.name} — U:DO CRAFT Admin`);
 
   const productImages = selectedVariant?.images ?? product.images ?? {};
 
@@ -416,7 +420,7 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
 
         {/* 56px icon sidebar — desktop only */}
         <div className="hidden lg:block border-r border-border">
-          <EditorSidebar activeTab={activeTab} onTabChange={setActiveTab} onBack={onClose} />
+          <EditorSidebar activeTab={activeTab} onTabChange={setActiveTab} onBack={onClose} layerCount={layers.length} />
         </div>
 
         {/* Animated panel — desktop only */}
@@ -436,7 +440,7 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
           {/* Mobile top bar */}
           <div className="lg:hidden w-full h-11 mb-3 flex items-center justify-between bg-card rounded-xl px-3 border border-border">
             <button onClick={() => { if (!confirm("Повернутися? Незбережені зміни буде втрачено.")) return; onClose(); }}
-              className="cursor-pointer flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+              className="cursor-pointer flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded">
               <ArrowLeft className="size-3.5" /> Назад
             </button>
             <p className="text-xs font-semibold truncate max-w-[140px]">{product.name}</p>
@@ -462,7 +466,7 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
               </div>
             </button>
             {addDisabledReason && !addingToCart && (
-              <p className="text-xs text-amber-600 text-center">{addDisabledReason}</p>
+              <p className="text-xs text-destructive/80 text-center">{addDisabledReason}</p>
             )}
             <Button type="button" className="w-full h-11 text-sm font-semibold cursor-pointer"
               onClick={() => void handleAddToCart()} disabled={addingToCart || !!addDisabledReason}>
@@ -486,7 +490,7 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
           <button onClick={() => { setActiveTab(null); setMobilePriceOpen((v) => !v); }}
             aria-label="Тираж та ціна"
             className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors min-h-[44px] ${mobilePriceOpen ? "text-primary border-t-2 border-primary -mt-px" : "text-muted-foreground"}`}>
-            <Ruler className="size-4" />Тираж
+            <Shirt className="size-4" />Тираж
           </button>
         </div>
       </div>
@@ -508,7 +512,7 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
             <div className="flex justify-center pt-2.5 pb-1 shrink-0"><div className="w-10 h-1 rounded-full bg-border" /></div>
             <div className="flex items-center justify-between px-4 pb-3 shrink-0">
               <p className="text-sm font-semibold">Тираж та ціна</p>
-              <button onClick={() => setMobilePriceOpen(false)} className="size-7 rounded-full flex items-center justify-center hover:bg-muted transition-colors"><X className="size-4" /></button>
+              <button onClick={() => setMobilePriceOpen(false)} aria-label="Закрити" className="size-7 rounded-full flex items-center justify-center hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><X className="size-4" /></button>
             </div>
             <div className="overflow-y-auto px-4 pb-2">{rightPanel}</div>
             <div className="shrink-0 border-t border-border px-4 py-3 pb-[max(12px,env(safe-area-inset-bottom))] space-y-2">
@@ -522,7 +526,7 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
                 </div>
               </button>
               {addDisabledReason && !addingToCart && (
-                <p className="text-xs text-amber-600 text-center">{addDisabledReason}</p>
+                <p className="text-xs text-destructive/80 text-center">{addDisabledReason}</p>
               )}
               <Button type="button" className="w-full h-11 text-sm font-semibold cursor-pointer"
                 onClick={() => { setMobilePriceOpen(false); void handleAddToCart(); }}

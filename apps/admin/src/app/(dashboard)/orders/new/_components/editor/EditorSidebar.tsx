@@ -8,6 +8,7 @@ export interface EditorSidebarProps {
   activeTab: SidebarTabId | null;
   onTabChange: (tab: SidebarTabId | null) => void;
   onBack: () => void;
+  layerCount?: number;
 }
 
 const TABS: { id: SidebarTabId; label: string; Icon: React.ElementType }[] = [
@@ -19,7 +20,7 @@ const TABS: { id: SidebarTabId; label: string; Icon: React.ElementType }[] = [
   { id: "layers",  label: "Шари",    Icon: LayoutList  },
 ];
 
-export default function EditorSidebar({ activeTab, onTabChange, onBack }: EditorSidebarProps) {
+export default function EditorSidebar({ activeTab, onTabChange, onBack, layerCount = 0 }: EditorSidebarProps) {
   return (
     <aside className="hidden lg:flex flex-col w-14 shrink-0 h-full bg-card" aria-label="Інструменти редактора">
       {/* Back button */}
@@ -58,6 +59,11 @@ export default function EditorSidebar({ activeTab, onTabChange, onBack }: Editor
             >
               {isActive && <span className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full bg-primary" />}
               <Icon className="size-4" />
+              {id === "layers" && layerCount > 0 && (
+                <span className="absolute top-1 right-1 min-w-[14px] h-3.5 rounded-full bg-primary text-[8px] font-black text-primary-foreground flex items-center justify-center px-0.5 leading-none">
+                  {layerCount > 9 ? "9+" : layerCount}
+                </span>
+              )}
               <span className="text-[9px] font-medium leading-none">{label}</span>
             </button>
           );

@@ -519,9 +519,6 @@ export default function ContextualToolbar({
           <ToolBtn title="Центрувати" onClick={handleCenter}>
             <MoveHorizontal className="size-3.5" />
           </ToolBtn>
-          <ToolBtn title="Відзеркалити" onClick={handleFlipH}>
-            <FlipHorizontal className="size-3.5" />
-          </ToolBtn>
           <ToolBtn title="Дублювати" onClick={() => onDuplicate(layer.id)}>
             <Copy className="size-3.5" />
           </ToolBtn>
@@ -551,9 +548,6 @@ export default function ContextualToolbar({
           <div className="flex items-center gap-1.5 px-3 pb-3 overflow-x-auto">
             <ToolBtn title="Центрувати" onClick={handleCenter}>
               <MoveHorizontal className="size-3.5" />
-            </ToolBtn>
-            <ToolBtn title="Відзеркалити" onClick={handleFlipH}>
-              <FlipHorizontal className="size-3.5" />
             </ToolBtn>
             <ToolBtn title="Дублювати" onClick={() => onDuplicate(layer.id)}>
               <Copy className="size-3.5" />

@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { fabric } from "fabric";
 import { Product, PrintZone } from "@udo-craft/shared";
-import { AlignCenter, AlignLeft, AlignRight, Bold, BringToFront, Copy, Eraser, FlipHorizontal, Focus, Italic, Loader2, Pencil, RotateCcw, RotateCw, SendToBack, Trash2 } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, Bold, BringToFront, Copy, Eraser, FlipHorizontal, Focus, Italic, Loader2, Pencil, RotateCcw, RotateCw, SendToBack, Shirt, Trash2 } from "lucide-react";
 import { removeBgClient } from "@/lib/remove-bg-client";
 import { toast } from "sonner";
 import { PRINT_TYPES, TEXT_FONTS, type PrintTypeId, type PrintLayer, type TextFontId } from "./print-types";
@@ -842,15 +842,6 @@ export default function ProductCanvas({
             <ToolBtn onClick={centerSelected} title="По центру" label="Центр" disabled={isCentered}>
               <Focus className="size-3.5" />
             </ToolBtn>
-            <ToolBtn onClick={flipSelected} title="Відзеркалити" label="Дзеркало">
-              <FlipHorizontal className="size-3.5" />
-            </ToolBtn>
-            <ToolBtn onClick={() => { const canvas = fabricRef.current; const obj = canvas?.getActiveObject(); if (obj) { canvas?.bringForward(obj); canvas?.renderAll(); } }} title="На передній план" label="Вперед">
-              <BringToFront className="size-3.5" />
-            </ToolBtn>
-            <ToolBtn onClick={() => { const canvas = fabricRef.current; const obj = canvas?.getActiveObject(); if (obj) { canvas?.sendBackwards(obj); canvas?.renderAll(); } }} title="На задній план" label="Назад">
-              <SendToBack className="size-3.5" />
-            </ToolBtn>
             {onLayerDuplicate && (
               <ToolBtn onClick={() => onLayerDuplicate(activeLayer)} title="Дублювати" label="Копія">
                 <Copy className="size-3.5" />
@@ -934,8 +925,14 @@ export default function ProductCanvas({
           </div>
           {/* Skeleton overlay — shown until background image is loaded */}
           {!backgroundLoaded && (
-            <div className="absolute inset-0 rounded-2xl overflow-hidden z-10 pointer-events-none">
-              <div className="w-full h-full bg-muted animate-pulse" />
+            <div className="absolute inset-0 rounded-2xl overflow-hidden z-10 pointer-events-none bg-muted/60">
+              <div className="w-full h-full flex flex-col items-center justify-center gap-3">
+                <Shirt className="w-12 h-12 opacity-15 text-foreground" aria-hidden="true" />
+                <span className="text-[11px] font-medium text-muted-foreground/60 tracking-wide select-none">Завантаження зображення...</span>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+                style={{ animation: "shimmer 1.4s ease-in-out infinite", backgroundSize: "200% 100%" }}
+              />
             </div>
           )}
           {removingBg && (

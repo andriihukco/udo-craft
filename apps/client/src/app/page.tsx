@@ -10,7 +10,7 @@ import { MockupViewer } from "@/components/MockupViewer";
 import { BrandLogoFull } from "@/components/brand-logo";
 import { LogoLoader } from "@udo-craft/ui";
 import { createClient } from "@/lib/supabase/client";
-import { User, ShoppingBag, ArrowRight, ChevronDown, Instagram, Send, X, Fullscreen, Shrink } from "lucide-react";
+import { User, ShoppingBag, ArrowRight, ChevronDown, Instagram, Send, X, Fullscreen, Shrink, Menu } from "lucide-react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 
 // Scroll-triggered fade-up wrapper
@@ -114,102 +114,50 @@ const STEP_DURATION = 5000;
 function PopupStepCarousel() {
   const [active, setActive] = useState(0);
   const [direction, setDirection] = useState(1);
-  const [progress, setProgress] = useState(0);
-  const [paused, setPaused] = useState(false);
   const [dragX, setDragX] = useState(0);
-  const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const dragStartX = useRef(0);
+  const isDragging = useRef(false);
   const n = POPUP_STEPS.length;
 
   const goTo = useCallback((idx: number, dir: number) => {
     setDirection(dir);
     setActive(((idx % n) + n) % n);
-    setProgress(0);
   }, [n]);
 
-  const next = useCallback(() => goTo(active + 1, 1),  [active, goTo]);
+  const next = useCallback(() => goTo(active + 1, 1), [active, goTo]);
   const prev = useCallback(() => goTo(active - 1, -1), [active, goTo]);
 
-  // Auto-advance
-  useEffect(() => {
-    if (paused) return;
-    const t = setTimeout(next, STEP_DURATION);
-    return () => clearTimeout(t);
-  }, [active, paused, next]);
-
-  // Progress ticker
-  useEffect(() => {
-    if (paused) { if (progressRef.current) clearInterval(progressRef.current); return; }
-    setProgress(0);
-    const tick = 1000 / 60;
-    progressRef.current = setInterval(() => {
-      setProgress((p) => Math.min(p + (tick / STEP_DURATION) * 100, 100));
-    }, tick);
-    return () => { if (progressRef.current) clearInterval(progressRef.current); };
-  }, [active, paused]);
-
-  // Touch / mouse drag
   const onPointerDown = (e: React.PointerEvent) => {
     dragStartX.current = e.clientX;
+    isDragging.current = true;
     setDragX(0);
-    setPaused(true);
   };
   const onPointerMove = (e: React.PointerEvent) => {
-    if (!paused) return;
+    if (!isDragging.current) return;
     setDragX(e.clientX - dragStartX.current);
   };
   const onPointerUp = () => {
-    if (Math.abs(dragX) > 50) dragX < 0 ? next() : prev();
+    if (Math.abs(dragX) > 40) dragX < 0 ? next() : prev();
     setDragX(0);
-    setPaused(false);
+    isDragging.current = false;
   };
 
-  const prevIdx = ((active - 1) + n) % n;
-  const nextIdx = (active + 1) % n;
-
   const variants = {
-    enter:  (d: number) => ({ x: d > 0 ? "100%" : "-100%", opacity: 0, scale: 0.88, rotateY: d > 0 ? 12 : -12 }),
-    center: { x: 0, opacity: 1, scale: 1, rotateY: 0 },
-    exit:   (d: number) => ({ x: d > 0 ? "-100%" : "100%", opacity: 0, scale: 0.88, rotateY: d > 0 ? -12 : 12 }),
+    enter:  (d: number) => ({ x: d > 0 ? "100%" : "-100%", opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit:   (d: number) => ({ x: d > 0 ? "-60%" : "60%", opacity: 0 }),
   };
 
   return (
-    <div className="flex flex-col gap-3 select-none h-full">
-      {/* Progress bars */}
-      <div className="flex gap-1.5 shrink-0">
-        {POPUP_STEPS.map((_, i) => (
-          <button key={i} onClick={() => goTo(i, i > active ? 1 : -1)} aria-label={`Крок ${i + 1}`}
-            className="flex-1 h-1 rounded-full bg-white/20 overflow-hidden">
-            <div className="h-full rounded-full bg-white transition-none"
-              style={{ width: i < active ? "100%" : i === active ? `${progress}%` : "0%" }} />
-          </button>
-        ))}
-      </div>
-
-      {/* Card stack viewport — overflow visible so side cards peek out */}
-      <div className="relative flex-1 rounded-2xl" style={{ perspective: "1000px" }}>
-
-        {/* Prev card — scaled down, peeking from left behind active */}
-        <div
-          className="absolute inset-y-0 left-0 w-[76%] rounded-2xl overflow-hidden z-10 pointer-events-none"
-          style={{ transform: "translateX(-30%) scale(0.88)", transformOrigin: "right center", opacity: 0.55 }}
-        >
-          <img src={POPUP_STEPS[prevIdx].img} alt="" className="absolute inset-0 w-full h-full object-cover" aria-hidden="true" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-          <div className="absolute inset-0 bg-primary/40" />
-        </div>
-
-        {/* Next card — scaled down, peeking from right behind active */}
-        <div
-          className="absolute inset-y-0 right-0 w-[76%] rounded-2xl overflow-hidden z-10 pointer-events-none"
-          style={{ transform: "translateX(30%) scale(0.88)", transformOrigin: "left center", opacity: 0.55 }}
-        >
-          <img src={POPUP_STEPS[nextIdx].img} alt="" className="absolute inset-0 w-full h-full object-cover" aria-hidden="true" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-          <div className="absolute inset-0 bg-primary/40" />
-        </div>
-
-        {/* Active card */}
+    <div className="flex flex-col gap-4 select-none">
+      {/* Card */}
+      <div className="relative overflow-hidden rounded-2xl aspect-[4/3]"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerLeave={onPointerUp}
+        style={{ cursor: isDragging.current ? "grabbing" : "grab" }}
+      >
         <AnimatePresence initial={false} custom={direction} mode="popLayout">
           <motion.div
             key={active}
@@ -218,55 +166,62 @@ function PopupStepCarousel() {
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}
-            style={{ x: dragX, cursor: paused ? "grabbing" : "grab" }}
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerLeave={onPointerUp}
-            className="absolute inset-0 rounded-2xl overflow-hidden z-20 flex flex-col shadow-2xl"
+            transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
+            style={{ x: dragX }}
+            className="absolute inset-0"
           >
-            {/* Full-bleed image */}
-            <div className="flex-1 relative overflow-hidden">
-              <img
-                src={POPUP_STEPS[active].img}
-                alt={POPUP_STEPS[active].title}
-                className="absolute inset-0 w-full h-full object-cover"
-                draggable={false}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-              <div className="absolute top-3 left-3 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white text-[11px] font-black">
-                {POPUP_STEPS[active].step}
-              </div>
+            <img
+              src={POPUP_STEPS[active].img}
+              alt={POPUP_STEPS[active].title}
+              className="w-full h-full object-cover"
+              draggable={false}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+            {/* Step badge */}
+            <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-sm border border-white/20 text-white text-[11px] font-black tracking-wide">
+              {POPUP_STEPS[active].step}
             </div>
-
-            {/* Text area */}
-            <div className="shrink-0 bg-black/60 border-t border-white/10 px-4 py-4">
+            {/* Text */}
+            <div className="absolute bottom-0 left-0 right-0 px-5 pb-5 pt-8">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg leading-none" aria-hidden="true">{POPUP_STEPS[active].icon}</span>
-                <p className="text-white font-bold text-sm leading-tight">{POPUP_STEPS[active].title}</p>
+                <span className="text-xl leading-none" aria-hidden="true">{POPUP_STEPS[active].icon}</span>
+                <p className="text-white font-bold text-base leading-tight">{POPUP_STEPS[active].title}</p>
               </div>
-              <p className="text-white/70 text-xs leading-relaxed">{POPUP_STEPS[active].desc}</p>
+              <p className="text-white/70 text-sm leading-relaxed">{POPUP_STEPS[active].desc}</p>
             </div>
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* Nav: arrows flanking the label */}
-      <div className="flex items-center justify-center gap-3 shrink-0">
-        <button onClick={prev} aria-label="Попередній крок"
-          className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-colors">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-            <path d="M9 11L5 7l4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
-        <span className="text-white/60 text-xs font-medium tabular-nums">{active + 1} / {n}</span>
-        <button onClick={next} aria-label="Наступний крок"
-          className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-colors">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-            <path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
+      {/* Controls — Apple style: dots + arrows */}
+      <div className="flex items-center justify-between px-1">
+        {/* Dot indicators */}
+        <div className="flex items-center gap-1.5">
+          {POPUP_STEPS.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => goTo(i, i > active ? 1 : -1)}
+              aria-label={`Крок ${i + 1}`}
+              className="transition-all duration-300 rounded-full bg-white/40 hover:bg-white/70"
+              style={{ width: i === active ? 20 : 6, height: 6, backgroundColor: i === active ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.35)" }}
+            />
+          ))}
+        </div>
+        {/* Arrow buttons */}
+        <div className="flex items-center gap-2">
+          <button onClick={prev} aria-label="Попередній"
+            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-white transition-colors">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M9 11L5 7l4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          <button onClick={next} aria-label="Наступний"
+            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-white transition-colors">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -358,17 +313,15 @@ function PopupSection() {
         </div>
 
         {/* Right — swipeable step carousel */}
-        <div className="flex flex-col px-8 py-10 lg:px-10 lg:w-[420px] lg:border-l border-white/10 lg:self-stretch">
-          <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-4 shrink-0">Як це працює</p>
-          <div className="flex-1 flex flex-col min-h-[420px]">
-            <PopupStepCarousel />
-          </div>
+        <div className="px-8 py-10 lg:px-10 lg:w-[420px]">
+          <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-4">Як це працює</p>
+          <PopupStepCarousel />
         </div>
       </div>
 
-      {/* Bottom — horizontal feature strip */}
-      <div className="bg-white border-t border-gray-100 px-8 py-6 md:px-12">
-        <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-gray-100">
+      {/* Bottom — Apple-style feature cards */}
+      <div className="px-6 pb-8 md:px-10">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
             { icon: "🎪", label: "Виїзд на будь-який захід", desc: "Конференції, фестивалі, корпоративи" },
             { icon: "👕", label: "Кастомізація на місці",    desc: "Живий дизайн за 5 хвилин" },
@@ -377,14 +330,14 @@ function PopupSection() {
           ].map((f, i) => (
             <motion.div
               key={f.label}
-              initial={{ opacity:0, y:16 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }}
-              transition={{ duration:0.45, delay: i * 0.08 }}
-              className="flex items-start gap-3 px-4 first:pl-0 last:pr-0"
+              initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+              transition={{ duration: 0.45, delay: i * 0.07 }}
+              className="rounded-2xl bg-white/[0.08] backdrop-blur-sm px-4 py-4 flex flex-col gap-2"
             >
-              <span className="text-2xl shrink-0 mt-0.5" aria-hidden="true">{f.icon}</span>
+              <span className="text-2xl leading-none" aria-hidden="true">{f.icon}</span>
               <div>
-                <p className="text-foreground text-xs font-bold leading-tight">{f.label}</p>
-                <p className="text-muted-foreground text-xs mt-0.5 leading-snug">{f.desc}</p>
+                <p className="text-white text-xs font-bold leading-tight">{f.label}</p>
+                <p className="text-white/50 text-xs mt-1 leading-snug">{f.desc}</p>
               </div>
             </motion.div>
           ))}
@@ -589,7 +542,7 @@ export default function HomePage() {
         aria-label="Головна навігація"
       >
         {/* Pill — hugs content, no full width */}
-        <div className={`pointer-events-auto inline-flex items-center gap-2 h-12 px-3 rounded-full bg-background border border-border transition-shadow duration-300 ${scrolled ? "shadow-lg" : "shadow-md"}`}>
+        <div className={`pointer-events-auto inline-flex items-center gap-2 h-12 sm:h-12 px-3 sm:px-3 rounded-full bg-background border border-border transition-shadow duration-300 ${scrolled ? "shadow-lg" : "shadow-md"}`}>
 
           {/* Logo */}
           <Link href="/" aria-label="U:DO CRAFT" className="shrink-0 pl-1 pr-2">
@@ -660,28 +613,12 @@ export default function HomePage() {
               </motion.span>
             </Link>
 
-            {/* Burger — 3 lines morph to X, compact 14px */}
+            {/* Burger */}
             <button onClick={() => setMenuOpen(!menuOpen)}
               aria-label={menuOpen ? "Закрити меню" : "Відкрити меню"}
               aria-expanded={menuOpen}
-              className="md:hidden flex items-center justify-center w-8 h-8 rounded-full hover:bg-muted transition-colors duration-200 ml-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              <div className="flex flex-col justify-center gap-[4px] w-[14px] h-[14px]">
-                <motion.span
-                  animate={menuOpen ? { rotate: 45, y: 4 } : { rotate: 0, y: 0 }}
-                  transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
-                  className="block h-[1.5px] w-full bg-foreground rounded-full origin-center"
-                />
-                <motion.span
-                  animate={menuOpen ? { opacity: 0, scaleX: 0 } : { opacity: 1, scaleX: 1 }}
-                  transition={{ duration: 0.2 }}
-                  className="block h-[1.5px] w-full bg-foreground rounded-full origin-center"
-                />
-                <motion.span
-                  animate={menuOpen ? { rotate: -45, y: -4 } : { rotate: 0, y: 0 }}
-                  transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
-                  className="block h-[1.5px] w-full bg-foreground rounded-full origin-center"
-                />
-              </div>
+              className="md:hidden flex items-center justify-center w-9 h-9 rounded-full hover:bg-muted transition-colors duration-200 ml-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              {menuOpen ? <X className="w-5 h-5" strokeWidth={2} /> : <Menu className="w-5 h-5" strokeWidth={2} />}
             </button>
           </div>
         </div>
@@ -718,6 +655,7 @@ export default function HomePage() {
       <section className="relative overflow-hidden bg-primary">
         {/* Video loads immediately — no delay */}
         <video
+          ref={(el) => { if (el && cinemaMode) el.play(); }}
           className="absolute inset-0 w-full h-full object-cover opacity-75"
           src="/hero-video.mp4"
           autoPlay
@@ -725,11 +663,44 @@ export default function HomePage() {
           muted
           playsInline
         />
+
+        {/* Cinema fullscreen overlay — covers entire viewport */}
+        <AnimatePresence>
+          {cinemaMode && (
+            <motion.div
+              key="cinema"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.4 }}
+              className="fixed inset-0 z-[9998] bg-black overflow-hidden"
+            >
+              <video
+                className="absolute inset-0 w-full h-full object-cover"
+                src="/hero-video.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+              />
+              {/* Exit button */}
+              <button
+                onClick={() => setCinemaMode(false)}
+                aria-label="Вийти з режиму перегляду"
+                className="absolute bottom-6 right-6 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm border border-white/15 text-white/70 hover:text-white transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+              >
+                <Shrink className="w-4 h-4" />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <motion.div
           animate={{ opacity: cinemaMode ? 0 : 1 }}
           transition={{ duration: 0.5, ease: "easeInOut" }}
-          className="relative max-w-3xl mx-auto px-4 sm:px-6 pt-32 sm:pt-48 pb-16 text-center pointer-events-none"
+          className="relative max-w-3xl mx-auto px-4 sm:px-6 pt-32 sm:pt-48 pb-16 text-center"
           aria-hidden={cinemaMode}
+          style={{ pointerEvents: cinemaMode ? "none" : "auto" }}
         >
           <motion.h1
             initial={{ opacity: 0, y: 28 }}
@@ -780,7 +751,8 @@ export default function HomePage() {
         <motion.div
           animate={{ opacity: cinemaMode ? 0 : 1 }}
           transition={{ duration: 0.5, ease: "easeInOut" }}
-          className="flex justify-center pb-8 pointer-events-none"
+          className="flex justify-center pb-8"
+          style={{ pointerEvents: cinemaMode ? "none" : "auto" }}
           aria-hidden={cinemaMode}
         >
           <a href="#collections" className="text-white/50 hover:text-white/80 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-full" aria-label="Прокрутити вниз">
@@ -793,35 +765,11 @@ export default function HomePage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4, delay: 2.5 }}
-          onClick={() => setCinemaMode((v) => !v)}
-          aria-label={cinemaMode ? "Вийти з режиму перегляду" : "Режим перегляду відео"}
+          onClick={() => setCinemaMode(true)}
+          aria-label="Режим перегляду відео"
           className="absolute bottom-4 right-4 z-10 flex items-center justify-center w-9 h-9 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-sm border border-white/10 text-white/60 hover:text-white transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
         >
-          <AnimatePresence mode="wait" initial={false}>
-            {cinemaMode ? (
-              <motion.span
-                key="exit"
-                aria-hidden="true"
-                initial={{ opacity: 0, scale: 0.7 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.7 }}
-                transition={{ duration: 0.15 }}
-              >
-                <Shrink className="w-4 h-4" />
-              </motion.span>
-            ) : (
-              <motion.span
-                key="enter"
-                aria-hidden="true"
-                initial={{ opacity: 0, scale: 0.7 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.7 }}
-                transition={{ duration: 0.15 }}
-              >
-                <Fullscreen className="w-4 h-4" />
-              </motion.span>
-            )}
-          </AnimatePresence>
+          <Fullscreen className="w-4 h-4" />
         </motion.button>
       </section>
 
