@@ -11,22 +11,64 @@ import { BrandLogoFull } from "@/components/brand-logo";
 import { LogoLoader } from "@udo-craft/ui";
 import { createClient } from "@/lib/supabase/client";
 import { User, ShoppingBag, ArrowRight, ChevronDown, Instagram, Send, X } from "lucide-react";
+import { motion, useInView } from "framer-motion";
 
-// Fade-in-up on scroll
-function useFadeIn() {
-  const ref = useRef<HTMLElement>(null);
-  const [visible, setVisible] = useState(false);
+// Scroll-triggered fade-up wrapper
+function FadeUp({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-80px" });
+  return (
+    <motion.div
+      ref={ref}
+      className={className}
+      initial={{ opacity: 0, y: 36 }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 36 }}
+      transition={{ duration: 0.65, delay, ease: "easeOut" }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+// Staggered children wrapper
+function StaggerGrid({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-60px" });
+  return (
+    <motion.div
+      ref={ref}
+      className={className}
+      initial="hidden"
+      animate={isInView ? "visible" : "hidden"}
+      variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+const cardVariant = {
+  hidden: { opacity: 0, y: 32 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: "easeOut" as const } },
+};
+
+function CountUp({ end, suffix = "" }: { end: number; suffix?: string }) {
+  const [count, setCount] = useState(0);
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true });
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect(); } },
-      { threshold: 0.12 }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
-  return { ref, visible };
+    if (!isInView) return;
+    let start = 0;
+    const duration = 1400;
+    const step = end / (duration / 16);
+    const timer = setInterval(() => {
+      start += step;
+      if (start >= end) { setCount(end); clearInterval(timer); }
+      else setCount(Math.floor(start));
+    }, 16);
+    return () => clearInterval(timer);
+  }, [isInView, end]);
+  return <span ref={ref}>{count}{suffix}</span>;
 }
 
 interface Category {
@@ -52,14 +94,6 @@ export default function HomePage() {
   const [scrolled, setScrolled]     = useState(false);
   const [cartOpen, setCartOpen]     = useState(false);
   const supabase = createClient();
-
-  const fadeStats        = useFadeIn();
-  const fadeCollections  = useFadeIn();
-  const fadeServices     = useFadeIn();
-  const fadeHow          = useFadeIn();
-  const fadeWhyUs        = useFadeIn();
-  const fadeTestimonials = useFadeIn();
-  const fadeContact      = useFadeIn();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
@@ -159,6 +193,13 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white text-gray-900 overflow-x-hidden scroll-smooth">
+      {/* Page load fade-in overlay */}
+      <motion.div
+        initial={{ opacity: 1 }}
+        animate={{ opacity: 0 }}
+        transition={{ duration: 0.7, delay: 0.1 }}
+        className="fixed inset-0 bg-white z-[100] pointer-events-none"
+      />
 
       {/* Cart sidebar */}
       {cartOpen && (
@@ -213,7 +254,12 @@ export default function HomePage() {
       )}
 
       {/* NAV */}
-      <nav className={`fixed top-0 inset-x-0 z-50 bg-white border-b border-gray-100 transition-all duration-300 ${scrolled ? "shadow-md" : ""}`}>
+      <motion.nav
+        initial={{ y: -80, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+        className={`fixed top-0 inset-x-0 z-50 bg-white border-b border-gray-100 transition-all duration-300 ${scrolled ? "shadow-md" : ""}`}
+      >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-1">
             <Link href="/" aria-label="U:DO CRAFT">
@@ -274,7 +320,7 @@ export default function HomePage() {
             </Link>
           </div>
         </div>
-      </nav>
+      </motion.nav>
 
       {/* HERO */}
       <section className="relative overflow-hidden bg-primary">
@@ -286,72 +332,108 @@ export default function HomePage() {
           muted
           playsInline
         />
-        <div className="relative max-w-3xl mx-auto px-4 sm:px-6 pt-32 sm:pt-48 pb-16 text-center animate-in fade-in slide-in-from-bottom-8 duration-700 fill-mode-both">
-          <div className="inline-flex items-center gap-2 bg-white/10 text-white/80 text-xs font-semibold px-3 py-1.5 rounded-full mb-7 tracking-wide uppercase">
+        <div className="relative max-w-3xl mx-auto px-4 sm:px-6 pt-32 sm:pt-48 pb-16 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="inline-flex items-center gap-2 bg-white/10 text-white/80 text-xs font-semibold px-3 py-1.5 rounded-full mb-7 tracking-wide uppercase"
+          >
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             B2B Мерч-платформа
-          </div>
-          <h1 className="text-white text-4xl sm:text-5xl lg:text-[3.5rem] font-black leading-[1.05] tracking-tight">
+          </motion.div>
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
+            className="text-white text-4xl sm:text-5xl lg:text-[3.5rem] font-black leading-[1.05] tracking-tight"
+          >
             Одяг, який стає частиною <span className="text-white/70">вашої корпоративної ДНК</span>
-          </h1>
-          <p className="text-white/80 mt-5 text-base sm:text-lg leading-relaxed max-w-xl mx-auto">
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.7 }}
+            className="text-white/80 mt-5 text-base sm:text-lg leading-relaxed max-w-xl mx-auto"
+          >
             Ринок перенасичений дешевим трендовим одягом. Ми створюємо речі, які стають улюбленими в гардеробі. Ваш мерч — це інструмент стратегічної комунікації.
-          </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.85 }}
+            className="mt-8 flex flex-wrap justify-center gap-3"
+          >
             <Link href="#collections"
-              className="inline-flex items-center gap-2 bg-white text-primary font-bold text-sm px-6 py-3 rounded-full hover:bg-white/90 active:scale-95 transition-all duration-200">
+              className="inline-flex items-center gap-2 bg-white text-primary font-bold text-sm px-6 py-3 rounded-full hover:bg-white/90 hover:scale-105 active:scale-95 transition-all duration-200">
               Переглянути каталог
             </Link>
             <Link href="#contact"
-              className="inline-flex items-center gap-2 border border-white/30 text-white font-semibold text-sm px-6 py-3 rounded-full hover:bg-white/10 active:scale-95 transition-all duration-200">
+              className="inline-flex items-center gap-2 border border-white/30 text-white font-semibold text-sm px-6 py-3 rounded-full hover:bg-white/10 hover:scale-105 active:scale-95 transition-all duration-200">
               Зв&apos;язатись
             </Link>
-          </div>
-          <div className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-1 text-white/70 text-xs font-medium">
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 1 }}
+            className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-1 text-white/70 text-xs font-medium"
+          >
             <span>Від 10 одиниць</span>
             <span className="text-white/40">•</span>
             <span>Гарантія якості</span>
             <span className="text-white/40">•</span>
             <span>7–14 днів на виготовлення</span>
-          </div>
+          </motion.div>
         </div>
-        <div className="flex justify-center pb-8">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 1.1 }}
+          className="flex justify-center pb-8"
+        >
           <a href="#collections" className="text-white/50 hover:text-white/80 transition-colors duration-200" aria-label="Прокрутити вниз">
             <ChevronDown className="w-5 h-5 animate-bounce" />
           </a>
-        </div>
+        </motion.div>
       </section>
 
       {/* STATS */}
-      <section className="border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-gray-100">
-            {[
-              { value: "500+",  label: "Задоволених клієнтів" },
-              { value: "15%",   label: "Знижка від 100 шт" },
-              { value: "14 дн", label: "Середній термін" },
-              { value: "100%",  label: "Контроль якості" },
-            ].map((s) => (
-              <div key={s.label} className="py-6 px-4 sm:px-6 text-center">
-                <p className="text-2xl font-black text-primary">{s.value}</p>
-                <p className="text-xs text-gray-500 mt-1 font-medium">{s.label}</p>
-              </div>
-            ))}
+      <FadeUp>
+        <section className="border-b border-gray-100">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-gray-100">
+              {[
+                { value: 500, suffix: "+",   label: "Задоволених клієнтів" },
+                { value: 15,  suffix: "%",   label: "Знижка від 100 шт" },
+                { value: 14,  suffix: " дн", label: "Середній термін" },
+                { value: 100, suffix: "%",   label: "Контроль якості" },
+              ].map((s) => (
+                <div key={s.label} className="py-6 px-4 sm:px-6 text-center">
+                  <p className="text-2xl font-black text-primary">
+                    <CountUp end={s.value} suffix={s.suffix} />
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1 font-medium">{s.label}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </FadeUp>
 
       {/* COLLECTIONS */}
       <section id="collections" className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
-        <div className="flex items-end justify-between mb-10">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-widest mb-2 text-primary">Каталог</p>
-            <h2 className="text-3xl font-black tracking-tight">Колекції</h2>
+        <FadeUp>
+          <div className="flex items-end justify-between mb-10">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest mb-2 text-primary">Каталог</p>
+              <h2 className="text-3xl font-black tracking-tight">Колекції</h2>
+            </div>
+            <Link href="/order" className="hidden sm:flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline transition-all duration-200">
+              Всі товари <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
-          <Link href="/order" className="hidden sm:flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline transition-all duration-200">
-            Всі товари <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
+        </FadeUp>
 
         {hasCatalog && (
           <div className="flex gap-2 overflow-x-auto pb-6 -mx-1 px-1 scrollbar-hide">
@@ -419,22 +501,24 @@ export default function HomePage() {
 
       {/* SERVICES */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
-        <div className="mb-10">
-          <p className="text-xs font-bold uppercase tracking-widest mb-2 text-primary">Додаткові послуги</p>
-          <h2 className="text-3xl font-black tracking-tight">Більше, ніж просто мерч</h2>
-        </div>
-        <div className="grid md:grid-cols-2 gap-5">
-          <div className="relative bg-gray-900 rounded-2xl p-8 overflow-hidden flex flex-col justify-between min-h-[280px] hover:shadow-xl transition-shadow duration-300">
+        <FadeUp>
+          <div className="mb-10">
+            <p className="text-xs font-bold uppercase tracking-widest mb-2 text-primary">Додаткові послуги</p>
+            <h2 className="text-3xl font-black tracking-tight">Більше, ніж просто мерч</h2>
+          </div>
+        </FadeUp>
+        <StaggerGrid className="grid md:grid-cols-2 gap-5">
+          <motion.div variants={cardVariant} className="relative bg-gray-900 rounded-2xl p-8 overflow-hidden flex flex-col justify-between min-h-[280px] hover:shadow-xl transition-shadow duration-300">
             <div>
               <span className="inline-block text-xs font-bold uppercase tracking-widest text-white/50 mb-4">Семпли</span>
               <h3 className="text-white text-2xl font-black mb-3">Box of Touch</h3>
               <p className="text-gray-400 text-sm leading-relaxed max-w-xs">Замов набір зразків тканин, кольорів та виробів — відчуй якість до того, як зробити тираж.</p>
             </div>
-            <Link href="#contact" className="mt-6 inline-flex items-center gap-2 bg-white text-gray-900 text-sm font-bold px-5 py-2.5 rounded-full hover:bg-gray-100 active:scale-95 transition-all duration-200 w-fit">
+            <Link href="#contact" className="mt-6 inline-flex items-center gap-2 bg-white text-gray-900 text-sm font-bold px-5 py-2.5 rounded-full hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all duration-200 w-fit">
               Замовити зразки <ArrowRight className="w-4 h-4" />
             </Link>
-          </div>
-          <div className="relative rounded-2xl p-8 overflow-hidden flex flex-col justify-between min-h-[280px] border border-gray-200 hover:shadow-xl transition-shadow duration-300">
+          </motion.div>
+          <motion.div variants={cardVariant} className="relative rounded-2xl p-8 overflow-hidden flex flex-col justify-between min-h-[280px] border border-gray-200 hover:shadow-xl transition-shadow duration-300">
             <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('/designer-bg.jpg')" }} />
             <div className="absolute inset-0 bg-black/60" />
             <div className="relative z-10">
@@ -442,11 +526,11 @@ export default function HomePage() {
               <h3 className="text-2xl font-black mb-3 text-white">Найми дизайнера</h3>
               <p className="text-white/90 text-sm leading-relaxed max-w-xs">Немає готового логотипу? Наш дизайнер допоможе створити фірмовий стиль або адаптує логотип для нанесення.</p>
             </div>
-            <Link href="#contact" className="relative z-10 mt-6 inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm font-bold px-5 py-2.5 rounded-full hover:bg-primary/90 active:scale-95 transition-all duration-200 w-fit">
+            <Link href="#contact" className="relative z-10 mt-6 inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm font-bold px-5 py-2.5 rounded-full hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all duration-200 w-fit">
               Обговорити проєкт <ArrowRight className="w-4 h-4" />
             </Link>
-          </div>
-        </div>
+          </motion.div>
+        </StaggerGrid>
       </section>
 
       {/* POPUP SERVICE */}
@@ -501,17 +585,25 @@ export default function HomePage() {
       {/* HOW IT WORKS */}
       <section id="how" className="py-20 sm:py-24 bg-primary">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="mb-14">
-            <p className="text-xs font-bold text-white/60 uppercase tracking-widest mb-3">Процес</p>
-            <h2 className="text-white text-3xl sm:text-4xl font-black tracking-tight">Кастомуй під свої цілі</h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-4">
+          <FadeUp>
+            <div className="mb-14">
+              <p className="text-xs font-bold text-white/60 uppercase tracking-widest mb-3">Процес</p>
+              <h2 className="text-white text-3xl sm:text-4xl font-black tracking-tight">Кастомуй під свої цілі</h2>
+            </div>
+          </FadeUp>
+          <StaggerGrid className="grid md:grid-cols-3 gap-4">
             {[
               { step: "01", title: "Обери товари", desc: "Переглядай каталог, фільтруй за категоріями. Обирай базу для свого мерчу — худі, футболки, аксесуари.", cta: "До каталогу", href: "#collections" },
               { step: "02", title: "Кастомуй одяг", desc: "Завантаж логотип, обери зону нанесення, розмір та колір. Переглянь попередній вигляд у реальному часі.", cta: "Спробувати", href: "/order" },
               { step: "03", title: "Отримай пропозицію", desc: "Заповни форму замовлення. Менеджер зв'яжеться з тобою для узгодження деталей та надішле рахунок.", cta: "Замовити", href: "#contact" },
             ].map((item) => (
-              <div key={item.step} className="bg-white/[0.08] hover:bg-white/[0.12] border border-white/15 rounded-2xl p-7 flex flex-col gap-5 transition-all duration-200">
+              <motion.div
+                key={item.step}
+                variants={cardVariant}
+                whileHover={{ scale: 1.03, y: -4 }}
+                transition={{ duration: 0.2 }}
+                className="bg-white/[0.08] hover:bg-white/[0.12] border border-white/15 rounded-2xl p-7 flex flex-col gap-5"
+              >
                 <span className="text-white/40 text-5xl font-black leading-none select-none">{item.step}</span>
                 <div className="flex-1">
                   <h3 className="text-white font-bold text-lg mb-2">{item.title}</h3>
@@ -520,20 +612,22 @@ export default function HomePage() {
                 <Link href={item.href} className="inline-flex items-center gap-1.5 text-white font-semibold text-sm hover:gap-2.5 transition-all duration-200 underline-offset-2 hover:underline">
                   {item.cta} <ArrowRight className="w-4 h-4" />
                 </Link>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </StaggerGrid>
         </div>
       </section>
 
       {/* WHY US */}
       <section className="bg-gray-50 py-16 sm:py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="mb-12 text-center">
-            <p className="text-xs font-bold uppercase tracking-widest mb-3 text-primary">Чому ми</p>
-            <h2 className="text-3xl font-black tracking-tight">Якість, яку відчуваєш</h2>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <FadeUp>
+            <div className="mb-12 text-center">
+              <p className="text-xs font-bold uppercase tracking-widest mb-3 text-primary">Чому ми</p>
+              <h2 className="text-3xl font-black tracking-tight">Якість, яку відчуваєш</h2>
+            </div>
+          </FadeUp>
+          <StaggerGrid className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               { icon: "🎨", title: "Онлайн-редактор",   desc: "Завантажуй логотип, розміщуй на виробі та одразу бачиш результат. Без зайвих листів і погоджень." },
               { icon: "📦", title: "Від 10 одиниць",     desc: "Не потрібно замовляти сотні. Починай з малого тиражу — ідеально для стартапів і команд." },
@@ -542,30 +636,44 @@ export default function HomePage() {
               { icon: "🔒", title: "Контроль якості",    desc: "Кожна партія проходить перевірку перед відправкою. Ми відповідаємо за результат." },
               { icon: "💬", title: "Особистий менеджер", desc: "Ваш менеджер на зв'язку від першого запиту до отримання замовлення." },
             ].map((f) => (
-              <div key={f.title} className="bg-white rounded-2xl p-6 border border-gray-100 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+              <motion.div
+                key={f.title}
+                variants={cardVariant}
+                whileHover={{ y: -4, scale: 1.02 }}
+                transition={{ duration: 0.2 }}
+                className="bg-white rounded-2xl p-6 border border-gray-100 hover:shadow-lg transition-shadow duration-200"
+              >
                 <span className="text-2xl mb-4 block" aria-hidden="true">{f.icon}</span>
                 <h3 className="font-bold text-gray-900 mb-2">{f.title}</h3>
                 <p className="text-sm text-gray-500 leading-relaxed">{f.desc}</p>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </StaggerGrid>
         </div>
       </section>
 
       {/* TESTIMONIALS */}
       <section className="bg-gray-50 py-16 sm:py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="mb-12">
-            <p className="text-xs font-bold uppercase tracking-widest mb-2 text-primary">Відгуки</p>
-            <h2 className="text-3xl font-black tracking-tight">Що кажуть клієнти</h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-5">
+          <FadeUp>
+            <div className="mb-12">
+              <p className="text-xs font-bold uppercase tracking-widest mb-2 text-primary">Відгуки</p>
+              <h2 className="text-3xl font-black tracking-tight">Що кажуть клієнти</h2>
+            </div>
+          </FadeUp>
+          <StaggerGrid className="grid md:grid-cols-3 gap-5">
             {[
               { name: "Олена Коваль",      role: "HR Director, TechCorp",      avatar: "ОК", text: "Замовляли корпоративні худі для команди 80 осіб. Якість перевершила очікування — люди носять їх не лише на роботі. Менеджер був на зв'язку на кожному етапі.", rating: 5 },
               { name: "Максим Бондаренко", role: "Co-founder, StartupUA",      avatar: "МБ", text: "Спочатку замовили Box of Touch — це вирішило всі сумніви щодо якості. Потім зробили тираж 200 футболок для конференції. Все вчасно і без нервів.", rating: 5 },
               { name: "Аліна Мороз",       role: "Brand Manager, RetailGroup", avatar: "АМ", text: "Зверталися за допомогою дизайнера — адаптували логотип під вишивку. Результат виглядає дуже преміально. Клієнти постійно питають, де ми це замовляли.", rating: 5 },
             ].map((t) => (
-              <div key={t.name} className="bg-white rounded-2xl p-6 border border-gray-100 flex flex-col gap-4 hover:shadow-md transition-shadow duration-200">
+              <motion.div
+                key={t.name}
+                variants={cardVariant}
+                whileHover={{ y: -4 }}
+                transition={{ duration: 0.2 }}
+                className="bg-white rounded-2xl p-6 border border-gray-100 flex flex-col gap-4 hover:shadow-lg transition-shadow duration-200"
+              >
                 <div className="flex gap-0.5" aria-label={`Оцінка: ${t.rating} з 5`}>
                   {[...Array(t.rating)].map((_, i) => (
                     <svg key={i} className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20" aria-hidden="true">
@@ -583,9 +691,9 @@ export default function HomePage() {
                     <p className="text-xs text-gray-500">{t.role}</p>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </StaggerGrid>
         </div>
       </section>
 
@@ -593,26 +701,30 @@ export default function HomePage() {
       <section id="contact" className="bg-gray-900 py-20 sm:py-24">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest mb-4 text-primary">Контакти</p>
-              <h2 className="text-white text-3xl sm:text-4xl font-black tracking-tight mb-5">Зв&apos;яжіться з нами</h2>
-              <p className="text-gray-400 text-base leading-relaxed mb-8">
-                Розкажіть про ваш проєкт — ми підберемо оптимальне рішення та надішлемо комерційну пропозицію протягом 24 годин.
-              </p>
-              <div className="space-y-4">
-                {[
-                  { label: "Email",   value: "info@udocraft.com" },
-                  { label: "Телефон", value: "+380 63 070 33 072" },
-                  { label: "Адреса",  value: "м. Львів, вул. Джерельна, 69 (Офіс 10)" },
-                ].map((c) => (
-                  <div key={c.label} className="flex items-start gap-3">
-                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider w-16 pt-0.5 shrink-0">{c.label}</span>
-                    <span className="text-gray-300 text-sm">{c.value}</span>
-                  </div>
-                ))}
+            <FadeUp>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest mb-4 text-primary">Контакти</p>
+                <h2 className="text-white text-3xl sm:text-4xl font-black tracking-tight mb-5">Зв&apos;яжіться з нами</h2>
+                <p className="text-gray-400 text-base leading-relaxed mb-8">
+                  Розкажіть про ваш проєкт — ми підберемо оптимальне рішення та надішлемо комерційну пропозицію протягом 24 годин.
+                </p>
+                <div className="space-y-4">
+                  {[
+                    { label: "Email",   value: "info@udocraft.com" },
+                    { label: "Телефон", value: "+380 63 070 33 072" },
+                    { label: "Адреса",  value: "м. Львів, вул. Джерельна, 69 (Офіс 10)" },
+                  ].map((c) => (
+                    <div key={c.label} className="flex items-start gap-3">
+                      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider w-16 pt-0.5 shrink-0">{c.label}</span>
+                      <span className="text-gray-300 text-sm">{c.value}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-            <ContactForm />
+            </FadeUp>
+            <FadeUp delay={0.2}>
+              <ContactForm />
+            </FadeUp>
           </div>
         </div>
       </section>
