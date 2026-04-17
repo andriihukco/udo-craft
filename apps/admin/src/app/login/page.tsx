@@ -37,7 +37,7 @@ export default function LoginPage() {
       return;
     }
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       if (error.message.includes("Invalid login credentials")) {
         setError("Невірний email або пароль.");
@@ -47,10 +47,21 @@ export default function LoginPage() {
         setError("Щось пішло не так. Спробуйте пізніше.");
       }
       setLoading(false);
-    } else {
-      router.push("/");
-      router.refresh();
+      return;
     }
+
+    // Check that this user has an admin role — regular client users are not allowed
+    const ALLOWED_ROLES = ["admin", "manager", "viewer"];
+    const role: string | undefined = data.user?.user_metadata?.role;
+    if (!role || !ALLOWED_ROLES.includes(role)) {
+      await supabase.auth.signOut();
+      setError("Доступ заборонено. Цей обліковий запис не має прав адміністратора.");
+      setLoading(false);
+      return;
+    }
+
+    router.push("/");
+    router.refresh();
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {

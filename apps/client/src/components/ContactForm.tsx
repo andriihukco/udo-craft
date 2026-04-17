@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { track } from "@/lib/analytics";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Loader2, Upload, X, ChevronDown, Check } from "lucide-react";
@@ -39,6 +37,9 @@ function topicFromSource(source: string): TopicValue {
   return "merch";
 }
 
+// Shared input class — taller to match landing page button height
+const inputCls = "w-full h-[52px] bg-white/5 border border-white/10 text-white placeholder:text-white/30 rounded-lg px-4 text-sm focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/30 transition-colors disabled:opacity-50";
+
 export function ContactForm({ defaultTopic }: { defaultTopic?: TopicValue }) {
   const [sent, setSent]             = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -52,6 +53,7 @@ export function ContactForm({ defaultTopic }: { defaultTopic?: TopicValue }) {
   const [message, setMessage]       = useState("");
   const [files, setFiles]           = useState<File[]>([]);
   const [source, setSource]         = useState("contact_form");
+
   useEffect(() => {
     const s = detectSource();
     setSource(s);
@@ -104,57 +106,76 @@ export function ContactForm({ defaultTopic }: { defaultTopic?: TopicValue }) {
 
   return (
     <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-4 max-w-2xl">
+
       <div className="space-y-1.5">
-        <Label htmlFor="cf-name" className="text-white/70 text-sm">Ваше iм&apos;я *</Label>
-        <Input id="cf-name" type="text" placeholder="Iван Петренко" value={name}
+        <Label htmlFor="cf-name" className="text-white/60 text-xs font-semibold uppercase tracking-wide">Ваше iм&apos;я *</Label>
+        <input id="cf-name" type="text" placeholder="Iван Петренко" value={name}
           onChange={(e) => setName(e.target.value)} required disabled={submitting}
-          className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-white/20 focus-visible:border-white/30" />
+          className={inputCls} />
       </div>
+
       <div className="space-y-1.5">
-        <Label htmlFor="cf-email" className="text-white/70 text-sm">Email *</Label>
-        <Input id="cf-email" type="email" placeholder="hr@company.com" value={email}
+        <Label htmlFor="cf-email" className="text-white/60 text-xs font-semibold uppercase tracking-wide">Email *</Label>
+        <input id="cf-email" type="email" placeholder="hr@company.com" value={email}
           onChange={(e) => setEmail(e.target.value)} required disabled={submitting}
-          className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-white/20 focus-visible:border-white/30" />
+          className={inputCls} />
       </div>
+
       <div className="space-y-1.5">
-        <Label htmlFor="cf-phone" className="text-white/70 text-sm">Телефон *</Label>
-        <Input id="cf-phone" type="tel" placeholder="+380 XX XXX XX XX" value={phone}
+        <Label htmlFor="cf-phone" className="text-white/60 text-xs font-semibold uppercase tracking-wide">Телефон *</Label>
+        <input id="cf-phone" type="tel" placeholder="+380 XX XXX XX XX" value={phone}
           onChange={(e) => setPhone(e.target.value)} required disabled={submitting}
-          className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-white/20 focus-visible:border-white/30" />
+          className={inputCls} />
       </div>
+
       <div className="space-y-1.5">
-        <Label htmlFor="cf-company" className="text-white/70 text-sm">Компанiя</Label>
-        <Input id="cf-company" type="text" placeholder="Назва компанiї" value={company}
+        <Label htmlFor="cf-company" className="text-white/60 text-xs font-semibold uppercase tracking-wide">Компанiя</Label>
+        <input id="cf-company" type="text" placeholder="Назва компанiї" value={company}
           onChange={(e) => setCompany(e.target.value)} disabled={submitting}
-          className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-white/20 focus-visible:border-white/30" />
+          className={inputCls} />
       </div>
 
       {/* Topic picker */}
       <div className="md:col-span-2 space-y-1.5">
-        <Label className="text-white/70 text-sm">Тема звернення *</Label>
+        <Label className="text-white/60 text-xs font-semibold uppercase tracking-wide">Тема звернення *</Label>
         <Popover open={topicOpen} onOpenChange={setTopicOpen}>
-          <PopoverTrigger className="w-full flex items-center gap-3 bg-white/5 border border-white/10 rounded-md px-3 py-2.5 text-left hover:bg-white/[0.08] hover:border-white/20 transition-colors disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-white/20" disabled={submitting}>
+          <PopoverTrigger
+            disabled={submitting}
+            className="w-full h-[52px] flex items-center gap-3 bg-white/5 border border-white/10 rounded-lg px-4 text-left hover:bg-white/[0.08] hover:border-white/20 transition-colors disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-white/20"
+          >
             <span className="text-xl shrink-0" aria-hidden="true">{selectedTopic.icon}</span>
             <div className="flex-1 min-w-0">
               <p className="text-white text-sm font-medium leading-tight">{selectedTopic.label}</p>
-              <p className="text-white/45 text-xs mt-0.5 truncate">{selectedTopic.desc}</p>
+              <p className="text-white/40 text-xs mt-0.5 truncate">{selectedTopic.desc}</p>
             </div>
             <ChevronDown className={`w-4 h-4 text-white/40 shrink-0 transition-transform duration-200 ${topicOpen ? "rotate-180" : ""}`} />
           </PopoverTrigger>
-          <PopoverContent className="p-1.5 bg-card border border-white/10 shadow-2xl rounded-xl"
-            style={{ width: "var(--anchor-width)" }} align="start" sideOffset={6}>
+
+          {/* Force dark bg with inline style — overrides CSS variable bg-popover */}
+          <PopoverContent
+            align="start"
+            sideOffset={6}
+            style={{
+              width: "var(--anchor-width)",
+              backgroundColor: "#0f172a",
+              border: "1px solid rgba(255,255,255,0.08)",
+            }}
+            className="!bg-[#0f172a] p-1.5 shadow-2xl rounded-xl"
+          >
             {TOPICS.map((t) => (
               <button key={t.value} type="button"
                 onClick={() => { setTopic(t.value); setTopicOpen(false); }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
-                  topic === t.value ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white"
-                }`}>
+                style={{ color: topic === t.value ? "#fff" : "rgba(255,255,255,0.7)" }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors focus:outline-none ${
+                  topic === t.value ? "bg-white/10" : "hover:bg-white/5"
+                }`}
+              >
                 <span className="text-xl shrink-0" aria-hidden="true">{t.icon}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium leading-tight">{t.label}</p>
-                  <p className="text-xs text-white/40 mt-0.5">{t.desc}</p>
+                  <p className="text-sm font-medium leading-tight" style={{ color: "#fff" }}>{t.label}</p>
+                  <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.55)" }}>{t.desc}</p>
                 </div>
-                {topic === t.value && <Check className="w-4 h-4 text-primary shrink-0" />}
+                {topic === t.value && <Check className="w-4 h-4 shrink-0" style={{ color: "#fff" }} />}
               </button>
             ))}
           </PopoverContent>
@@ -162,45 +183,34 @@ export function ContactForm({ defaultTopic }: { defaultTopic?: TopicValue }) {
       </div>
 
       <div className="md:col-span-2 space-y-1.5">
-        <Label htmlFor="cf-message" className="text-white/70 text-sm">Розкажiть про ваш проєкт</Label>
+        <Label htmlFor="cf-message" className="text-white/60 text-xs font-semibold uppercase tracking-wide">Розкажiть про ваш проєкт</Label>
         <textarea id="cf-message" placeholder="Кiлькiсть одиниць, тип товару, термiни..."
           rows={4} value={message} onChange={(e) => setMessage(e.target.value)} disabled={submitting}
-          className="w-full bg-white/5 border border-white/10 text-white placeholder:text-gray-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/30 transition-colors resize-none disabled:opacity-50" />
+          className="w-full bg-white/5 border border-white/10 text-white placeholder:text-white/30 rounded-lg px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/30 transition-colors resize-none disabled:opacity-50" />
       </div>
 
       <div className="md:col-span-2 space-y-1.5">
-        <Label htmlFor="cf-files" className="text-white/70 text-sm">
+        <Label htmlFor="cf-files" className="text-white/60 text-xs font-semibold uppercase tracking-wide">
           Завантажити файли (макети, логотипи тощо)
         </Label>
         <div className="relative">
-          <input
-            id="cf-files"
-            type="file"
-            multiple
+          <input id="cf-files" type="file" multiple
             onChange={(e) => setFiles(Array.from(e.target.files || []))}
-            disabled={submitting}
-            className="hidden"
-          />
-          <label
-            htmlFor="cf-files"
-            className="flex flex-col items-center justify-center w-full p-6 border-2 border-dashed border-white/20 rounded-lg cursor-pointer hover:border-white/40 hover:bg-white/5 transition-colors"
-          >
+            disabled={submitting} className="hidden" />
+          <label htmlFor="cf-files"
+            className="flex flex-col items-center justify-center w-full p-6 border-2 border-dashed border-white/20 rounded-lg cursor-pointer hover:border-white/40 hover:bg-white/5 transition-colors">
             <Upload className="w-8 h-8 text-white/40 mb-2" aria-hidden="true" />
             <p className="text-white/70 text-sm font-medium">Натисніть або перетягніть файли</p>
             <p className="text-white/50 text-xs mt-1">Макети, логотипи, зображення...</p>
           </label>
-
           {files.length > 0 && (
             <div className="mt-3 space-y-2">
               {files.map((f, i) => (
                 <div key={i} className="flex items-center justify-between p-2 bg-white/5 rounded border border-white/10">
                   <span className="text-white/70 text-xs truncate">{f.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => setFiles(files.filter((_, idx) => idx !== i))}
+                  <button type="button" onClick={() => setFiles(files.filter((_, idx) => idx !== i))}
                     aria-label={`Видалити файл ${f.name}`}
-                    className="text-white/50 hover:text-white/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 rounded"
-                  >
+                    className="text-white/50 hover:text-white/70 transition-colors rounded focus:outline-none focus:ring-2 focus:ring-white/20">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
@@ -217,20 +227,12 @@ export function ContactForm({ defaultTopic }: { defaultTopic?: TopicValue }) {
       )}
 
       <div className="md:col-span-2">
-        <Button
-          type="submit"
-          disabled={submitting}
-          className="bg-primary hover:bg-primary/90 text-white font-bold px-8 rounded-full disabled:opacity-50"
-        >
+        <button type="submit" disabled={submitting}
+          className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold text-sm px-8 py-3.5 rounded-full active:scale-95 transition-all duration-200 disabled:opacity-50">
           {submitting ? (
-            <>
-              <Loader2 className="size-4 mr-2 animate-spin" aria-hidden="true" />
-              Надсилаємо...
-            </>
-          ) : (
-            "Надіслати"
-          )}
-        </Button>
+            <><Loader2 className="size-4 animate-spin" aria-hidden="true" />Надсилаємо...</>
+          ) : "Надіслати"}
+        </button>
       </div>
     </form>
   );
