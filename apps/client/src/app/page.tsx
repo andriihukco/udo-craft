@@ -11,7 +11,7 @@ import { BrandLogoFull } from "@/components/brand-logo";
 import { LogoLoader } from "@udo-craft/ui";
 import { createClient } from "@/lib/supabase/client";
 import { User, ShoppingBag, ArrowRight, ChevronDown, Instagram, Send, X } from "lucide-react";
-import { motion, useInView } from "framer-motion";
+import { motion, useInView, AnimatePresence } from "framer-motion";
 
 // Scroll-triggered fade-up wrapper
 function FadeUp({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
@@ -85,6 +85,315 @@ interface ProductWithCategory extends Product {
   category_id?: string | null;
 }
 
+const POPUP_STEPS = [
+  {
+    step: "01",
+    icon: "🎨",
+    title: "Обери пакет",
+    desc: "Стікер-паки або пакети принтів — підбери під формат заходу",
+    img: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&q=80",
+  },
+  {
+    step: "02",
+    icon: "👕",
+    title: "Обери товар",
+    desc: "Футболки, худі, аксесуари — гості обирають на місці",
+    img: "https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=600&q=80",
+  },
+  {
+    step: "03",
+    icon: "⚡",
+    title: "Ми приїжджаємо",
+    desc: "Привозимо обладнання та наносимо принти прямо на заході",
+    img: "https://images.unsplash.com/photo-1562157873-818bc0726f68?w=600&q=80",
+  },
+];
+
+const STEP_DURATION = 5000;
+
+function PopupStepCarousel() {
+  const [active, setActive] = useState(0);
+  const [direction, setDirection] = useState(1);
+  const [progress, setProgress] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [dragX, setDragX] = useState(0);
+  const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const dragStartX = useRef(0);
+  const n = POPUP_STEPS.length;
+
+  const goTo = useCallback((idx: number, dir: number) => {
+    setDirection(dir);
+    setActive(((idx % n) + n) % n);
+    setProgress(0);
+  }, [n]);
+
+  const next = useCallback(() => goTo(active + 1, 1),  [active, goTo]);
+  const prev = useCallback(() => goTo(active - 1, -1), [active, goTo]);
+
+  // Auto-advance
+  useEffect(() => {
+    if (paused) return;
+    const t = setTimeout(next, STEP_DURATION);
+    return () => clearTimeout(t);
+  }, [active, paused, next]);
+
+  // Progress ticker
+  useEffect(() => {
+    if (paused) { if (progressRef.current) clearInterval(progressRef.current); return; }
+    setProgress(0);
+    const tick = 1000 / 60;
+    progressRef.current = setInterval(() => {
+      setProgress((p) => Math.min(p + (tick / STEP_DURATION) * 100, 100));
+    }, tick);
+    return () => { if (progressRef.current) clearInterval(progressRef.current); };
+  }, [active, paused]);
+
+  // Touch / mouse drag
+  const onPointerDown = (e: React.PointerEvent) => {
+    dragStartX.current = e.clientX;
+    setDragX(0);
+    setPaused(true);
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!paused) return;
+    setDragX(e.clientX - dragStartX.current);
+  };
+  const onPointerUp = () => {
+    if (Math.abs(dragX) > 50) dragX < 0 ? next() : prev();
+    setDragX(0);
+    setPaused(false);
+  };
+
+  const prevIdx = ((active - 1) + n) % n;
+  const nextIdx = (active + 1) % n;
+
+  const variants = {
+    enter:  (d: number) => ({ x: d > 0 ? "100%" : "-100%", opacity: 0, scale: 0.88, rotateY: d > 0 ? 12 : -12 }),
+    center: { x: 0, opacity: 1, scale: 1, rotateY: 0 },
+    exit:   (d: number) => ({ x: d > 0 ? "-100%" : "100%", opacity: 0, scale: 0.88, rotateY: d > 0 ? -12 : 12 }),
+  };
+
+  return (
+    <div className="flex flex-col gap-3 select-none h-full">
+      {/* Progress bars */}
+      <div className="flex gap-1.5 shrink-0">
+        {POPUP_STEPS.map((_, i) => (
+          <button key={i} onClick={() => goTo(i, i > active ? 1 : -1)} aria-label={`Крок ${i + 1}`}
+            className="flex-1 h-1 rounded-full bg-white/20 overflow-hidden">
+            <div className="h-full rounded-full bg-white transition-none"
+              style={{ width: i < active ? "100%" : i === active ? `${progress}%` : "0%" }} />
+          </button>
+        ))}
+      </div>
+
+      {/* Card stack viewport — overflow visible so side cards peek out */}
+      <div className="relative flex-1 rounded-2xl" style={{ perspective: "1000px" }}>
+
+        {/* Prev card — scaled down, peeking from left behind active */}
+        <div
+          className="absolute inset-y-0 left-0 w-[76%] rounded-2xl overflow-hidden z-10 pointer-events-none"
+          style={{ transform: "translateX(-30%) scale(0.88)", transformOrigin: "right center", opacity: 0.55 }}
+        >
+          <img src={POPUP_STEPS[prevIdx].img} alt="" className="absolute inset-0 w-full h-full object-cover" aria-hidden="true" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+          <div className="absolute inset-0 bg-primary/40" />
+        </div>
+
+        {/* Next card — scaled down, peeking from right behind active */}
+        <div
+          className="absolute inset-y-0 right-0 w-[76%] rounded-2xl overflow-hidden z-10 pointer-events-none"
+          style={{ transform: "translateX(30%) scale(0.88)", transformOrigin: "left center", opacity: 0.55 }}
+        >
+          <img src={POPUP_STEPS[nextIdx].img} alt="" className="absolute inset-0 w-full h-full object-cover" aria-hidden="true" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+          <div className="absolute inset-0 bg-primary/40" />
+        </div>
+
+        {/* Active card */}
+        <AnimatePresence initial={false} custom={direction} mode="popLayout">
+          <motion.div
+            key={active}
+            custom={direction}
+            variants={variants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}
+            style={{ x: dragX, cursor: paused ? "grabbing" : "grab" }}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerLeave={onPointerUp}
+            className="absolute inset-0 rounded-2xl overflow-hidden z-20 flex flex-col shadow-2xl"
+          >
+            {/* Full-bleed image */}
+            <div className="flex-1 relative overflow-hidden">
+              <img
+                src={POPUP_STEPS[active].img}
+                alt={POPUP_STEPS[active].title}
+                className="absolute inset-0 w-full h-full object-cover"
+                draggable={false}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+              <div className="absolute top-3 left-3 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white text-[11px] font-black">
+                {POPUP_STEPS[active].step}
+              </div>
+            </div>
+
+            {/* Text area */}
+            <div className="shrink-0 bg-black/60 border-t border-white/10 px-4 py-4">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-lg leading-none" aria-hidden="true">{POPUP_STEPS[active].icon}</span>
+                <p className="text-white font-bold text-sm leading-tight">{POPUP_STEPS[active].title}</p>
+              </div>
+              <p className="text-white/70 text-xs leading-relaxed">{POPUP_STEPS[active].desc}</p>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* Nav: arrows flanking the label */}
+      <div className="flex items-center justify-center gap-3 shrink-0">
+        <button onClick={prev} aria-label="Попередній крок"
+          className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-colors">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M9 11L5 7l4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <span className="text-white/60 text-xs font-medium tabular-nums">{active + 1} / {n}</span>
+        <button onClick={next} aria-label="Наступний крок"
+          className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-colors">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Animated CTA button — icon slides right on hover
+function AnimBtn({ href, children, variant = "primary", className = "" }: {
+  href: string;
+  children: React.ReactNode;
+  variant?: "primary" | "outline" | "ghost";
+  className?: string;
+}) {
+  const base = "group inline-flex items-center gap-2 font-bold text-sm px-7 py-3.5 rounded-full transition-all duration-200 active:scale-95 overflow-hidden relative";
+  const styles = {
+    primary: "bg-primary text-white hover:bg-primary/90 shadow-lg hover:shadow-xl hover:shadow-primary/25",
+    outline: "border-2 border-primary text-primary hover:bg-primary hover:text-white",
+    ghost:   "border-2 border-white text-white hover:bg-white/10",
+  };
+  return (
+    <Link href={href} className={`${base} ${styles[variant]} ${className}`}>
+      <span className="relative z-10">{children}</span>
+      <motion.span
+        className="relative z-10 flex items-center"
+        initial={{ x: 0 }}
+        whileHover={{ x: 4 }}
+        transition={{ duration: 0.2, ease: "easeOut" }}
+      >
+        <ArrowRight className="w-4 h-4" />
+      </motion.span>
+    </Link>
+  );
+}
+
+// White variant for dark backgrounds
+function AnimBtnWhite({ href, children, className = "" }: { href: string; children: React.ReactNode; className?: string }) {
+  return (
+    <Link href={href} className={`group inline-flex items-center gap-2 bg-white text-primary font-bold text-sm px-7 py-3.5 rounded-full hover:bg-gray-50 active:scale-95 transition-all duration-200 shadow-lg hover:shadow-xl ${className}`}>
+      <span>{children}</span>
+      <motion.span
+        className="flex items-center"
+        initial={{ x: 0 }}
+        whileHover={{ x: 4 }}
+        transition={{ duration: 0.2, ease: "easeOut" }}
+      >
+        <ArrowRight className="w-4 h-4" />
+      </motion.span>
+    </Link>
+  );
+}
+
+
+function PopupSection() {
+  return (
+    <div className="rounded-3xl overflow-hidden bg-primary">
+
+      {/* Top: left copy + right carousel */}
+      <div className="flex flex-col lg:flex-row items-stretch">
+
+        {/* Left — copy */}
+        <div className="flex-1 flex flex-col justify-center px-8 py-12 md:px-12 lg:pr-8">
+          <motion.h2
+            initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }}
+            transition={{ duration:0.6 }}
+            className="text-white text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.1] mb-5"
+          >
+            U:DO Craft Popup
+          </motion.h2>
+          <motion.p
+            initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }}
+            transition={{ duration:0.6, delay:0.1 }}
+            className="text-white/80 text-base sm:text-lg leading-relaxed max-w-lg mb-8"
+          >
+            Перетворіть ваш захід на незабутній досвід. Виїзний попап-стенд з живою кастомізацією мерчу — гості створюють унікальний одяг і забирають його одразу.
+          </motion.p>
+          <motion.div
+            initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }}
+            transition={{ duration:0.6, delay:0.2 }}
+            className="flex flex-wrap gap-3"
+          >
+            <AnimBtnWhite href="/popup">Дізнатись більше</AnimBtnWhite>
+            <Link href="#contact"
+              className="group inline-flex items-center gap-2 border-2 border-white/40 text-white font-bold text-sm px-7 py-3.5 rounded-full hover:border-white hover:bg-white/10 active:scale-95 transition-all duration-200">
+              <span>Обговорити захід</span>
+              <motion.span className="flex items-center" initial={{ x:0 }} whileHover={{ x:4 }} transition={{ duration:0.2 }}>
+                <ArrowRight className="w-4 h-4" />
+              </motion.span>
+            </Link>
+          </motion.div>
+        </div>
+
+        {/* Right — swipeable step carousel */}
+        <div className="flex flex-col px-8 py-10 lg:px-10 lg:w-[420px] lg:border-l border-white/10 lg:self-stretch">
+          <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-4 shrink-0">Як це працює</p>
+          <div className="flex-1 flex flex-col min-h-[420px]">
+            <PopupStepCarousel />
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom — horizontal feature strip */}
+      <div className="bg-white border-t border-gray-100 px-8 py-6 md:px-12">
+        <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-gray-100">
+          {[
+            { icon: "🎪", label: "Виїзд на будь-який захід", desc: "Конференції, фестивалі, корпоративи" },
+            { icon: "👕", label: "Кастомізація на місці",    desc: "Живий дизайн за 5 хвилин" },
+            { icon: "⚡", label: "Миттєвий результат",       desc: "Готовий мерч у руки гостей" },
+            { icon: "🎯", label: "Від 50 учасників",         desc: "Масштабуємо під ваш захід" },
+          ].map((f, i) => (
+            <motion.div
+              key={f.label}
+              initial={{ opacity:0, y:16 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }}
+              transition={{ duration:0.45, delay: i * 0.08 }}
+              className="flex items-start gap-3 px-4 first:pl-0 last:pr-0"
+            >
+              <span className="text-2xl shrink-0 mt-0.5" aria-hidden="true">{f.icon}</span>
+              <div>
+                <p className="text-gray-900 text-xs font-bold leading-tight">{f.label}</p>
+                <p className="text-gray-500 text-xs mt-0.5 leading-snug">{f.desc}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function HomePage() {
   const router = useRouter();
   const [products, setProducts]     = useState<ProductWithCategory[]>([]);
@@ -92,11 +401,25 @@ export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [menuOpen, setMenuOpen]     = useState(false);
   const [scrolled, setScrolled]     = useState(false);
+  const [navVisible, setNavVisible]  = useState(true);
+  const lastScrollY = useRef(0);
   const [cartOpen, setCartOpen]     = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 10);
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > 60);
+      // hide when scrolling down past 120px, show when scrolling up
+      if (y < 120) {
+        setNavVisible(true);
+      } else if (y > lastScrollY.current + 8) {
+        setNavVisible(false);
+      } else if (y < lastScrollY.current - 8) {
+        setNavVisible(true);
+      }
+      lastScrollY.current = y;
+    };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
@@ -185,6 +508,7 @@ export default function HomePage() {
 
   const navLinks = [
     { href: "#collections", label: "Колекції" },
+    { href: "/popup",       label: "Popup" },
     { href: "#how",         label: "Як це працює" },
     { href: "#contact",     label: "Контакти" },
   ];
@@ -193,23 +517,23 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white text-gray-900 overflow-x-hidden scroll-smooth">
-      {/* Page load fade-in overlay */}
+      {/* Page load fade-in overlay — white covers everything, fades out fast */}
       <motion.div
         initial={{ opacity: 1 }}
         animate={{ opacity: 0 }}
-        transition={{ duration: 0.7, delay: 0.1 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
         className="fixed inset-0 bg-white z-[100] pointer-events-none"
       />
 
       {/* Cart sidebar */}
       {cartOpen && (
         <div className="fixed inset-0 z-[60] flex justify-end">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setCartOpen(false)} />
-          <div className="relative bg-white w-80 max-w-full h-full flex flex-col shadow-2xl">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setCartOpen(false)} aria-hidden="true" />
+          <div className="relative bg-white w-80 max-w-full h-full flex flex-col shadow-2xl" role="dialog" aria-modal="true" aria-label="Кошик">
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
               <span className="font-semibold text-sm">Кошик {cartCount > 0 ? `(${cartCount})` : ""}</span>
-              <button onClick={() => setCartOpen(false)} className="size-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
-                <X className="size-4" />
+              <button onClick={() => setCartOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <X className="w-4 h-4" strokeWidth={2} />
               </button>
             </div>
             {cartCount === 0 ? (
@@ -253,77 +577,145 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* NAV */}
       <motion.nav
-        initial={{ y: -80, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
-        className={`fixed top-0 inset-x-0 z-50 bg-white border-b border-gray-100 transition-all duration-300 ${scrolled ? "shadow-md" : ""}`}
+        initial={{ y: -20, opacity: 0 }}
+        animate={{
+          y: navVisible ? 0 : -80,
+          opacity: navVisible ? 1 : 0,
+        }}
+        transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1], delay: navVisible && !scrolled ? 1.5 : 0 }}
+        className="fixed top-4 inset-x-0 z-50 flex justify-center pointer-events-none px-4"
+        aria-label="Головна навігація"
       >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-1">
-            <Link href="/" aria-label="U:DO CRAFT">
-              <BrandLogoFull className="h-10 w-auto" color="var(--color-primary, #1B18AC)" />
-            </Link>
+        {/* Pill — hugs content, no full width */}
+        <div className={`pointer-events-auto inline-flex items-center gap-2 h-12 px-3 rounded-full bg-background border border-border transition-shadow duration-300 ${scrolled ? "shadow-lg" : "shadow-md"}`}>
 
-            <div className="hidden md:flex items-center gap-1 ml-4">
-              {navLinks.map((l) => (
-                <Link key={l.href} href={l.href} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-full hover:bg-gray-50 transition-colors duration-200">
-                  {l.label}
-                </Link>
-              ))}
-            </div>
+          {/* Logo */}
+          <Link href="/" aria-label="U:DO CRAFT" className="shrink-0 pl-1 pr-2">
+            <BrandLogoFull className="h-6 w-auto" color="var(--color-primary, #1B18AC)" />
+          </Link>
+
+          {/* Divider */}
+          <div className="hidden md:block w-px h-5 bg-border shrink-0" />
+
+          {/* Nav links */}
+          <div className="hidden md:flex items-center">
+            {navLinks.map((l) => (
+              <Link key={l.href} href={l.href}
+                className="px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-all duration-200 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                {l.label}
+              </Link>
+            ))}
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Divider */}
+          <div className="hidden md:block w-px h-5 bg-border shrink-0" />
+
+          {/* Actions */}
+          <div className="flex items-center gap-0.5">
+
+            {/* User — circle head bobs up on hover */}
             <Link href={isLoggedIn ? "/cabinet" : "/cabinet/login"} aria-label="Кабінет"
-              className="flex items-center justify-center w-9 h-9 rounded-full text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors duration-200">
-              <User className="w-5 h-5" />
+              className="flex items-center justify-center w-8 h-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <motion.div
+                initial={{ y: 2, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.4, delay: 1.7, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <motion.div whileHover={{ y: -1.5 }} transition={{ duration: 0.2, ease: "easeOut" }}>
+                  <User className="w-4 h-4" strokeWidth={2} />
+                </motion.div>
+              </motion.div>
             </Link>
-            <button
-              onClick={() => setCartOpen(true)}
-              aria-label="Кошик"
-              className="relative flex items-center justify-center w-9 h-9 rounded-full text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors duration-200">
-              <ShoppingBag className="w-5 h-5" />
+
+            {/* Cart — bag bounces down on hover, badge pops in */}
+            <button onClick={() => setCartOpen(true)} aria-label="Кошик"
+              className="relative flex items-center justify-center w-8 h-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <motion.div
+                initial={{ y: 2, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.4, delay: 1.8, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <motion.div whileHover={{ y: 1.5, scale: 1.1 }} transition={{ duration: 0.2, ease: "easeOut" }}>
+                  <ShoppingBag className="w-4 h-4" strokeWidth={2} />
+                </motion.div>
+              </motion.div>
               {cartCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 bg-primary text-white text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                <motion.span
+                  initial={{ scale: 0 }} animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                  className="absolute -top-0.5 -right-0.5 bg-primary text-white text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center leading-none"
+                >
                   {cartCount}
-                </span>
+                </motion.span>
               )}
             </button>
+
             <Link href="/order"
-              className="hidden sm:flex items-center gap-1.5 bg-primary text-primary-foreground text-sm font-semibold px-4 py-2 rounded-full hover:bg-primary/90 active:scale-95 transition-all duration-200">
-              Почати проєкт <ArrowRight className="w-3.5 h-3.5" />
+              className="hidden sm:inline-flex items-center gap-1.5 bg-primary text-white text-xs font-bold px-3.5 py-2 rounded-full hover:bg-primary/90 active:scale-95 transition-all duration-200 whitespace-nowrap ml-1">
+              Почати проєкт
+              <motion.span className="flex items-center" initial={{ x:0 }} whileHover={{ x:3 }} transition={{ duration:0.18 }}>
+                <ArrowRight className="w-3 h-3" />
+              </motion.span>
             </Link>
-            <button onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? "Закрити меню" : "Відкрити меню"} aria-expanded={menuOpen}
-              className="md:hidden flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 transition-colors duration-200">
-              <div className="flex flex-col gap-1.5 w-5">
-                <span className={`block h-0.5 bg-gray-700 transition-all duration-300 origin-center ${menuOpen ? "rotate-45 translate-y-2" : ""}`} />
-                <span className={`block h-0.5 bg-gray-700 transition-all duration-300 ${menuOpen ? "opacity-0 scale-x-0" : ""}`} />
-                <span className={`block h-0.5 bg-gray-700 transition-all duration-300 origin-center ${menuOpen ? "-rotate-45 -translate-y-2" : ""}`} />
+
+            {/* Burger — 3 lines morph to X, compact 14px */}
+            <button onClick={() => setMenuOpen(!menuOpen)}
+              aria-label={menuOpen ? "Закрити меню" : "Відкрити меню"}
+              aria-expanded={menuOpen}
+              className="md:hidden flex items-center justify-center w-8 h-8 rounded-full hover:bg-muted transition-colors duration-200 ml-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <div className="flex flex-col justify-center gap-[4px] w-[14px] h-[14px]">
+                <motion.span
+                  animate={menuOpen ? { rotate: 45, y: 4 } : { rotate: 0, y: 0 }}
+                  transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
+                  className="block h-[1.5px] w-full bg-foreground rounded-full origin-center"
+                />
+                <motion.span
+                  animate={menuOpen ? { opacity: 0, scaleX: 0 } : { opacity: 1, scaleX: 1 }}
+                  transition={{ duration: 0.2 }}
+                  className="block h-[1.5px] w-full bg-foreground rounded-full origin-center"
+                />
+                <motion.span
+                  animate={menuOpen ? { rotate: -45, y: -4 } : { rotate: 0, y: 0 }}
+                  transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
+                  className="block h-[1.5px] w-full bg-foreground rounded-full origin-center"
+                />
               </div>
             </button>
           </div>
         </div>
 
-        <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${menuOpen ? "max-h-64 opacity-100" : "max-h-0 opacity-0"}`}>
-          <div className="bg-white border-t border-gray-100 px-6 py-4 space-y-1">
-            {navLinks.map((l) => (
-              <Link key={l.href} href={l.href} onClick={() => setMenuOpen(false)}
-                className="block px-4 py-2.5 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-full transition-colors duration-200">
-                {l.label}
-              </Link>
-            ))}
-            <Link href="/order" onClick={() => setMenuOpen(false)}
-              className="block mt-2 text-center bg-primary text-primary-foreground text-sm font-semibold px-4 py-2.5 rounded-full hover:bg-primary/90 transition-colors duration-200">
-              Почати проєкт
-            </Link>
-          </div>
-        </div>
+        {/* Mobile dropdown */}
+        <AnimatePresence>
+          {menuOpen && (
+            <motion.div
+              key="mobile-menu"
+              initial={{ opacity: 0, y: -8, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.97 }}
+              transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+              className="absolute top-[calc(100%+8px)] left-4 right-4 rounded-2xl"
+            >
+              <div className="bg-background border border-border shadow-xl rounded-2xl px-4 py-3 space-y-1">
+                {navLinks.map((l) => (
+                  <Link key={l.href} href={l.href} onClick={() => setMenuOpen(false)}
+                    className="block px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    {l.label}
+                  </Link>
+                ))}
+                <Link href="/order" onClick={() => setMenuOpen(false)}
+                  className="block mt-1 text-center bg-primary text-primary-foreground text-sm font-semibold px-4 py-2.5 rounded-full hover:bg-primary/90 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  Почати проєкт
+                </Link>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.nav>
 
       {/* HERO */}
       <section className="relative overflow-hidden bg-primary">
+        {/* Video loads immediately — no delay */}
         <video
           className="absolute inset-0 w-full h-full object-cover opacity-75"
           src="/hero-video.mp4"
@@ -333,19 +725,10 @@ export default function HomePage() {
           playsInline
         />
         <div className="relative max-w-3xl mx-auto px-4 sm:px-6 pt-32 sm:pt-48 pb-16 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="inline-flex items-center gap-2 bg-white/10 text-white/80 text-xs font-semibold px-3 py-1.5 rounded-full mb-7 tracking-wide uppercase"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            B2B Мерч-платформа
-          </motion.div>
           <motion.h1
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
+            transition={{ duration: 0.75, delay: 1.65, ease: [0.22, 1, 0.36, 1] }}
             className="text-white text-4xl sm:text-5xl lg:text-[3.5rem] font-black leading-[1.05] tracking-tight"
           >
             Одяг, який стає частиною <span className="text-white/70">вашої корпоративної ДНК</span>
@@ -353,30 +736,32 @@ export default function HomePage() {
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.7 }}
+            transition={{ duration: 0.6, delay: 1.85 }}
             className="text-white/80 mt-5 text-base sm:text-lg leading-relaxed max-w-xl mx-auto"
           >
             Ринок перенасичений дешевим трендовим одягом. Ми створюємо речі, які стають улюбленими в гардеробі. Ваш мерч — це інструмент стратегічної комунікації.
           </motion.p>
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.85 }}
+            transition={{ duration: 0.55, delay: 2.05 }}
             className="mt-8 flex flex-wrap justify-center gap-3"
           >
-            <Link href="#collections"
-              className="inline-flex items-center gap-2 bg-white text-primary font-bold text-sm px-6 py-3 rounded-full hover:bg-white/90 hover:scale-105 active:scale-95 transition-all duration-200">
+            <AnimBtnWhite href="#collections">
               Переглянути каталог
-            </Link>
+            </AnimBtnWhite>
             <Link href="#contact"
-              className="inline-flex items-center gap-2 border border-white/30 text-white font-semibold text-sm px-6 py-3 rounded-full hover:bg-white/10 hover:scale-105 active:scale-95 transition-all duration-200">
-              Зв&apos;язатись
+              className="group inline-flex items-center gap-2 border-2 border-white/30 text-white font-bold text-sm px-7 py-3.5 rounded-full hover:bg-white/10 hover:border-white active:scale-95 transition-all duration-200">
+              <span>Зв&apos;язатись</span>
+              <motion.span className="flex items-center" initial={{ x: 0 }} whileHover={{ x: 4 }} transition={{ duration: 0.2 }}>
+                <ArrowRight className="w-4 h-4" />
+              </motion.span>
             </Link>
           </motion.div>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 1 }}
+            transition={{ duration: 0.5, delay: 2.25 }}
             className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-1 text-white/70 text-xs font-medium"
           >
             <span>Від 10 одиниць</span>
@@ -389,7 +774,7 @@ export default function HomePage() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 1.1 }}
+          transition={{ duration: 0.5, delay: 2.4 }}
           className="flex justify-center pb-8"
         >
           <a href="#collections" className="text-white/50 hover:text-white/80 transition-colors duration-200" aria-label="Прокрутити вниз">
@@ -441,7 +826,7 @@ export default function HomePage() {
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`flex items-center gap-2 whitespace-nowrap px-5 py-2.5 rounded-full text-sm font-semibold transition-all border ${
+                className={`flex items-center gap-2 whitespace-nowrap px-5 py-2.5 rounded-full text-sm font-semibold transition-all border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                   activeCategory === cat.id
                     ? "bg-primary text-primary-foreground border-primary shadow-md"
                     : "bg-white text-gray-700 border-gray-200 hover:border-gray-400 hover:shadow-sm"
@@ -535,51 +920,7 @@ export default function HomePage() {
 
       {/* POPUP SERVICE */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
-        <div className="relative rounded-3xl overflow-hidden bg-gray-950 min-h-[320px] flex flex-col md:flex-row items-stretch">
-          {/* Decorative gradient blob */}
-          <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-primary/30 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-16 right-10 w-64 h-64 rounded-full bg-primary/20 blur-2xl pointer-events-none" />
-
-          {/* Content */}
-          <div className="relative z-10 flex-1 flex flex-col justify-center px-8 py-12 md:px-12">
-            <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-5">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              Нова послуга
-            </span>
-            <h2 className="text-white text-3xl sm:text-4xl font-black tracking-tight leading-tight mb-4">
-              U:DO Craft Popup —<br />
-              <span className="text-white/60">мерч прямо на вашому заході</span>
-            </h2>
-            <p className="text-white/70 text-sm sm:text-base leading-relaxed max-w-md mb-8">
-              Виїзний попап-стенд на корпоративи, конференції, фестивалі та брендові події. Гості обирають одяг, кастомізують принт на місці — і йдуть з готовим мерчем у руках.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Link href="/popup"
-                className="inline-flex items-center gap-2 bg-primary text-white text-sm font-bold px-6 py-3 rounded-full hover:bg-primary/90 active:scale-95 transition-all duration-200">
-                Дізнатись більше <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link href="#contact"
-                className="inline-flex items-center gap-2 border border-white/20 text-white/80 text-sm font-semibold px-6 py-3 rounded-full hover:bg-white/10 active:scale-95 transition-all duration-200">
-                Обговорити захід
-              </Link>
-            </div>
-          </div>
-
-          {/* Right side — feature pills */}
-          <div className="relative z-10 flex flex-col justify-center gap-3 px-8 py-12 md:px-10 md:min-w-[260px]">
-            {[
-              { icon: "🎪", label: "Виїзд на будь-який захід" },
-              { icon: "👕", label: "Кастомізація на місці" },
-              { icon: "⚡", label: "Готовий мерч за хвилини" },
-              { icon: "🎯", label: "Від 50 учасників" },
-            ].map((f) => (
-              <div key={f.label} className="flex items-center gap-3 bg-white/[0.07] border border-white/10 rounded-2xl px-4 py-3">
-                <span className="text-xl" aria-hidden="true">{f.icon}</span>
-                <span className="text-white/80 text-sm font-medium">{f.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <PopupSection />
       </section>
 
       {/* HOW IT WORKS */}
@@ -619,15 +960,15 @@ export default function HomePage() {
       </section>
 
       {/* WHY US */}
-      <section className="bg-gray-50 py-16 sm:py-20">
+      <section className="bg-white py-24 sm:py-32">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <FadeUp>
-            <div className="mb-12 text-center">
-              <p className="text-xs font-bold uppercase tracking-widest mb-3 text-primary">Чому ми</p>
-              <h2 className="text-3xl font-black tracking-tight">Якість, яку відчуваєш</h2>
+            <div className="mb-16 text-center">
+              <p className="text-xs font-bold uppercase tracking-widest mb-4 text-primary">Чому ми</p>
+              <h2 className="text-4xl sm:text-5xl font-black tracking-tight">Якість, яку відчуваєш</h2>
             </div>
           </FadeUp>
-          <StaggerGrid className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <StaggerGrid className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[
               { icon: "🎨", title: "Онлайн-редактор",   desc: "Завантажуй логотип, розміщуй на виробі та одразу бачиш результат. Без зайвих листів і погоджень." },
               { icon: "📦", title: "Від 10 одиниць",     desc: "Не потрібно замовляти сотні. Починай з малого тиражу — ідеально для стартапів і команд." },
@@ -639,12 +980,12 @@ export default function HomePage() {
               <motion.div
                 key={f.title}
                 variants={cardVariant}
-                whileHover={{ y: -4, scale: 1.02 }}
+                whileHover={{ y: -6, scale: 1.02 }}
                 transition={{ duration: 0.2 }}
-                className="bg-white rounded-2xl p-6 border border-gray-100 hover:shadow-lg transition-shadow duration-200"
+                className="bg-gray-50 rounded-3xl p-8 border border-gray-100 hover:shadow-xl hover:border-gray-200 transition-all duration-300"
               >
-                <span className="text-2xl mb-4 block" aria-hidden="true">{f.icon}</span>
-                <h3 className="font-bold text-gray-900 mb-2">{f.title}</h3>
+                <span className="text-3xl mb-6 block" aria-hidden="true">{f.icon}</span>
+                <h3 className="font-bold text-gray-900 text-lg mb-3">{f.title}</h3>
                 <p className="text-sm text-gray-500 leading-relaxed">{f.desc}</p>
               </motion.div>
             ))}
@@ -652,13 +993,18 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Section divider */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="border-t border-gray-100" />
+      </div>
+
       {/* TESTIMONIALS */}
-      <section className="bg-gray-50 py-16 sm:py-20">
+      <section className="bg-white py-24 sm:py-32">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <FadeUp>
-            <div className="mb-12">
-              <p className="text-xs font-bold uppercase tracking-widest mb-2 text-primary">Відгуки</p>
-              <h2 className="text-3xl font-black tracking-tight">Що кажуть клієнти</h2>
+            <div className="mb-16">
+              <p className="text-xs font-bold uppercase tracking-widest mb-4 text-primary">Відгуки</p>
+              <h2 className="text-4xl sm:text-5xl font-black tracking-tight">Що кажуть клієнти</h2>
             </div>
           </FadeUp>
           <StaggerGrid className="grid md:grid-cols-3 gap-5">
@@ -670,25 +1016,25 @@ export default function HomePage() {
               <motion.div
                 key={t.name}
                 variants={cardVariant}
-                whileHover={{ y: -4 }}
+                whileHover={{ y: -6 }}
                 transition={{ duration: 0.2 }}
-                className="bg-white rounded-2xl p-6 border border-gray-100 flex flex-col gap-4 hover:shadow-lg transition-shadow duration-200"
+                className="bg-gray-50 rounded-3xl p-8 border border-gray-100 flex flex-col gap-6 hover:shadow-xl hover:border-gray-200 transition-all duration-300"
               >
-                <div className="flex gap-0.5" aria-label={`Оцінка: ${t.rating} з 5`}>
+                <div className="flex gap-1" aria-label={`Оцінка: ${t.rating} з 5`}>
                   {[...Array(t.rating)].map((_, i) => (
                     <svg key={i} className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20" aria-hidden="true">
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
                   ))}
                 </div>
-                <p className="text-gray-700 text-sm leading-relaxed flex-1">&ldquo;{t.text}&rdquo;</p>
-                <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
-                  <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0" aria-hidden="true">
+                <p className="text-gray-700 text-base leading-relaxed flex-1">&ldquo;{t.text}&rdquo;</p>
+                <div className="flex items-center gap-4 pt-4 border-t border-gray-200">
+                  <div className="w-11 h-11 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0" aria-hidden="true">
                     {t.avatar}
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-gray-900">{t.name}</p>
-                    <p className="text-xs text-gray-500">{t.role}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{t.role}</p>
                   </div>
                 </div>
               </motion.div>
@@ -698,55 +1044,175 @@ export default function HomePage() {
       </section>
 
       {/* CONTACT */}
-      <section id="contact" className="bg-gray-900 py-20 sm:py-24">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
-            <FadeUp>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest mb-4 text-primary">Контакти</p>
-                <h2 className="text-white text-3xl sm:text-4xl font-black tracking-tight mb-5">Зв&apos;яжіться з нами</h2>
-                <p className="text-gray-400 text-base leading-relaxed mb-8">
-                  Розкажіть про ваш проєкт — ми підберемо оптимальне рішення та надішлемо комерційну пропозицію протягом 24 годин.
-                </p>
-                <div className="space-y-4">
-                  {[
-                    { label: "Email",   value: "info@udocraft.com" },
-                    { label: "Телефон", value: "+380 63 070 33 072" },
-                    { label: "Адреса",  value: "м. Львів, вул. Джерельна, 69 (Офіс 10)" },
-                  ].map((c) => (
-                    <div key={c.label} className="flex items-start gap-3">
-                      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider w-16 pt-0.5 shrink-0">{c.label}</span>
-                      <span className="text-gray-300 text-sm">{c.value}</span>
-                    </div>
-                  ))}
+      <section id="contact" className="bg-gray-950 pt-0 pb-0">
+        <div className="bg-gray-950 py-20 sm:py-28">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+            <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-start">
+              <FadeUp>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest mb-5 text-primary">Контакти</p>
+                  <h2 className="text-white text-4xl sm:text-5xl font-black tracking-tight leading-[1.05] mb-6">
+                    Зв&apos;яжіться<br />з нами
+                  </h2>
+                  <p className="text-gray-400 text-base leading-relaxed mb-10 max-w-sm">
+                    Розкажіть про ваш проєкт — ми підберемо оптимальне рішення та надішлемо пропозицію протягом 24 годин.
+                  </p>
+                  <div className="space-y-5 mb-10">
+                    {[
+                      { label: "Email",   value: "info@udocraft.com",              href: "mailto:info@udocraft.com" },
+                      { label: "Телефон", value: "+380 63 070 33 072",             href: "tel:+380630703072" },
+                      { label: "Адреса",  value: "м. Львів, вул. Джерельна, 69",  href: "#" },
+                    ].map((c) => (
+                      <a key={c.label} href={c.href}
+                        className="group flex items-start gap-4 hover:opacity-80 transition-opacity duration-200">
+                        <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest w-16 pt-1 shrink-0">{c.label}</span>
+                        <span className="text-gray-300 text-sm group-hover:text-white transition-colors duration-200">{c.value}</span>
+                      </a>
+                    ))}
+                  </div>
+                  <div className="flex gap-3">
+                    <a href="https://www.instagram.com/u.do.craft/" target="_blank" rel="noopener noreferrer"
+                      className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-200">
+                      <Instagram className="w-4 h-4" aria-hidden="true" />
+                    </a>
+                    <a href="https://t.me/udostore" target="_blank" rel="noopener noreferrer"
+                      className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-200">
+                      <Send className="w-4 h-4" aria-hidden="true" />
+                    </a>
+                  </div>
                 </div>
-              </div>
-            </FadeUp>
-            <FadeUp delay={0.2}>
-              <ContactForm />
-            </FadeUp>
+              </FadeUp>
+              <FadeUp delay={0.15}>
+                <ContactForm />
+              </FadeUp>
+            </div>
           </div>
         </div>
       </section>
 
       {/* FOOTER */}
-      <footer className="bg-gray-950 py-10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-6">
-          <Link href="/" aria-label="U:DO CRAFT">
-            <BrandLogoFull className="h-6 w-auto" color="#4B4B8F" />
-          </Link>
-          <p className="text-gray-600 text-xs text-center">© {new Date().getFullYear()} U:DO CRAFT. Всі права захищені.</p>
-          <div className="flex items-center gap-4">
-            <a href="https://www.instagram.com/u.do.craft/" target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 text-gray-500 hover:text-gray-200 transition-colors duration-200">
-              <Instagram className="w-4 h-4" aria-hidden="true" />
-              <span className="text-xs font-medium">Instagram</span>
-            </a>
-            <a href="https://t.me/udostore" target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 text-gray-500 hover:text-gray-200 transition-colors duration-200">
-              <Send className="w-4 h-4" aria-hidden="true" />
-              <span className="text-xs font-medium">Telegram</span>
-            </a>
+      <footer className="bg-gray-950 text-gray-400">
+
+        {/* Main footer grid */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-16 pb-10">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-10 md:gap-8">
+
+            {/* Brand column */}
+            <div className="col-span-2 md:col-span-1 flex flex-col gap-5">
+              <Link href="/" aria-label="U:DO CRAFT">
+                <BrandLogoFull className="h-8 w-auto" color="var(--color-primary)" />
+              </Link>
+              <p className="text-xs leading-relaxed text-gray-500 max-w-[180px]">
+                B2B мерч-платформа для команд, брендів та подій.
+              </p>
+              <div className="flex items-center gap-3">
+                <a href="https://www.instagram.com/u.do.craft/" target="_blank" rel="noopener noreferrer"
+                  aria-label="Instagram"
+                  className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-200">
+                  <Instagram className="w-3.5 h-3.5" aria-hidden="true" />
+                </a>
+                <a href="https://t.me/udostore" target="_blank" rel="noopener noreferrer"
+                  aria-label="Telegram"
+                  className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-200">
+                  <Send className="w-3.5 h-3.5" aria-hidden="true" />
+                </a>
+              </div>
+            </div>
+
+            {/* Products */}
+            <div className="flex flex-col gap-4">
+              <p className="text-white text-xs font-semibold tracking-wide">Продукти</p>
+              <nav className="flex flex-col gap-2.5" aria-label="Продукти">
+                {[
+                  { href: "/order",    label: "Конструктор мерчу" },
+                  { href: "#collections", label: "Каталог" },
+                  { href: "/popup",    label: "Popup-стенд" },
+                  { href: "#contact",  label: "Box of Touch" },
+                  { href: "#contact",  label: "Найми дизайнера" },
+                ].map((l) => (
+                  <Link key={l.label} href={l.href}
+                    className="text-xs text-gray-500 hover:text-gray-200 transition-colors duration-200 w-fit">
+                    {l.label}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+
+            {/* Company */}
+            <div className="flex flex-col gap-4">
+              <p className="text-white text-xs font-semibold tracking-wide">Компанія</p>
+              <nav className="flex flex-col gap-2.5" aria-label="Компанія">
+                {[
+                  { href: "#how",     label: "Як це працює" },
+                  { href: "#contact", label: "Про нас" },
+                  { href: "#contact", label: "Кар'єра" },
+                  { href: "#contact", label: "Блог" },
+                ].map((l) => (
+                  <Link key={l.label} href={l.href}
+                    className="text-xs text-gray-500 hover:text-gray-200 transition-colors duration-200 w-fit">
+                    {l.label}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+
+            {/* Support */}
+            <div className="flex flex-col gap-4">
+              <p className="text-white text-xs font-semibold tracking-wide">Підтримка</p>
+              <nav className="flex flex-col gap-2.5" aria-label="Підтримка">
+                {[
+                  { href: "#contact", label: "Зв'язатись з нами" },
+                  { href: "/cabinet", label: "Особистий кабінет" },
+                  { href: "#contact", label: "FAQ" },
+                  { href: "#contact", label: "Доставка та оплата" },
+                ].map((l) => (
+                  <Link key={l.label} href={l.href}
+                    className="text-xs text-gray-500 hover:text-gray-200 transition-colors duration-200 w-fit">
+                    {l.label}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+
+            {/* Contact */}
+            <div className="flex flex-col gap-4">
+              <p className="text-white text-xs font-semibold tracking-wide">Контакти</p>
+              <div className="flex flex-col gap-2.5">
+                <a href="mailto:info@udocraft.com"
+                  className="text-xs text-gray-500 hover:text-gray-200 transition-colors duration-200 w-fit">
+                  info@udocraft.com
+                </a>
+                <a href="tel:+380630703072"
+                  className="text-xs text-gray-500 hover:text-gray-200 transition-colors duration-200 w-fit">
+                  +380 63 070 33 072
+                </a>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  м. Львів,<br />вул. Джерельна, 69<br />Офіс 10
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-white/[0.06]" />
+
+        {/* Bottom bar */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-[11px] text-gray-600 text-center sm:text-left">
+            © {new Date().getFullYear()} U:DO CRAFT. Всі права захищені.
+          </p>
+          <div className="flex items-center gap-5">
+            {[
+              { href: "#", label: "Політика конфіденційності" },
+              { href: "#", label: "Умови використання" },
+              { href: "#", label: "Cookies" },
+            ].map((l) => (
+              <Link key={l.label} href={l.href}
+                className="text-[11px] text-gray-600 hover:text-gray-400 transition-colors duration-200">
+                {l.label}
+              </Link>
+            ))}
           </div>
         </div>
       </footer>

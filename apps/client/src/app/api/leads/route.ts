@@ -1,6 +1,6 @@
 import { CreateLeadSchema } from "@udo-craft/shared";
 import { createServiceClient } from "@/lib/supabase/service";
-import { sendOrderConfirmation } from "@/lib/email";
+import { sendOrderConfirmation, sendContactNotification } from "@/lib/email";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -70,6 +70,18 @@ export async function POST(request: NextRequest) {
         name: customer_data.name,
         leadId: lead.id,
       }).catch((err) => console.error("Order confirmation email failed:", err));
+
+      // Notify team
+      sendContactNotification({
+        leadId: lead.id,
+        name: customer_data.name,
+        email: customer_data.email,
+        phone: customer_data.phone,
+        company: customer_data.company,
+        topic: customer_data.topic,
+        source: customer_data.source,
+        message: body.initial_message ?? undefined,
+      }).catch((err) => console.error("Contact notification email failed:", err));
     }
 
     return NextResponse.json(lead, { status: 201 });

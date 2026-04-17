@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, User } from "lucide-react";
 import { BrandLogoFull } from "@/components/brand-logo";
 import { ContactForm } from "@/components/ContactForm";
 import { motion, useInView } from "framer-motion";
@@ -65,10 +65,19 @@ function CountUp({ end, suffix = "" }: { end: number; suffix?: string }) {
 
 export default function PopupPage() {
   const [scrolled, setScrolled] = useState(false);
+  const [navVisible, setNavVisible] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
+  const lastScrollY = useRef(0);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 10);
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > 60);
+      if (y < 120) { setNavVisible(true); }
+      else if (y > lastScrollY.current + 8) { setNavVisible(false); }
+      else if (y < lastScrollY.current - 8) { setNavVisible(true); }
+      lastScrollY.current = y;
+    };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
@@ -82,63 +91,69 @@ export default function PopupPage() {
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
-      {/* Page load overlay */}
       <motion.div
-        initial={{ opacity: 1 }}
-        animate={{ opacity: 0 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
+        initial={{ opacity: 1 }} animate={{ opacity: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
         className="fixed inset-0 bg-white z-[100] pointer-events-none"
       />
 
-      {/* NAV */}
+      {/* NAV — floating pill (same as landing) */}
       <motion.nav
-        initial={{ y: -80, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        className={`fixed top-0 inset-x-0 z-50 bg-white border-b border-gray-100 transition-shadow duration-300 ${scrolled ? "shadow-md" : ""}`}
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: navVisible ? 0 : -80, opacity: navVisible ? 1 : 0 }}
+        transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1], delay: 0.6 }}
+        className="fixed top-4 inset-x-0 z-50 flex justify-center pointer-events-none px-4"
+        aria-label="Навігація"
       >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/" aria-label="U:DO CRAFT">
-              <BrandLogoFull className="h-10 w-auto" />
-            </Link>
-            <span className="hidden sm:flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-gray-400">
-              <span className="text-gray-300">|</span>
-              Попап
-            </span>
-            <div className="hidden md:flex items-center gap-1 ml-4">
-              {navLinks.map((l) => (
-                <Link key={l.href} href={l.href} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-full hover:bg-gray-50 transition-colors duration-200">
-                  {l.label}
-                </Link>
-              ))}
-            </div>
+        <div className={`pointer-events-auto inline-flex items-center gap-2 h-12 px-3 rounded-full bg-background border border-border transition-shadow duration-300 ${scrolled ? "shadow-lg" : "shadow-md"}`}>
+          <Link href="/" aria-label="U:DO CRAFT" className="shrink-0 pl-1 pr-2">
+            <BrandLogoFull className="h-6 w-auto" color="var(--color-primary, #1B18AC)" />
+          </Link>
+          <div className="hidden md:block w-px h-5 bg-border shrink-0" />
+          <div className="hidden md:flex items-center">
+            {navLinks.map((l) => (
+              <Link key={l.href} href={l.href}
+                className="px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-all duration-200 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                {l.label}
+              </Link>
+            ))}
           </div>
-          <div className="flex items-center gap-2">
-            <Link href="#contact"
-              className="hidden sm:flex items-center gap-1.5 bg-primary text-primary-foreground text-sm font-semibold px-4 py-2 rounded-full hover:bg-primary/90 active:scale-95 transition-all duration-200">
-              Забронювати <ArrowRight className="w-3.5 h-3.5" />
+          <div className="hidden md:block w-px h-5 bg-border shrink-0" />
+          <div className="flex items-center gap-0.5">
+            <Link href="/" aria-label="Головна"
+              className="flex items-center justify-center w-8 h-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <User className="w-4 h-4" />
             </Link>
-            <button onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? "Закрити меню" : "Відкрити меню"} aria-expanded={menuOpen}
-              className="md:hidden flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 transition-colors duration-200">
-              <div className="flex flex-col gap-1.5 w-5">
-                <span className={`block h-0.5 bg-gray-700 transition-all duration-300 origin-center ${menuOpen ? "rotate-45 translate-y-2" : ""}`} />
-                <span className={`block h-0.5 bg-gray-700 transition-all duration-300 ${menuOpen ? "opacity-0 scale-x-0" : ""}`} />
-                <span className={`block h-0.5 bg-gray-700 transition-all duration-300 origin-center ${menuOpen ? "-rotate-45 -translate-y-2" : ""}`} />
+            <Link href="#contact"
+              className="hidden sm:inline-flex items-center gap-1.5 bg-primary text-white text-xs font-bold px-3.5 py-2 rounded-full hover:bg-primary/90 active:scale-95 transition-all duration-200 whitespace-nowrap ml-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              Забронювати
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+            <button onClick={() => setMenuOpen(!menuOpen)}
+              aria-label={menuOpen ? "Закрити меню" : "Відкрити меню"}
+              aria-expanded={menuOpen}
+              className="md:hidden flex items-center justify-center w-8 h-8 rounded-full hover:bg-muted transition-colors duration-200 ml-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <div className="flex flex-col justify-center gap-[4px] w-[14px] h-[14px]">
+                <motion.span animate={menuOpen ? { rotate: 45, y: 4 } : { rotate: 0, y: 0 }} transition={{ duration: 0.25 }}
+                  className="block h-[1.5px] w-full bg-foreground rounded-full origin-center" />
+                <motion.span animate={menuOpen ? { opacity: 0, scaleX: 0 } : { opacity: 1, scaleX: 1 }} transition={{ duration: 0.2 }}
+                  className="block h-[1.5px] w-full bg-foreground rounded-full origin-center" />
+                <motion.span animate={menuOpen ? { rotate: -45, y: -4 } : { rotate: 0, y: 0 }} transition={{ duration: 0.25 }}
+                  className="block h-[1.5px] w-full bg-foreground rounded-full origin-center" />
               </div>
             </button>
           </div>
         </div>
-        <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${menuOpen ? "max-h-64 opacity-100" : "max-h-0 opacity-0"}`}>
-          <div className="bg-white border-t border-gray-100 px-6 py-4 space-y-1">
+        <div className={`absolute top-[calc(100%+8px)] left-4 right-4 overflow-hidden transition-all duration-300 ease-in-out rounded-2xl ${menuOpen ? "max-h-64 opacity-100 pointer-events-auto" : "max-h-0 opacity-0 pointer-events-none"}`}>
+          <div className="bg-background border border-border shadow-xl rounded-2xl px-4 py-3 space-y-1">
             {navLinks.map((l) => (
               <Link key={l.href} href={l.href} onClick={() => setMenuOpen(false)}
-                className="block px-4 py-2.5 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-full transition-colors duration-200">
+                className="block px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 {l.label}
               </Link>
             ))}
             <Link href="#contact" onClick={() => setMenuOpen(false)}
-              className="block mt-2 text-center bg-primary text-primary-foreground text-sm font-semibold px-4 py-2.5 rounded-full hover:bg-primary/90 transition-colors duration-200">
+              className="block mt-1 text-center bg-primary text-white text-sm font-semibold px-4 py-2.5 rounded-full hover:bg-primary/90 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               Забронювати
             </Link>
           </div>
@@ -147,16 +162,6 @@ export default function PopupPage() {
 
       {/* HERO */}
       <section className="relative overflow-hidden bg-gray-950 pt-32 pb-20 sm:pt-44 sm:pb-28">
-        <motion.div
-          animate={{ scale: [1, 1.1, 1], opacity: [0.25, 0.3, 0.25] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full bg-primary/25 blur-3xl pointer-events-none"
-        />
-        <motion.div
-          animate={{ scale: [1, 1.15, 1], opacity: [0.15, 0.2, 0.15] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-primary/15 blur-3xl pointer-events-none"
-        />
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 text-center">
           <motion.span
             initial={{ opacity: 0, y: 20 }}

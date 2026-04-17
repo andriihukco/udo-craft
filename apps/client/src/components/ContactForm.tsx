@@ -1,75 +1,93 @@
 "use client";
 
-import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useState, useEffect } from "react";
 import { track } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Upload, X } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Loader2, Upload, X, ChevronDown, Check } from "lucide-react";
 
-export function ContactForm() {
-  const [sent, setSent] = useState(false);
+const TOPICS = [
+  { value: "merch",    label: "Корпоративний мерч",  desc: "Футболки, худi, аксесуари для команди або бренду",  icon: "👕" },
+  { value: "popup",    label: "Popup-стенд на захiд", desc: "Виїзна кастомiзацiя мерчу прямо на вашому заходi", icon: "🎪" },
+  { value: "box",      label: "Box of Touch",         desc: "Набiр зразкiв тканин i виробiв перед тиражем",     icon: "📦" },
+  { value: "designer", label: "Послуги дизайнера",    desc: "Розробка або адаптацiя логотипу для нанесення",    icon: "🎨" },
+  { value: "bulk",     label: "Великий тираж (500+)", desc: "Оптовi замовлення з iндивiдуальними умовами",      icon: "🚀" },
+  { value: "other",    label: "Iнше",                 desc: "Будь-яке iнше питання або пропозицiя",             icon: "💬" },
+] as const;
+
+type TopicValue = typeof TOPICS[number]["value"];
+
+function detectSource(): string {
+  if (typeof window === "undefined") return "contact_form";
+  const hash = window.location.hash.replace("#", "");
+  const params = new URLSearchParams(window.location.search);
+  const ref = params.get("ref") ?? params.get("from") ?? hash;
+  if (!ref) return "contact_form";
+  const map: Record<string, string> = {
+    popup: "popup_section", box: "box_of_touch",
+    designer: "designer_service", services: "services_section", contact: "contact_section",
+  };
+  return map[ref] ?? ref;
+}
+
+function topicFromSource(source: string): TopicValue {
+  if (source.includes("popup"))    return "popup";
+  if (source.includes("box"))      return "box";
+  if (source.includes("designer")) return "designer";
+  return "merch";
+}
+
+export function ContactForm({ defaultTopic }: { defaultTopic?: TopicValue }) {
+  const [sent, setSent]             = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [company, setCompany] = useState("");
-  const [message, setMessage] = useState("");
-  const [files, setFiles] = useState<File[]>([]);
-  const supabase = createClient();
+  const [error, setError]           = useState<string | null>(null);
+  const [name, setName]             = useState("");
+  const [email, setEmail]           = useState("");
+  const [phone, setPhone]           = useState("");
+  const [company, setCompany]       = useState("");
+  const [topic, setTopic]           = useState<TopicValue>(defaultTopic ?? "merch");
+  const [topicOpen, setTopicOpen]   = useState(false);
+  const [message, setMessage]       = useState("");
+  const [files, setFiles]           = useState<File[]>([]);
+  const [source, setSource]         = useState("contact_form");
+  useEffect(() => {
+    const s = detectSource();
+    setSource(s);
+    if (!defaultTopic) setTopic(topicFromSource(s));
+  }, [defaultTopic]);
+
+  const selectedTopic = TOPICS.find((t) => t.value === topic)!;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
-
     try {
-      // Track the event
-      await track("form_submit", { form: "contact", name, email });
-
-      // Upload attachments first
+      await track("form_submit", { form: "contact", name, email, topic, source });
       let attachmentUrls: string[] = [];
       if (files.length > 0) {
         const fd = new FormData();
         files.forEach((f) => fd.append("files", f));
         const uploadRes = await fetch("/api/upload", { method: "POST", body: fd });
-        if (uploadRes.ok) {
-          const { urls } = await uploadRes.json();
-          attachmentUrls = urls;
-        }
+        if (uploadRes.ok) { const { urls } = await uploadRes.json(); attachmentUrls = urls; }
       }
-
-      // Create a lead via API (as the message thread container)
-      const response = await fetch('/api/leads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           status: "new",
-          customer_data: {
-            name,
-            email,
-            phone,
-            company,
-            source: "contact_form",
-            attachments: attachmentUrls,
-          },
+          customer_data: { name, email, phone, company, topic, source, attachments: attachmentUrls },
           total_amount_cents: 0,
-          // Pass message so the API can insert it into messages table
           initial_message: message || null,
         }),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to submit form');
-      }
-
+      if (!response.ok) { const d = await response.json(); throw new Error(d.error || "Failed"); }
       setSent(true);
     } catch (err) {
-      console.error("Form submission error:", err);
-      setError("Виникла помилка. Спробуйте ще раз або зв'яжіться з нами напряму.");
+      console.error(err);
+      setError("Виникла помилка. Спробуйте ще раз або зв'яжiться з нами напряму.");
     } finally {
       setSubmitting(false);
     }
@@ -78,12 +96,8 @@ export function ContactForm() {
   if (sent) {
     return (
       <div className="max-w-2xl">
-        <p className="text-white/90 text-base font-medium">
-          Дякуємо за звернення!
-        </p>
-        <p className="text-white/70 text-sm mt-2">
-          Ми отримали вашу заявку та зв&apos;яжемося з вами найближчим часом.
-        </p>
+        <p className="text-white/90 text-base font-medium">Дякуємо за звернення!</p>
+        <p className="text-white/70 text-sm mt-2">Ми отримали вашу заявку та зв&apos;яжемося з вами найближчим часом.</p>
       </div>
     );
   }
@@ -91,71 +105,73 @@ export function ContactForm() {
   return (
     <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-4 max-w-2xl">
       <div className="space-y-1.5">
-        <Label htmlFor="cf-name" className="text-white/70 text-sm">Ваше ім&apos;я *</Label>
-        <Input
-          id="cf-name"
-          type="text"
-          placeholder="Іван Петренко"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          disabled={submitting}
-          className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-white/20 focus-visible:border-white/30"
-        />
+        <Label htmlFor="cf-name" className="text-white/70 text-sm">Ваше iм&apos;я *</Label>
+        <Input id="cf-name" type="text" placeholder="Iван Петренко" value={name}
+          onChange={(e) => setName(e.target.value)} required disabled={submitting}
+          className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-white/20 focus-visible:border-white/30" />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="cf-email" className="text-white/70 text-sm">Email *</Label>
-        <Input
-          id="cf-email"
-          type="email"
-          placeholder="hr@company.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          disabled={submitting}
-          className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-white/20 focus-visible:border-white/30"
-        />
+        <Input id="cf-email" type="email" placeholder="hr@company.com" value={email}
+          onChange={(e) => setEmail(e.target.value)} required disabled={submitting}
+          className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-white/20 focus-visible:border-white/30" />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="cf-phone" className="text-white/70 text-sm">Телефон *</Label>
-        <Input
-          id="cf-phone"
-          type="tel"
-          placeholder="+380 XX XXX XX XX"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          required
-          disabled={submitting}
-          className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-white/20 focus-visible:border-white/30"
-        />
+        <Input id="cf-phone" type="tel" placeholder="+380 XX XXX XX XX" value={phone}
+          onChange={(e) => setPhone(e.target.value)} required disabled={submitting}
+          className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-white/20 focus-visible:border-white/30" />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="cf-company" className="text-white/70 text-sm">Компанія</Label>
-        <Input
-          id="cf-company"
-          type="text"
-          placeholder="Назва компанії"
-          value={company}
-          onChange={(e) => setCompany(e.target.value)}
-          disabled={submitting}
-          className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-white/20 focus-visible:border-white/30"
-        />
+        <Label htmlFor="cf-company" className="text-white/70 text-sm">Компанiя</Label>
+        <Input id="cf-company" type="text" placeholder="Назва компанiї" value={company}
+          onChange={(e) => setCompany(e.target.value)} disabled={submitting}
+          className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-white/20 focus-visible:border-white/30" />
       </div>
+
+      {/* Topic picker */}
       <div className="md:col-span-2 space-y-1.5">
-        <Label htmlFor="cf-message" className="text-white/70 text-sm">Розкажіть про ваш проєкт</Label>
-        <textarea
-          id="cf-message"
-          placeholder="Кількість одиниць, тип товару, терміни..."
-          rows={4}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          disabled={submitting}
-          className="w-full bg-white/5 border border-white/10 text-white placeholder:text-gray-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/30 transition-colors resize-none disabled:opacity-50"
-        />
+        <Label className="text-white/70 text-sm">Тема звернення *</Label>
+        <Popover open={topicOpen} onOpenChange={setTopicOpen}>
+          <PopoverTrigger className="w-full flex items-center gap-3 bg-white/5 border border-white/10 rounded-md px-3 py-2.5 text-left hover:bg-white/[0.08] hover:border-white/20 transition-colors disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-white/20" disabled={submitting}>
+            <span className="text-xl shrink-0" aria-hidden="true">{selectedTopic.icon}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-white text-sm font-medium leading-tight">{selectedTopic.label}</p>
+              <p className="text-white/45 text-xs mt-0.5 truncate">{selectedTopic.desc}</p>
+            </div>
+            <ChevronDown className={`w-4 h-4 text-white/40 shrink-0 transition-transform duration-200 ${topicOpen ? "rotate-180" : ""}`} />
+          </PopoverTrigger>
+          <PopoverContent className="p-1.5 bg-card border border-white/10 shadow-2xl rounded-xl"
+            style={{ width: "var(--anchor-width)" }} align="start" sideOffset={6}>
+            {TOPICS.map((t) => (
+              <button key={t.value} type="button"
+                onClick={() => { setTopic(t.value); setTopicOpen(false); }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
+                  topic === t.value ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white"
+                }`}>
+                <span className="text-xl shrink-0" aria-hidden="true">{t.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium leading-tight">{t.label}</p>
+                  <p className="text-xs text-white/40 mt-0.5">{t.desc}</p>
+                </div>
+                {topic === t.value && <Check className="w-4 h-4 text-primary shrink-0" />}
+              </button>
+            ))}
+          </PopoverContent>
+        </Popover>
       </div>
 
       <div className="md:col-span-2 space-y-1.5">
-        <Label htmlFor="cf-files" className="text-white/70 text-sm">Завантажити файли (макети, логотипи тощо)</Label>
+        <Label htmlFor="cf-message" className="text-white/70 text-sm">Розкажiть про ваш проєкт</Label>
+        <textarea id="cf-message" placeholder="Кiлькiсть одиниць, тип товару, термiни..."
+          rows={4} value={message} onChange={(e) => setMessage(e.target.value)} disabled={submitting}
+          className="w-full bg-white/5 border border-white/10 text-white placeholder:text-gray-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/30 transition-colors resize-none disabled:opacity-50" />
+      </div>
+
+      <div className="md:col-span-2 space-y-1.5">
+        <Label htmlFor="cf-files" className="text-white/70 text-sm">
+          Завантажити файли (макети, логотипи тощо)
+        </Label>
         <div className="relative">
           <input
             id="cf-files"
@@ -169,7 +185,7 @@ export function ContactForm() {
             htmlFor="cf-files"
             className="flex flex-col items-center justify-center w-full p-6 border-2 border-dashed border-white/20 rounded-lg cursor-pointer hover:border-white/40 hover:bg-white/5 transition-colors"
           >
-            <Upload className="w-8 h-8 text-white/40 mb-2" />
+            <Upload className="w-8 h-8 text-white/40 mb-2" aria-hidden="true" />
             <p className="text-white/70 text-sm font-medium">Натисніть або перетягніть файли</p>
             <p className="text-white/50 text-xs mt-1">Макети, логотипи, зображення...</p>
           </label>
@@ -182,7 +198,8 @@ export function ContactForm() {
                   <button
                     type="button"
                     onClick={() => setFiles(files.filter((_, idx) => idx !== i))}
-                    className="text-white/50 hover:text-white/70 transition-colors"
+                    aria-label={`Видалити файл ${f.name}`}
+                    className="text-white/50 hover:text-white/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 rounded"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -194,7 +211,7 @@ export function ContactForm() {
       </div>
 
       {error && (
-        <div className="md:col-span-2">
+        <div className="md:col-span-2" role="alert">
           <p className="text-red-400 text-sm">{error}</p>
         </div>
       )}
@@ -207,7 +224,7 @@ export function ContactForm() {
         >
           {submitting ? (
             <>
-              <Loader2 className="size-4 mr-2 animate-spin" />
+              <Loader2 className="size-4 mr-2 animate-spin" aria-hidden="true" />
               Надсилаємо...
             </>
           ) : (

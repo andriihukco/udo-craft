@@ -8,7 +8,6 @@ export function LogoLoader() {
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white">
       <div className="relative w-32 h-10 overflow-hidden rounded-sm">
-        {/* The logo image — rendered as a background so we can overlay the shimmer */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/logo.png"

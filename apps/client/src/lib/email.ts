@@ -4,7 +4,8 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://u-do-craft.store";
 const LOGO_URL = `${APP_URL}/logo.png`;
-const FROM = "U:DO CRAFT <noreply@u-do-craft.store>";
+const FROM = "U:DO CRAFT <hi@u-do-craft.store>";
+const TEAM_EMAIL = "hi@u-do-craft.store";
 
 const FONT = `'Cousine','Courier New',Courier,monospace`;
 
@@ -139,6 +140,93 @@ export async function sendNewMessageNotification({
     from: FROM,
     to,
     subject: "Нове повідомлення від менеджера — U:DO CRAFT",
+    html: baseTemplate(content),
+  });
+}
+
+// ─── New contact form lead — notify team ─────────────────────────────────────
+
+const TOPIC_LABELS: Record<string, string> = {
+  merch:    "Корпоративний мерч",
+  popup:    "Popup-стенд на захід",
+  box:      "Box of Touch (зразки)",
+  designer: "Послуги дизайнера",
+  bulk:     "Великий тираж (500+)",
+  other:    "Інше",
+};
+
+const SOURCE_LABELS: Record<string, string> = {
+  contact_form:     "Форма контактів",
+  popup_section:    "Секція Popup",
+  box_of_touch:     "Box of Touch",
+  designer_service: "Послуги дизайнера",
+  services_section: "Секція послуг",
+  contact_section:  "Секція контактів",
+};
+
+export async function sendContactNotification({
+  leadId,
+  name,
+  email,
+  phone,
+  company,
+  topic,
+  source,
+  message,
+}: {
+  leadId: string;
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  topic?: string;
+  source?: string;
+  message?: string;
+}) {
+  const topicLabel  = TOPIC_LABELS[topic ?? ""] ?? topic ?? "—";
+  const sourceLabel = SOURCE_LABELS[source ?? ""] ?? source ?? "—";
+  const adminUrl    = `https://admin.u-do-craft.store/orders`;
+
+  const row = (label: string, value: string) =>
+    `<tr>
+      <td style="padding:8px 0;font-size:12px;color:#999;font-family:${FONT};width:110px;vertical-align:top;">${label}</td>
+      <td style="padding:8px 0;font-size:13px;color:#222;font-family:${FONT};font-weight:600;">${value}</td>
+    </tr>`;
+
+  const content = `
+    <h1 style="margin:0 0 6px;font-size:18px;font-weight:700;color:#0a0a0a;font-family:${FONT};">
+      Нова заявка з сайту
+    </h1>
+    <p style="margin:0 0 24px;font-size:13px;color:#888;font-family:${FONT};">
+      ID: <strong style="color:#1B18AC;">${leadId.slice(0, 8).toUpperCase()}</strong>
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #f0f0f0;margin-bottom:24px;">
+      ${row("Ім'я", name)}
+      ${row("Email", email)}
+      ${row("Телефон", phone ?? "—")}
+      ${row("Компанія", company ?? "—")}
+      ${row("Тема", topicLabel)}
+      ${row("Джерело", sourceLabel)}
+    </table>
+
+    ${message ? `
+    <div style="background:#f8f8ff;border-left:3px solid #1B18AC;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:24px;">
+      <p style="margin:0 0 4px;font-size:11px;color:#999;text-transform:uppercase;letter-spacing:0.08em;font-family:${FONT};">Повідомлення</p>
+      <p style="margin:0;font-size:13px;color:#333;line-height:1.6;font-family:${FONT};">${message.replace(/\n/g, "<br/>")}</p>
+    </div>` : ""}
+
+    <a href="${adminUrl}"
+       style="display:inline-block;background:#1B18AC;color:#fff;text-decoration:none;padding:11px 24px;border-radius:8px;font-size:13px;font-weight:700;font-family:${FONT};">
+      Відкрити в адмінці →
+    </a>
+  `;
+
+  return resend.emails.send({
+    from: FROM,
+    to: TEAM_EMAIL,
+    replyTo: email,
+    subject: `Нова заявка: ${topicLabel} — ${name}`,
     html: baseTemplate(content),
   });
 }
