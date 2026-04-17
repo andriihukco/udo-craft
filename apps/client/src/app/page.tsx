@@ -218,16 +218,18 @@ export default function HomePage() {
       {/* NAV */}
       <nav className={`fixed top-0 inset-x-0 z-50 bg-white border-b border-gray-100 transition-all duration-300 ${scrolled ? "shadow-md" : ""}`}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link href="/" aria-label="U:DO CRAFT">
-            <BrandLogoFull className="h-10 w-auto" color="var(--color-primary, #1B18AC)" />
-          </Link>
+          <div className="flex items-center gap-1">
+            <Link href="/" aria-label="U:DO CRAFT">
+              <BrandLogoFull className="h-10 w-auto" color="var(--color-primary, #1B18AC)" />
+            </Link>
 
-          <div className="hidden md:flex items-center gap-1">
-            {navLinks.map((l) => (
-              <Link key={l.href} href={l.href} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-full hover:bg-gray-50 transition-colors duration-200">
-                {l.label}
-              </Link>
-            ))}
+            <div className="hidden md:flex items-center gap-1 ml-4">
+              {navLinks.map((l) => (
+                <Link key={l.href} href={l.href} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-full hover:bg-gray-50 transition-colors duration-200">
+                  {l.label}
+                </Link>
+              ))}
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
@@ -280,16 +282,13 @@ export default function HomePage() {
       {/* HERO */}
       <section className="relative overflow-hidden bg-primary">
         <video
-          className="absolute inset-0 w-full h-full object-cover opacity-40"
+          className="absolute inset-0 w-full h-full object-cover opacity-75"
           src="/hero-video.mp4"
           autoPlay
           loop
           muted
           playsInline
         />
-        <div className="absolute inset-0 opacity-[0.04]"
-          style={{ backgroundImage: "linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px)", backgroundSize: "40px 40px" }} />
-
         <div className="relative max-w-3xl mx-auto px-4 sm:px-6 pt-32 sm:pt-48 pb-16 text-center animate-in fade-in slide-in-from-bottom-8 duration-700 fill-mode-both">
           <div className="inline-flex items-center gap-2 bg-white/10 text-white/80 text-xs font-semibold px-3 py-1.5 rounded-full mb-7 tracking-wide uppercase">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
