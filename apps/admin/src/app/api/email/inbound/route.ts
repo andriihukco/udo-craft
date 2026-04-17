@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Webhook } from "svix";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 
-// Resend sends inbound emails as multipart/form-data POST
+// Resend inbound email webhook — verified with Svix (whsec_... signing secret)
 // Docs: https://resend.com/docs/dashboard/receiving/introduction
 
 function service() {
@@ -11,80 +12,74 @@ function service() {
   );
 }
 
-// Extract lead ID from the To address.
-// Convention: lead-<8-char-id>@poudtio.resend.app  OR  <leadId>@poudtio.resend.app
+// Extract lead ID from To address.
+// Convention: lead-<8-char-id>@domain  OR  full UUID before @
 function extractLeadId(toAddress: string): string | null {
-  const match = toAddress.match(/lead[-_]?([a-f0-9-]{8,36})@/i);
-  if (match) return match[1];
-  // Also try bare UUID prefix before @
-  const bare = toAddress.match(/^([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})@/i);
-  if (bare) return bare[1];
+  const short = toAddress.match(/lead[-_]?([a-f0-9]{8,36})@/i);
+  if (short) return short[1];
+  const uuid = toAddress.match(/^([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})@/i);
+  if (uuid) return uuid[1];
   return null;
 }
 
+// Must read raw body for Svix signature verification
 export async function POST(req: NextRequest) {
   try {
-    // Verify shared secret if configured
+    const rawBody = await req.text();
+
+    // ── Signature verification ──────────────────────────────────────────────
     const secret = process.env.RESEND_WEBHOOK_SECRET;
     if (secret) {
-      const provided = req.headers.get("x-resend-signature") ?? req.headers.get("authorization");
-      if (!provided || !provided.includes(secret)) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      const wh = new Webhook(secret);
+      try {
+        wh.verify(rawBody, {
+          "svix-id":        req.headers.get("svix-id") ?? "",
+          "svix-timestamp": req.headers.get("svix-timestamp") ?? "",
+          "svix-signature": req.headers.get("svix-signature") ?? "",
+        });
+      } catch {
+        console.warn("[email/inbound] invalid signature");
+        return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
       }
     }
 
-    const contentType = req.headers.get("content-type") ?? "";
-    let from = "";
-    let to = "";
-    let subject = "";
-    let text = "";
-    let html = "";
+    // ── Parse payload ───────────────────────────────────────────────────────
+    // Resend sends: { type: "email.received", data: { from, to, subject, text, html, ... } }
+    const event = JSON.parse(rawBody);
+    const payload = event?.data ?? event;
 
-    if (contentType.includes("application/json")) {
-      // Resend webhook event format
-      const body = await req.json();
-      const data = body?.data ?? body;
-      from    = data?.from ?? data?.email_id ?? "";
-      to      = Array.isArray(data?.to) ? data.to[0] : (data?.to ?? "");
-      subject = data?.subject ?? "";
-      text    = data?.text ?? "";
-      html    = data?.html ?? "";
-    } else {
-      // multipart/form-data (legacy inbound format)
-      const form = await req.formData();
-      from    = String(form.get("from")    ?? "");
-      to      = String(form.get("to")      ?? "");
-      subject = String(form.get("subject") ?? "");
-      text    = String(form.get("text")    ?? "");
-      html    = String(form.get("html")    ?? "");
+    const rawFrom: string = payload?.from ?? "";
+    const rawTo:   string = Array.isArray(payload?.to) ? payload.to[0] : (payload?.to ?? "");
+    const subject: string = payload?.subject ?? "";
+    const text:    string = payload?.text ?? "";
+    const html:    string = payload?.html ?? "";
+
+    if (!rawFrom) {
+      return NextResponse.json({ ok: true, skipped: "no from" });
     }
 
-    if (!from) {
-      return NextResponse.json({ error: "Missing from" }, { status: 400 });
-    }
+    // Extract clean email + display name from "Name <email>" format
+    const fromEmail = (rawFrom.match(/<(.+?)>/) ?? [])[1]?.trim() ?? rawFrom.trim();
+    const fromName  = (rawFrom.match(/^(.+?)\s*</) ?? [])[1]?.trim() ?? fromEmail;
 
-    // Extract sender email from "Name <email>" format
-    const fromEmail = (from.match(/<(.+?)>/) ?? [])[1] ?? from.trim();
-    const fromName  = (from.match(/^(.+?)\s*</) ?? [])[1]?.trim() ?? fromEmail;
-
-    // Build message body — prefer plain text, strip quoted replies
-    const rawBody = text || html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-    // Strip everything after common reply separators
-    const messageBody = rawBody
-      .split(/\n[-–—]{3,}|\nOn .+ wrote:|\n>+\s/)[0]
+    // Build message body — prefer plain text, strip quoted reply history
+    const rawBody2 = text || html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    const messageBody = rawBody2
+      .split(/\n[-–—]{3,}|\nOn .+wrote:|\n>+\s/)[0]
       .trim();
 
     if (!messageBody) {
-      return NextResponse.json({ ok: true, skipped: "empty body" });
+      return NextResponse.json({ ok: true, skipped: "empty body after stripping" });
     }
 
+    // ── Resolve lead ────────────────────────────────────────────────────────
     const db = service();
     let leadId: string | null = null;
 
-    // 1. Try to find lead ID from To address
-    leadId = extractLeadId(to);
+    // 1. Lead ID encoded in To address (reply-to routing)
+    leadId = extractLeadId(rawTo);
 
-    // 2. If not found, look up by sender email
+    // 2. Look up by sender email
     if (!leadId) {
       const { data: leads } = await db
         .from("leads")
@@ -95,7 +90,7 @@ export async function POST(req: NextRequest) {
       leadId = leads?.[0]?.id ?? null;
     }
 
-    // 3. If still not found, create a new lead from the email
+    // 3. Create a new lead for unknown senders
     if (!leadId) {
       const { data: newLead } = await db
         .from("leads")
@@ -118,10 +113,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Could not resolve lead" }, { status: 500 });
     }
 
-    // Insert message into thread
-    const fullBody = subject
-      ? `**${subject}**\n\n${messageBody}`
-      : messageBody;
+    // ── Insert message ──────────────────────────────────────────────────────
+    const fullBody = subject ? `**${subject}**\n\n${messageBody}` : messageBody;
 
     const { error: msgError } = await db.from("messages").insert({
       lead_id:      leadId,
@@ -133,18 +126,19 @@ export async function POST(req: NextRequest) {
     });
 
     if (msgError) {
-      console.error("messages insert error:", msgError);
+      console.error("[email/inbound] messages insert error:", msgError);
       return NextResponse.json({ error: msgError.message }, { status: 500 });
     }
 
-    // Bump lead updated_at so it surfaces in the kanban
+    // Bump lead so it surfaces at the top of the kanban
     await db
       .from("leads")
       .update({ updated_at: new Date().toISOString() })
       .eq("id", leadId);
 
-    console.log(`[email/inbound] routed from=${fromEmail} to lead=${leadId}`);
+    console.log(`[email/inbound] from=${fromEmail} → lead=${leadId}`);
     return NextResponse.json({ ok: true, leadId });
+
   } catch (err) {
     console.error("[email/inbound] error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
