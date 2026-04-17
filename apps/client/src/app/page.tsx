@@ -8,8 +8,9 @@ import { ContactForm } from "@/components/ContactForm";
 import { ProductCardDetailed } from "@/components/ProductCardDetailed";
 import { MockupViewer } from "@/components/MockupViewer";
 import { BrandLogoFull } from "@/components/brand-logo";
+import { LogoLoader } from "@udo-craft/ui";
 import { createClient } from "@/lib/supabase/client";
-import { Loader2, User, ShoppingBag, ArrowRight, ChevronDown, Instagram, Send, X } from "lucide-react";
+import { User, ShoppingBag, ArrowRight, ChevronDown, Instagram, Send, X } from "lucide-react";
 
 // Fade-in-up on scroll
 function useFadeIn() {
@@ -154,11 +155,7 @@ export default function HomePage() {
     { href: "#contact",     label: "Контакти" },
   ];
 
-  if (loading) return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <Loader2 className="size-8 animate-spin text-primary" />
-    </div>
-  );
+  if (loading) return <LogoLoader />;
 
   return (
     <div className="min-h-screen bg-white text-gray-900 overflow-x-hidden scroll-smooth">
@@ -448,6 +445,55 @@ export default function HomePage() {
             <Link href="#contact" className="relative z-10 mt-6 inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm font-bold px-5 py-2.5 rounded-full hover:bg-primary/90 active:scale-95 transition-all duration-200 w-fit">
               Обговорити проєкт <ArrowRight className="w-4 h-4" />
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* POPUP SERVICE */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
+        <div className="relative rounded-3xl overflow-hidden bg-gray-950 min-h-[320px] flex flex-col md:flex-row items-stretch">
+          {/* Decorative gradient blob */}
+          <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-primary/30 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-16 right-10 w-64 h-64 rounded-full bg-primary/20 blur-2xl pointer-events-none" />
+
+          {/* Content */}
+          <div className="relative z-10 flex-1 flex flex-col justify-center px-8 py-12 md:px-12">
+            <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-5">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              Нова послуга
+            </span>
+            <h2 className="text-white text-3xl sm:text-4xl font-black tracking-tight leading-tight mb-4">
+              U:DO Craft Popup —<br />
+              <span className="text-white/60">мерч прямо на вашому заході</span>
+            </h2>
+            <p className="text-white/70 text-sm sm:text-base leading-relaxed max-w-md mb-8">
+              Виїзний попап-стенд на корпоративи, конференції, фестивалі та брендові події. Гості обирають одяг, кастомізують принт на місці — і йдуть з готовим мерчем у руках.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Link href="/popup"
+                className="inline-flex items-center gap-2 bg-primary text-white text-sm font-bold px-6 py-3 rounded-full hover:bg-primary/90 active:scale-95 transition-all duration-200">
+                Дізнатись більше <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link href="#contact"
+                className="inline-flex items-center gap-2 border border-white/20 text-white/80 text-sm font-semibold px-6 py-3 rounded-full hover:bg-white/10 active:scale-95 transition-all duration-200">
+                Обговорити захід
+              </Link>
+            </div>
+          </div>
+
+          {/* Right side — feature pills */}
+          <div className="relative z-10 flex flex-col justify-center gap-3 px-8 py-12 md:px-10 md:min-w-[260px]">
+            {[
+              { icon: "🎪", label: "Виїзд на будь-який захід" },
+              { icon: "👕", label: "Кастомізація на місці" },
+              { icon: "⚡", label: "Готовий мерч за хвилини" },
+              { icon: "🎯", label: "Від 50 учасників" },
+            ].map((f) => (
+              <div key={f.label} className="flex items-center gap-3 bg-white/[0.07] border border-white/10 rounded-2xl px-4 py-3">
+                <span className="text-xl" aria-hidden="true">{f.icon}</span>
+                <span className="text-white/80 text-sm font-medium">{f.label}</span>
+              </div>
+            ))}
           </div>
         </div>
       </section>
