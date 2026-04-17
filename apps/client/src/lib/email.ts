@@ -6,6 +6,12 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://u-do-craft.store";
 const LOGO_URL = `${APP_URL}/logo.png`;
 const FROM = "U:DO CRAFT <hi@u-do-craft.store>";
 const TEAM_EMAIL = "hi@u-do-craft.store";
+const INBOUND_DOMAIN = "poudtio.resend.app";
+
+/** Reply-to address that routes inbound replies to the correct lead thread */
+function leadReplyTo(leadId: string): string {
+  return `lead-${leadId.slice(0, 8)}@${INBOUND_DOMAIN}`;
+}
 
 const FONT = `'Cousine','Courier New',Courier,monospace`;
 
@@ -92,6 +98,7 @@ export async function sendOrderConfirmation({
   return resend.emails.send({
     from: FROM,
     to,
+    replyTo: leadReplyTo(leadId),
     subject: "Замовлення прийнято — U:DO CRAFT",
     html: baseTemplate(content),
   });
@@ -139,6 +146,7 @@ export async function sendNewMessageNotification({
   return resend.emails.send({
     from: FROM,
     to,
+    replyTo: leadReplyTo(leadId),
     subject: "Нове повідомлення від менеджера — U:DO CRAFT",
     html: baseTemplate(content),
   });
@@ -225,7 +233,7 @@ export async function sendContactNotification({
   return resend.emails.send({
     from: FROM,
     to: TEAM_EMAIL,
-    replyTo: email,
+    replyTo: `${email}, lead-${leadId.slice(0, 8)}@${INBOUND_DOMAIN}`,
     subject: `Нова заявка: ${topicLabel} — ${name}`,
     html: baseTemplate(content),
   });
