@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e5e5e5;">
           <!-- Header -->
           <tr>
-            <td style="background:#1B18AC;padding:32px 40px;text-align:center;">
+            <td style="background:#eeeeff;padding:32px 40px;text-align:center;border-bottom:1px solid #ddddf5;">
               <img src="${logoUrl}" alt="U:DO CRAFT" width="140" height="auto" style="display:block;margin:0 auto;max-width:140px;height:auto;" />
             </td>
           </tr>
