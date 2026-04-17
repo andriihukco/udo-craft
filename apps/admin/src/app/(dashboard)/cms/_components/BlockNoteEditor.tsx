@@ -4,7 +4,7 @@
 // Never import it directly — always use the dynamic wrapper in BlockEditor.tsx.
 
 import { useCallback, useEffect, useState } from "react";
-import { useCreateBlockNote, BlockNoteView } from "@blocknote/react";
+import { useCreateBlockNote, BlockNoteViewEditor } from "@blocknote/react";
 import "@blocknote/react/style.css";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -147,7 +147,7 @@ export default function BlockNoteEditor({ slug, pageTitle, description, previewU
               />
             ) : (
               <div className="rounded-xl border border-border bg-background min-h-[400px] overflow-hidden">
-                <BlockNoteView editor={editor} theme="light" />
+                <BlockNoteViewEditor editor={editor} theme="light" />
               </div>
             )}
           </div>
