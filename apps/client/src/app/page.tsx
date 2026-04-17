@@ -10,7 +10,7 @@ import { MockupViewer } from "@/components/MockupViewer";
 import { BrandLogoFull } from "@/components/brand-logo";
 import { LogoLoader } from "@udo-craft/ui";
 import { createClient } from "@/lib/supabase/client";
-import { User, ShoppingBag, ArrowRight, ChevronDown, Instagram, Send, X } from "lucide-react";
+import { User, ShoppingBag, ArrowRight, ChevronDown, Instagram, Send, X, Fullscreen, Shrink } from "lucide-react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 
 // Scroll-triggered fade-up wrapper
@@ -279,7 +279,7 @@ function AnimBtn({ href, children, variant = "primary", className = "" }: {
   variant?: "primary" | "outline" | "ghost";
   className?: string;
 }) {
-  const base = "group inline-flex items-center gap-2 font-bold text-sm px-7 py-3.5 rounded-full transition-all duration-200 active:scale-95 overflow-hidden relative";
+  const base = "group inline-flex items-center gap-2 font-bold text-sm px-7 py-3.5 rounded-full transition-all duration-200 active:scale-95 overflow-hidden relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
   const styles = {
     primary: "bg-primary text-white hover:bg-primary/90 shadow-lg hover:shadow-xl hover:shadow-primary/25",
     outline: "border-2 border-primary text-primary hover:bg-primary hover:text-white",
@@ -303,7 +303,7 @@ function AnimBtn({ href, children, variant = "primary", className = "" }: {
 // White variant for dark backgrounds
 function AnimBtnWhite({ href, children, className = "" }: { href: string; children: React.ReactNode; className?: string }) {
   return (
-    <Link href={href} className={`group inline-flex items-center gap-2 bg-white text-primary font-bold text-sm px-7 py-3.5 rounded-full hover:bg-gray-50 active:scale-95 transition-all duration-200 shadow-lg hover:shadow-xl ${className}`}>
+    <Link href={href} className={`group inline-flex items-center gap-2 bg-white text-primary font-bold text-sm px-7 py-3.5 rounded-full hover:bg-gray-50 active:scale-95 transition-all duration-200 shadow-lg hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${className}`}>
       <span>{children}</span>
       <motion.span
         className="flex items-center"
@@ -383,8 +383,8 @@ function PopupSection() {
             >
               <span className="text-2xl shrink-0 mt-0.5" aria-hidden="true">{f.icon}</span>
               <div>
-                <p className="text-gray-900 text-xs font-bold leading-tight">{f.label}</p>
-                <p className="text-gray-500 text-xs mt-0.5 leading-snug">{f.desc}</p>
+                <p className="text-foreground text-xs font-bold leading-tight">{f.label}</p>
+                <p className="text-muted-foreground text-xs mt-0.5 leading-snug">{f.desc}</p>
               </div>
             </motion.div>
           ))}
@@ -402,6 +402,7 @@ export default function HomePage() {
   const [menuOpen, setMenuOpen]     = useState(false);
   const [scrolled, setScrolled]     = useState(false);
   const [navVisible, setNavVisible]  = useState(true);
+  const [cinemaMode, setCinemaMode] = useState(false);
   const lastScrollY = useRef(0);
   const [cartOpen, setCartOpen]     = useState(false);
   const supabase = createClient();
@@ -516,7 +517,7 @@ export default function HomePage() {
   if (loading) return <LogoLoader />;
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 overflow-x-hidden scroll-smooth">
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden scroll-smooth">
       {/* Page load fade-in overlay — white covers everything, fades out fast */}
       <motion.div
         initial={{ opacity: 1 }}
@@ -529,18 +530,18 @@ export default function HomePage() {
       {cartOpen && (
         <div className="fixed inset-0 z-[60] flex justify-end">
           <div className="absolute inset-0 bg-black/40" onClick={() => setCartOpen(false)} aria-hidden="true" />
-          <div className="relative bg-white w-80 max-w-full h-full flex flex-col shadow-2xl" role="dialog" aria-modal="true" aria-label="Кошик">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+          <div className="relative bg-background w-80 max-w-full h-full flex flex-col shadow-2xl" role="dialog" aria-modal="true" aria-label="Кошик">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
               <span className="font-semibold text-sm">Кошик {cartCount > 0 ? `(${cartCount})` : ""}</span>
-              <button onClick={() => setCartOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <button onClick={() => setCartOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <X className="w-4 h-4" strokeWidth={2} />
               </button>
             </div>
             {cartCount === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center px-6">
-                <ShoppingBag className="size-10 text-gray-200" />
-                <p className="text-sm text-gray-400 font-medium">Кошик порожній</p>
-                <p className="text-xs text-gray-300">Оберіть товар та налаштуйте принт</p>
+                <ShoppingBag className="size-10 text-muted" />
+                <p className="text-sm text-muted-foreground font-medium">Кошик порожній</p>
+                <p className="text-xs text-muted-foreground/60">Оберіть товар та налаштуйте принт</p>
                 <Link href="/order" onClick={() => setCartOpen(false)}
                   className="mt-2 inline-flex items-center gap-1.5 bg-primary text-white text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-primary/90 transition-colors">
                   Перейти до каталогу <ArrowRight className="size-3.5" />
@@ -565,7 +566,7 @@ export default function HomePage() {
                     );
                   })}
                 </div>
-                <div className="p-4 border-t border-gray-100 space-y-2">
+                <div className="p-4 border-t border-border space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Разом:</span>
                     <span className="font-bold text-foreground">{(totalCents / 100).toFixed(0)} ₴</span>
@@ -580,8 +581,8 @@ export default function HomePage() {
       <motion.nav
         initial={{ y: -20, opacity: 0 }}
         animate={{
-          y: navVisible ? 0 : -80,
-          opacity: navVisible ? 1 : 0,
+          y: navVisible && !cinemaMode ? 0 : -80,
+          opacity: navVisible && !cinemaMode ? 1 : 0,
         }}
         transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1], delay: navVisible && !scrolled ? 1.5 : 0 }}
         className="fixed top-4 inset-x-0 z-50 flex justify-center pointer-events-none px-4"
@@ -724,7 +725,12 @@ export default function HomePage() {
           muted
           playsInline
         />
-        <div className="relative max-w-3xl mx-auto px-4 sm:px-6 pt-32 sm:pt-48 pb-16 text-center">
+        <motion.div
+          animate={{ opacity: cinemaMode ? 0 : 1 }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
+          className="relative max-w-3xl mx-auto px-4 sm:px-6 pt-32 sm:pt-48 pb-16 text-center pointer-events-none"
+          aria-hidden={cinemaMode}
+        >
           <motion.h1
             initial={{ opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
@@ -770,24 +776,60 @@ export default function HomePage() {
             <span className="text-white/40">•</span>
             <span>7–14 днів на виготовлення</span>
           </motion.div>
-        </div>
+        </motion.div>
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 2.4 }}
-          className="flex justify-center pb-8"
+          animate={{ opacity: cinemaMode ? 0 : 1 }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
+          className="flex justify-center pb-8 pointer-events-none"
+          aria-hidden={cinemaMode}
         >
-          <a href="#collections" className="text-white/50 hover:text-white/80 transition-colors duration-200" aria-label="Прокрутити вниз">
+          <a href="#collections" className="text-white/50 hover:text-white/80 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-full" aria-label="Прокрутити вниз">
             <ChevronDown className="w-5 h-5 animate-bounce" />
           </a>
         </motion.div>
+
+        {/* Cinema mode toggle — bottom-right corner */}
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4, delay: 2.5 }}
+          onClick={() => setCinemaMode((v) => !v)}
+          aria-label={cinemaMode ? "Вийти з режиму перегляду" : "Режим перегляду відео"}
+          className="absolute bottom-4 right-4 z-10 flex items-center justify-center w-9 h-9 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-sm border border-white/10 text-white/60 hover:text-white transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            {cinemaMode ? (
+              <motion.span
+                key="exit"
+                aria-hidden="true"
+                initial={{ opacity: 0, scale: 0.7 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.7 }}
+                transition={{ duration: 0.15 }}
+              >
+                <Shrink className="w-4 h-4" />
+              </motion.span>
+            ) : (
+              <motion.span
+                key="enter"
+                aria-hidden="true"
+                initial={{ opacity: 0, scale: 0.7 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.7 }}
+                transition={{ duration: 0.15 }}
+              >
+                <Fullscreen className="w-4 h-4" />
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.button>
       </section>
 
       {/* STATS */}
       <FadeUp>
-        <section className="border-b border-gray-100">
+        <section className="border-b border-border">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-gray-100">
+            <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-border">
               {[
                 { value: 500, suffix: "+",   label: "Задоволених клієнтів" },
                 { value: 15,  suffix: "%",   label: "Знижка від 100 шт" },
@@ -798,7 +840,7 @@ export default function HomePage() {
                   <p className="text-2xl font-black text-primary">
                     <CountUp end={s.value} suffix={s.suffix} />
                   </p>
-                  <p className="text-xs text-gray-500 mt-1 font-medium">{s.label}</p>
+                  <p className="text-xs text-muted-foreground mt-1 font-medium">{s.label}</p>
                 </div>
               ))}
             </div>
@@ -829,7 +871,7 @@ export default function HomePage() {
                 className={`flex items-center gap-2 whitespace-nowrap px-5 py-2.5 rounded-full text-sm font-semibold transition-all border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                   activeCategory === cat.id
                     ? "bg-primary text-primary-foreground border-primary shadow-md"
-                    : "bg-white text-gray-700 border-gray-200 hover:border-gray-400 hover:shadow-sm"
+                    : "bg-background text-muted-foreground border-border hover:border-foreground/40 hover:shadow-sm"
                 }`}
               >
                 {cat.image_url && <img src={cat.image_url} alt="" className="w-5 h-5 rounded-full object-cover" />}
@@ -982,11 +1024,11 @@ export default function HomePage() {
                 variants={cardVariant}
                 whileHover={{ y: -6, scale: 1.02 }}
                 transition={{ duration: 0.2 }}
-                className="bg-gray-50 rounded-3xl p-8 border border-gray-100 hover:shadow-xl hover:border-gray-200 transition-all duration-300"
+                className="bg-card rounded-3xl p-8 border border-border hover:shadow-xl hover:border-border/80 transition-all duration-300"
               >
                 <span className="text-3xl mb-6 block" aria-hidden="true">{f.icon}</span>
-                <h3 className="font-bold text-gray-900 text-lg mb-3">{f.title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">{f.desc}</p>
+                <h3 className="font-bold text-foreground text-lg mb-3">{f.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
               </motion.div>
             ))}
           </StaggerGrid>
@@ -995,7 +1037,7 @@ export default function HomePage() {
 
       {/* Section divider */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="border-t border-gray-100" />
+        <div className="border-t border-border" />
       </div>
 
       {/* TESTIMONIALS */}
@@ -1018,7 +1060,7 @@ export default function HomePage() {
                 variants={cardVariant}
                 whileHover={{ y: -6 }}
                 transition={{ duration: 0.2 }}
-                className="bg-gray-50 rounded-3xl p-8 border border-gray-100 flex flex-col gap-6 hover:shadow-xl hover:border-gray-200 transition-all duration-300"
+                className="bg-card rounded-3xl p-8 border border-border flex flex-col gap-6 hover:shadow-xl hover:border-border/80 transition-all duration-300"
               >
                 <div className="flex gap-1" aria-label={`Оцінка: ${t.rating} з 5`}>
                   {[...Array(t.rating)].map((_, i) => (
@@ -1027,14 +1069,14 @@ export default function HomePage() {
                     </svg>
                   ))}
                 </div>
-                <p className="text-gray-700 text-base leading-relaxed flex-1">&ldquo;{t.text}&rdquo;</p>
-                <div className="flex items-center gap-4 pt-4 border-t border-gray-200">
+                <p className="text-foreground text-base leading-relaxed flex-1">&ldquo;{t.text}&rdquo;</p>
+                <div className="flex items-center gap-4 pt-4 border-t border-border">
                   <div className="w-11 h-11 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0" aria-hidden="true">
                     {t.avatar}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">{t.name}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{t.role}</p>
+                    <p className="text-sm font-semibold text-foreground">{t.name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{t.role}</p>
                   </div>
                 </div>
               </motion.div>
@@ -1072,11 +1114,11 @@ export default function HomePage() {
                   </div>
                   <div className="flex gap-3">
                     <a href="https://www.instagram.com/u.do.craft/" target="_blank" rel="noopener noreferrer"
-                      className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-200">
+                      className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40">
                       <Instagram className="w-4 h-4" aria-hidden="true" />
                     </a>
                     <a href="https://t.me/udostore" target="_blank" rel="noopener noreferrer"
-                      className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-200">
+                      className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40">
                       <Send className="w-4 h-4" aria-hidden="true" />
                     </a>
                   </div>
@@ -1131,7 +1173,7 @@ export default function HomePage() {
                   { href: "#contact",  label: "Найми дизайнера" },
                 ].map((l) => (
                   <Link key={l.label} href={l.href}
-                    className="text-xs text-gray-500 hover:text-gray-200 transition-colors duration-200 w-fit">
+                    className="text-xs text-gray-500 hover:text-gray-200 transition-colors duration-200 w-fit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded">
                     {l.label}
                   </Link>
                 ))}
@@ -1149,7 +1191,7 @@ export default function HomePage() {
                   { href: "#contact", label: "Блог" },
                 ].map((l) => (
                   <Link key={l.label} href={l.href}
-                    className="text-xs text-gray-500 hover:text-gray-200 transition-colors duration-200 w-fit">
+                    className="text-xs text-gray-500 hover:text-gray-200 transition-colors duration-200 w-fit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded">
                     {l.label}
                   </Link>
                 ))}
@@ -1167,7 +1209,7 @@ export default function HomePage() {
                   { href: "#contact", label: "Доставка та оплата" },
                 ].map((l) => (
                   <Link key={l.label} href={l.href}
-                    className="text-xs text-gray-500 hover:text-gray-200 transition-colors duration-200 w-fit">
+                    className="text-xs text-gray-500 hover:text-gray-200 transition-colors duration-200 w-fit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded">
                     {l.label}
                   </Link>
                 ))}
@@ -1209,7 +1251,7 @@ export default function HomePage() {
               { href: "#", label: "Cookies" },
             ].map((l) => (
               <Link key={l.label} href={l.href}
-                className="text-[11px] text-gray-600 hover:text-gray-400 transition-colors duration-200">
+                className="text-[11px] text-gray-600 hover:text-gray-400 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded">
                 {l.label}
               </Link>
             ))}

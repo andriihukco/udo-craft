@@ -3,7 +3,11 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BarChart2, Users, MessagesSquare, ShoppingBag, Box } from "lucide-react";
+import {
+  BarChart2, Users, MessagesSquare, ShoppingBag, Box,
+  Settings, ChevronRight, UserCog,
+  LayoutDashboard, FileEdit,
+} from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { NavUser } from "@/components/nav-user";
 import { createClient } from "@/lib/supabase/client";
@@ -14,23 +18,87 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarRail,
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
-const navItems = [
-  { title: "Продажі",      url: "/orders",    icon: ShoppingBag,     badgeKey: "orders"   as const },
+// ── Nav structure ─────────────────────────────────────────────────────────────
+
+interface NavSubItem {
+  title: string;
+  url: string;
+}
+
+interface NavItem {
+  title: string;
+  url: string;
+  icon: React.ElementType;
+  badgeKey?: "orders" | "messages";
+  children?: NavSubItem[];
+}
+
+const MAIN_NAV: NavItem[] = [
+  { title: "Дашборд",      url: "/",          icon: LayoutDashboard },
+  { title: "Продажі",      url: "/orders",    icon: ShoppingBag,    badgeKey: "orders" },
   { title: "Клієнти",      url: "/clients",   icon: Users },
-  { title: "Повідомлення", url: "/messages",  icon: MessagesSquare,  badgeKey: "messages" as const },
-  { title: "Каталог",      url: "/products",  icon: Box },
+  { title: "Повідомлення", url: "/messages",  icon: MessagesSquare, badgeKey: "messages" },
   { title: "Аналітика",    url: "/analytics", icon: BarChart2 },
 ];
+
+const CATALOG_NAV: NavItem[] = [
+  {
+    title: "Каталог",
+    url: "/products",
+    icon: Box,
+    children: [
+      { title: "Товари",      url: "/products" },
+      { title: "Категорії",   url: "/products?tab=categories" },
+      { title: "Кольори",     url: "/products?tab=materials" },
+      { title: "Ціни друку",  url: "/products?tab=print_pricing" },
+      { title: "Принти",      url: "/products?tab=prints" },
+    ],
+  },
+];
+
+const SYSTEM_NAV: NavItem[] = [
+  {
+    title: "CMS",
+    url: "/cms",
+    icon: FileEdit,
+    children: [
+      { title: "Сторінки",        url: "/cms" },
+      { title: "Умови та правила", url: "/cms/terms" },
+      { title: "Конфіденційність", url: "/cms/privacy" },
+    ],
+  },
+  {
+    title: "Користувачі",
+    url: "/users",
+    icon: UserCog,
+  },
+  {
+    title: "Налаштування",
+    url: "/settings",
+    icon: Settings,
+  },
+];
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 interface AppSidebarProps {
   user: { name: string; email: string; avatar: string };
@@ -44,6 +112,12 @@ export function AppSidebar({ user }: AppSidebarProps) {
   const supabase = React.useMemo(() => createClient(), []);
   const [badges, setBadges] = React.useState({ orders: 0, messages: 0 });
   const [unreadMessages, setUnreadMessages] = React.useState(0);
+
+  // Track which collapsibles are open
+  const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>({
+    "/products": pathname.startsWith("/products"),
+    "/cms": pathname.startsWith("/cms"),
+  });
 
   React.useEffect(() => {
     if (pathname.startsWith("/messages")) setUnreadMessages(0);
@@ -91,6 +165,102 @@ export function AppSidebar({ user }: AppSidebarProps) {
     return () => { mounted = false; supabase.removeChannel(channel); };
   }, [supabase, router]);
 
+  const handleNavClick = (url: string, isActive: boolean) => {
+    if (isMobile) setOpenMobile(false);
+    const hasDraft = typeof sessionStorage !== "undefined" && !!sessionStorage.getItem("new-order-draft");
+    if (hasDraft && !isActive) {
+      if (confirm("Покинути сторінку? Незбережене замовлення буде втрачено.")) {
+        sessionStorage.removeItem("new-order-draft");
+        router.push(url);
+      }
+      return false;
+    }
+    return true;
+  };
+
+  const renderSimpleItem = (item: NavItem) => {
+    const isActive = item.url === "/" ? pathname === "/" : pathname.startsWith(item.url);
+    const count = item.badgeKey === "messages" ? unreadMessages : item.badgeKey === "orders" ? badges.orders : 0;
+    const suppress =
+      (item.badgeKey === "messages" && pathname.startsWith("/messages")) ||
+      (item.badgeKey === "orders" && pathname.startsWith("/orders"));
+    const showBadge = !!item.badgeKey && count > 0 && !suppress;
+
+    return (
+      <SidebarMenuItem key={item.title}>
+        <SidebarMenuButton
+          render={<Link href={item.url} />}
+          isActive={isActive}
+          tooltip={item.title}
+          aria-current={isActive ? "page" : undefined}
+          onClick={(e) => {
+            const ok = handleNavClick(item.url, isActive);
+            if (!ok) e.preventDefault();
+          }}
+        >
+          <item.icon aria-hidden="true" />
+          <span>{item.title}</span>
+        </SidebarMenuButton>
+        {showBadge && (
+          <SidebarMenuBadge className="bg-destructive/10 text-destructive rounded-full text-[10px] font-semibold">
+            {count > 99 ? "99+" : count}
+          </SidebarMenuBadge>
+        )}
+      </SidebarMenuItem>
+    );
+  };
+
+  const renderCollapsibleItem = (item: NavItem) => {
+    const isGroupActive = pathname.startsWith(item.url);
+    const isOpen = openGroups[item.url] ?? isGroupActive;
+
+    return (
+      <Collapsible
+        key={item.title}
+        open={isOpen}
+        onOpenChange={(open) => setOpenGroups((prev) => ({ ...prev, [item.url]: open }))}
+        className="group/collapsible"
+      >
+        <SidebarMenuItem>
+          <CollapsibleTrigger asChild>
+            <SidebarMenuButton
+              tooltip={item.title}
+              isActive={isGroupActive}
+              aria-current={isGroupActive ? "page" : undefined}
+            >
+              <item.icon aria-hidden="true" />
+              <span>{item.title}</span>
+              <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+            </SidebarMenuButton>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <SidebarMenuSub>
+              {item.children?.map((child) => {
+                const childActive = child.url.includes("?")
+                  ? pathname === child.url.split("?")[0]
+                  : pathname === child.url || pathname.startsWith(child.url + "/");
+                return (
+                  <SidebarMenuSubItem key={child.title}>
+                    <SidebarMenuSubButton
+                      render={<Link href={child.url} />}
+                      isActive={childActive}
+                      onClick={(e) => {
+                        const ok = handleNavClick(child.url, childActive);
+                        if (!ok) e.preventDefault();
+                      }}
+                    >
+                      {child.title}
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                );
+              })}
+            </SidebarMenuSub>
+          </CollapsibleContent>
+        </SidebarMenuItem>
+      </Collapsible>
+    );
+  };
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
@@ -109,47 +279,31 @@ export function AppSidebar({ user }: AppSidebarProps) {
       </SidebarHeader>
 
       <SidebarContent>
+        {/* Main */}
         <SidebarGroup>
+          <SidebarGroupLabel>Головне</SidebarGroupLabel>
           <SidebarMenu>
-            {navItems.map((item) => {
-              const isActive = pathname.startsWith(item.url);
-              const count = item.badgeKey === "messages" ? unreadMessages : item.badgeKey === "orders" ? badges.orders : 0;
-              const suppress =
-                (item.badgeKey === "messages" && pathname.startsWith("/messages")) ||
-                (item.badgeKey === "orders" && pathname.startsWith("/orders"));
-              const showBadge = !!item.badgeKey && count > 0 && !suppress;
+            {MAIN_NAV.map(renderSimpleItem)}
+          </SidebarMenu>
+        </SidebarGroup>
 
-              return (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    render={<Link href={item.url} />}
-                    isActive={isActive}
-                    tooltip={item.title}
-                    aria-current={isActive ? "page" : undefined}
-                    onClick={(e) => {
-                      if (isMobile) setOpenMobile(false);
-                      // Guard: if there's an unsaved new-order draft, confirm before leaving
-                      const hasDraft = typeof sessionStorage !== "undefined" && !!sessionStorage.getItem("new-order-draft");
-                      if (hasDraft && !isActive) {
-                        e.preventDefault();
-                        if (confirm("Покинути сторінку? Незбережене замовлення буде втрачено.")) {
-                          sessionStorage.removeItem("new-order-draft");
-                          router.push(item.url);
-                        }
-                      }
-                    }}
-                  >
-                    <item.icon aria-hidden="true" />
-                    <span>{item.title}</span>
-                  </SidebarMenuButton>
-                  {showBadge && (
-                    <SidebarMenuBadge className="bg-destructive/10 text-destructive rounded-full text-[10px] font-semibold">
-                      {count > 99 ? "99+" : count}
-                    </SidebarMenuBadge>
-                  )}
-                </SidebarMenuItem>
-              );
-            })}
+        {/* Catalog */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Каталог</SidebarGroupLabel>
+          <SidebarMenu>
+            {CATALOG_NAV.map((item) =>
+              item.children ? renderCollapsibleItem(item) : renderSimpleItem(item)
+            )}
+          </SidebarMenu>
+        </SidebarGroup>
+
+        {/* System */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Система</SidebarGroupLabel>
+          <SidebarMenu>
+            {SYSTEM_NAV.map((item) =>
+              item.children ? renderCollapsibleItem(item) : renderSimpleItem(item)
+            )}
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>

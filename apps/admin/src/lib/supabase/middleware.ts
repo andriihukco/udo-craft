@@ -44,21 +44,27 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth") &&
-    !request.nextUrl.pathname.startsWith("/reset-password")
-  ) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+  const isPublicPath =
+    request.nextUrl.pathname.startsWith("/login") ||
+    request.nextUrl.pathname.startsWith("/auth") ||
+    request.nextUrl.pathname.startsWith("/reset-password");
+
+  // Only users explicitly granted admin/manager role may access the dashboard.
+  // Regular client-side signups have no role set — they are rejected.
+  const ALLOWED_ROLES = ["admin", "manager", "viewer"];
+  const role: string | undefined = user?.user_metadata?.role;
+  const isAdminUser = !!role && ALLOWED_ROLES.includes(role);
+
+  if (!isPublicPath && (!user || !isAdminUser)) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/login";
+    return NextResponse.redirect(redirectUrl);
   }
 
-  if (user && request.nextUrl.pathname.startsWith("/login")) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/";
-    return NextResponse.redirect(url);
+  if (user && isAdminUser && request.nextUrl.pathname.startsWith("/login")) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/";
+    return NextResponse.redirect(redirectUrl);
   }
 
   return supabaseResponse;
