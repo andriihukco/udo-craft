@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ArrowRight } from "lucide-react";
 import { BrandLogoFull } from "@/components/brand-logo";
 import { ContactForm } from "@/components/ContactForm";
+import { motion, useInView } from "framer-motion";
 
 const steps = [
   { step: "01", title: "Обираєте формат", desc: "Розкажіть нам про захід — кількість гостей, локація, дата. Ми підберемо оптимальний формат попапу." },
@@ -29,6 +30,39 @@ const faqs = [
   { q: "За скільки потрібно бронювати?", a: "Рекомендуємо за 2–3 тижні до заходу. Для великих подій (500+ осіб) — за місяць." },
 ];
 
+function FadeUp({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-80px" });
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 36 }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 36 }}
+      transition={{ duration: 0.6, delay, ease: "easeOut" }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function CountUp({ end, suffix = "" }: { end: number; suffix?: string }) {
+  const [count, setCount] = useState(0);
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true });
+  useEffect(() => {
+    if (!isInView) return;
+    let start = 0;
+    const step = end / (1500 / 16);
+    const timer = setInterval(() => {
+      start += step;
+      if (start >= end) { setCount(end); clearInterval(timer); }
+      else setCount(Math.floor(start));
+    }, 16);
+    return () => clearInterval(timer);
+  }, [isInView, end]);
+  return <span ref={ref}>{count}{suffix}</span>;
+}
+
 export default function PopupPage() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -48,22 +82,30 @@ export default function PopupPage() {
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
+      {/* Page load overlay */}
+      <motion.div
+        initial={{ opacity: 1 }}
+        animate={{ opacity: 0 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+        className="fixed inset-0 bg-white z-[100] pointer-events-none"
+      />
 
       {/* NAV */}
-      <nav className={`fixed top-0 inset-x-0 z-50 bg-white border-b border-gray-100 transition-all duration-300 ${scrolled ? "shadow-md" : ""}`}>
+      <motion.nav
+        initial={{ y: -80, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className={`fixed top-0 inset-x-0 z-50 bg-white border-b border-gray-100 transition-shadow duration-300 ${scrolled ? "shadow-md" : ""}`}
+      >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-
-          {/* Logo + label */}
           <div className="flex items-center gap-3">
             <Link href="/" aria-label="U:DO CRAFT">
-              <BrandLogoFull className="h-10 w-auto" color="var(--color-primary, #1B18AC)" />
+              <BrandLogoFull className="h-10 w-auto" />
             </Link>
             <span className="hidden sm:flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-gray-400">
               <span className="text-gray-300">|</span>
               Попап
             </span>
-
-            {/* Desktop nav links */}
             <div className="hidden md:flex items-center gap-1 ml-4">
               {navLinks.map((l) => (
                 <Link key={l.href} href={l.href} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-full hover:bg-gray-50 transition-colors duration-200">
@@ -72,8 +114,6 @@ export default function PopupPage() {
               ))}
             </div>
           </div>
-
-          {/* CTA + burger */}
           <div className="flex items-center gap-2">
             <Link href="#contact"
               className="hidden sm:flex items-center gap-1.5 bg-primary text-primary-foreground text-sm font-semibold px-4 py-2 rounded-full hover:bg-primary/90 active:scale-95 transition-all duration-200">
@@ -89,8 +129,6 @@ export default function PopupPage() {
             </button>
           </div>
         </div>
-
-        {/* Mobile menu */}
         <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${menuOpen ? "max-h-64 opacity-100" : "max-h-0 opacity-0"}`}>
           <div className="bg-white border-t border-gray-100 px-6 py-4 space-y-1">
             {navLinks.map((l) => (
@@ -105,69 +143,109 @@ export default function PopupPage() {
             </Link>
           </div>
         </div>
-      </nav>
+      </motion.nav>
 
       {/* HERO */}
       <section className="relative overflow-hidden bg-gray-950 pt-32 pb-20 sm:pt-44 sm:pb-28">
-        <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full bg-primary/25 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-primary/15 blur-3xl pointer-events-none" />
+        <motion.div
+          animate={{ scale: [1, 1.1, 1], opacity: [0.25, 0.3, 0.25] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full bg-primary/25 blur-3xl pointer-events-none"
+        />
+        <motion.div
+          animate={{ scale: [1, 1.15, 1], opacity: [0.15, 0.2, 0.15] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-primary/15 blur-3xl pointer-events-none"
+        />
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 text-center">
-          <span className="inline-flex items-center gap-2 bg-primary/20 text-primary text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full mb-8">
+          <motion.span
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="inline-flex items-center gap-2 bg-primary/20 text-primary text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full mb-8"
+          >
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
             Виїзний попап-сервіс
-          </span>
-          <h1 className="text-white text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.05] tracking-tight mb-6">
+          </motion.span>
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
+            className="text-white text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.05] tracking-tight mb-6"
+          >
             Мерч-попап на вашому заході —<br />
-            <span className="text-white/50">живий досвід, який запам'ятовують</span>
-          </h1>
-          <p className="text-white/70 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto mb-10">
+            <span className="text-white/50">живий досвід, який запам&apos;ятовують</span>
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+            className="text-white/70 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto mb-10"
+          >
             Ми приїжджаємо до вас. Гості обирають одяг, кастомізують принт на місці і йдуть з готовим мерчем у руках. Жодної логістики з вашого боку — тільки wow-ефект.
-          </p>
-          <div className="flex flex-wrap justify-center gap-3">
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.75 }}
+            className="flex flex-wrap justify-center gap-3"
+          >
             <a href="#contact"
-              className="inline-flex items-center gap-2 bg-primary text-white font-bold text-sm px-7 py-3.5 rounded-full hover:bg-primary/90 active:scale-95 transition-all duration-200">
+              className="inline-flex items-center gap-2 bg-primary text-white font-bold text-sm px-7 py-3.5 rounded-full hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all duration-200">
               Забронювати попап <ArrowRight className="w-4 h-4" />
             </a>
             <a href="#how"
-              className="inline-flex items-center gap-2 border border-white/20 text-white/80 font-semibold text-sm px-7 py-3.5 rounded-full hover:bg-white/10 active:scale-95 transition-all duration-200">
+              className="inline-flex items-center gap-2 border border-white/20 text-white/80 font-semibold text-sm px-7 py-3.5 rounded-full hover:bg-white/10 hover:scale-105 active:scale-95 transition-all duration-200">
               Як це працює
             </a>
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* STATS */}
-      <section className="border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-gray-100">
-            {[
-              { value: "50+",    label: "Проведених попапів" },
-              { value: "3 хв",   label: "Час кастомізації" },
-              { value: "500+",   label: "Гостей на одному заході" },
-              { value: "100%",   label: "Задоволених організаторів" },
-            ].map((s) => (
-              <div key={s.label} className="py-6 px-4 sm:px-6 text-center">
-                <p className="text-2xl font-black text-primary">{s.value}</p>
-                <p className="text-xs text-gray-500 mt-1 font-medium">{s.label}</p>
-              </div>
-            ))}
+      <FadeUp>
+        <section className="border-b border-gray-100">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-gray-100">
+              {[
+                { value: 50,  suffix: "+",   label: "Проведених попапів" },
+                { value: 3,   suffix: " хв", label: "Час кастомізації" },
+                { value: 500, suffix: "+",   label: "Гостей на одному заході" },
+                { value: 100, suffix: "%",   label: "Задоволених організаторів" },
+              ].map((s) => (
+                <div key={s.label} className="py-6 px-4 sm:px-6 text-center">
+                  <p className="text-2xl font-black text-primary">
+                    <CountUp end={s.value} suffix={s.suffix} />
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1 font-medium">{s.label}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </FadeUp>
 
       {/* USE CASES */}
       <section id="use-cases" className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
-        <div className="mb-12">
-          <p className="text-xs font-bold uppercase tracking-widest mb-2 text-primary">Для кого</p>
-          <h2 className="text-3xl font-black tracking-tight">Підходить для будь-якого заходу</h2>
-        </div>
+        <FadeUp>
+          <div className="mb-12">
+            <p className="text-xs font-bold uppercase tracking-widest mb-2 text-primary">Для кого</p>
+            <h2 className="text-3xl font-black tracking-tight">Підходить для будь-якого заходу</h2>
+          </div>
+        </FadeUp>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {useCases.map((u) => (
-            <div key={u.title} className="bg-gray-50 rounded-2xl p-6 border border-gray-100 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
-              <span className="text-3xl mb-4 block" aria-hidden="true">{u.icon}</span>
-              <h3 className="font-bold text-gray-900 mb-2">{u.title}</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">{u.desc}</p>
-            </div>
+          {useCases.map((u, i) => (
+            <FadeUp key={u.title} delay={i * 0.08}>
+              <motion.div
+                whileHover={{ y: -4, scale: 1.02 }}
+                transition={{ duration: 0.2 }}
+                className="bg-gray-50 rounded-2xl p-6 border border-gray-100 hover:shadow-lg transition-shadow duration-200 h-full"
+              >
+                <span className="text-3xl mb-4 block" aria-hidden="true">{u.icon}</span>
+                <h3 className="font-bold text-gray-900 mb-2">{u.title}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">{u.desc}</p>
+              </motion.div>
+            </FadeUp>
           ))}
         </div>
       </section>
@@ -175,19 +253,27 @@ export default function PopupPage() {
       {/* HOW IT WORKS */}
       <section id="how" className="py-20 sm:py-24 bg-primary">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="mb-14">
-            <p className="text-xs font-bold text-white/60 uppercase tracking-widest mb-3">Процес</p>
-            <h2 className="text-white text-3xl sm:text-4xl font-black tracking-tight">Три кроки до ідеального попапу</h2>
-          </div>
+          <FadeUp>
+            <div className="mb-14">
+              <p className="text-xs font-bold text-white/60 uppercase tracking-widest mb-3">Процес</p>
+              <h2 className="text-white text-3xl sm:text-4xl font-black tracking-tight">Три кроки до ідеального попапу</h2>
+            </div>
+          </FadeUp>
           <div className="grid md:grid-cols-3 gap-4">
-            {steps.map((item) => (
-              <div key={item.step} className="bg-white/[0.08] hover:bg-white/[0.12] border border-white/15 rounded-2xl p-7 flex flex-col gap-5 transition-all duration-200">
-                <span className="text-white/40 text-5xl font-black leading-none select-none">{item.step}</span>
-                <div>
-                  <h3 className="text-white font-bold text-lg mb-2">{item.title}</h3>
-                  <p className="text-white/75 text-sm leading-relaxed">{item.desc}</p>
-                </div>
-              </div>
+            {steps.map((item, i) => (
+              <FadeUp key={item.step} delay={i * 0.15}>
+                <motion.div
+                  whileHover={{ scale: 1.03, y: -4 }}
+                  transition={{ duration: 0.2 }}
+                  className="bg-white/[0.08] hover:bg-white/[0.12] border border-white/15 rounded-2xl p-7 flex flex-col gap-5 h-full"
+                >
+                  <span className="text-white/40 text-5xl font-black leading-none select-none">{item.step}</span>
+                  <div>
+                    <h3 className="text-white font-bold text-lg mb-2">{item.title}</h3>
+                    <p className="text-white/75 text-sm leading-relaxed">{item.desc}</p>
+                  </div>
+                </motion.div>
+              </FadeUp>
             ))}
           </div>
         </div>
@@ -195,16 +281,24 @@ export default function PopupPage() {
 
       {/* FAQ */}
       <section id="faq" className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
-        <div className="mb-12">
-          <p className="text-xs font-bold uppercase tracking-widest mb-2 text-primary">FAQ</p>
-          <h2 className="text-3xl font-black tracking-tight">Часті запитання</h2>
-        </div>
+        <FadeUp>
+          <div className="mb-12">
+            <p className="text-xs font-bold uppercase tracking-widest mb-2 text-primary">FAQ</p>
+            <h2 className="text-3xl font-black tracking-tight">Часті запитання</h2>
+          </div>
+        </FadeUp>
         <div className="grid md:grid-cols-2 gap-4">
-          {faqs.map((f) => (
-            <div key={f.q} className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-              <h3 className="font-bold text-gray-900 mb-2 text-sm">{f.q}</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">{f.a}</p>
-            </div>
+          {faqs.map((f, i) => (
+            <FadeUp key={f.q} delay={i * 0.07}>
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                transition={{ duration: 0.2 }}
+                className="bg-gray-50 rounded-2xl p-6 border border-gray-100 hover:shadow-md transition-shadow duration-200"
+              >
+                <h3 className="font-bold text-gray-900 mb-2 text-sm">{f.q}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">{f.a}</p>
+              </motion.div>
+            </FadeUp>
           ))}
         </div>
       </section>
@@ -213,28 +307,32 @@ export default function PopupPage() {
       <section id="contact" className="bg-gray-900 py-20 sm:py-24">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest mb-4 text-primary">Забронювати</p>
-              <h2 className="text-white text-3xl sm:text-4xl font-black tracking-tight mb-4">
-                Розкажіть нам про ваш захід
-              </h2>
-              <p className="text-white/60 text-sm leading-relaxed mb-8 max-w-sm">
-                Залиште заявку — менеджер зв'яжеться з вами протягом одного робочого дня, щоб обговорити деталі та розрахувати вартість.
-              </p>
-              <div className="space-y-3">
-                {[
-                  "Безкоштовна консультація",
-                  "Індивідуальний розрахунок під ваш захід",
-                  "Відповідь протягом 24 годин",
-                ].map((item) => (
-                  <div key={item} className="flex items-center gap-2.5 text-white/70 text-sm">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                    {item}
-                  </div>
-                ))}
+            <FadeUp>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest mb-4 text-primary">Забронювати</p>
+                <h2 className="text-white text-3xl sm:text-4xl font-black tracking-tight mb-4">
+                  Розкажіть нам про ваш захід
+                </h2>
+                <p className="text-white/60 text-sm leading-relaxed mb-8 max-w-sm">
+                  Залиште заявку — менеджер зв&apos;яжеться з вами протягом одного робочого дня, щоб обговорити деталі та розрахувати вартість.
+                </p>
+                <div className="space-y-3">
+                  {[
+                    "Безкоштовна консультація",
+                    "Індивідуальний розрахунок під ваш захід",
+                    "Відповідь протягом 24 годин",
+                  ].map((item) => (
+                    <div key={item} className="flex items-center gap-2.5 text-white/70 text-sm">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                      {item}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-            <ContactForm />
+            </FadeUp>
+            <FadeUp delay={0.2}>
+              <ContactForm />
+            </FadeUp>
           </div>
         </div>
       </section>
@@ -242,7 +340,7 @@ export default function PopupPage() {
       {/* FOOTER */}
       <footer className="bg-gray-950 py-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <BrandLogoFull className="h-7 w-auto opacity-60" color="white" />
+          <BrandLogoFull className="h-7 w-auto opacity-60" />
           <p className="text-gray-600 text-xs">© {new Date().getFullYear()} U:DO CRAFT. Всі права захищені.</p>
         </div>
       </footer>
