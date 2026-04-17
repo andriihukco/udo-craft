@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { sendNewMessageNotification } from "@/lib/email";
 import { NextRequest, NextResponse } from "next/server";
 
 function serviceClient() {
@@ -97,11 +98,23 @@ export async function POST(request: NextRequest) {
   if (body?.trim()) {
     const { data: lead } = await serviceClient()
       .from("leads")
-      .select("source, tg_chat_id")
+      .select("source, tg_chat_id, customer_data")
       .eq("id", lead_id)
       .single();
     if (lead?.source === "telegram" && lead.tg_chat_id) {
       await forwardToTelegram(lead.tg_chat_id, body.trim());
+    } else if (lead && body?.trim()) {
+      // Non-Telegram lead — notify customer by email
+      const email = lead.customer_data?.email;
+      const name = lead.customer_data?.name;
+      if (email && !email.includes("@telegram.placeholder")) {
+        sendNewMessageNotification({
+          to: email,
+          name: name ?? "Клієнт",
+          preview: body.trim(),
+          leadId: lead_id,
+        }).catch((err) => console.error("Message notification email failed:", err));
+      }
     }
   }
 
