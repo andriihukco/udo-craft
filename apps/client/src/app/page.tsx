@@ -283,58 +283,59 @@ function PopupSection() {
   ];
 
   return (
-    <div className="rounded-3xl overflow-hidden bg-primary">
+    <>
+      {/* Main popup card */}
+      <div className="rounded-3xl overflow-hidden bg-primary">
+        <div className="flex flex-col lg:flex-row items-stretch">
+          {/* Left — copy */}
+          <div className="flex-1 flex flex-col justify-center px-8 py-12 md:px-12 lg:pr-8">
+            <motion.h2
+              initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }}
+              transition={{ duration:0.6 }}
+              className="text-white text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.1] mb-5"
+            >
+              U:DO Craft Popup
+            </motion.h2>
+            <motion.p
+              initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }}
+              transition={{ duration:0.6, delay:0.1 }}
+              className="text-white/75 text-base sm:text-lg leading-relaxed max-w-lg mb-8"
+            >
+              Перетворіть ваш захід на незабутній досвід. Виїзний попап-стенд з живою кастомізацією мерчу — гості створюють унікальний одяг і забирають його одразу.
+            </motion.p>
+            <motion.div
+              initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }}
+              transition={{ duration:0.6, delay:0.2 }}
+              className="flex flex-wrap gap-3"
+            >
+              <AnimBtnWhite href="/popup">Дізнатись більше</AnimBtnWhite>
+              <Link href="#contact?ref=popup"
+                className="group inline-flex items-center gap-2 border-2 border-white/30 text-white font-bold text-sm px-7 py-3.5 rounded-full hover:border-white hover:bg-white/10 active:scale-95 transition-all duration-200">
+                <span>Обговорити захід</span>
+                <motion.span className="flex items-center" initial={{ x:0 }} whileHover={{ x:4 }} transition={{ duration:0.2 }}>
+                  <ArrowRight className="w-4 h-4" />
+                </motion.span>
+              </Link>
+            </motion.div>
+          </div>
 
-      {/* Top: left copy + right carousel */}
-      <div className="flex flex-col lg:flex-row items-stretch">
-        {/* Left — copy */}
-        <div className="flex-1 flex flex-col justify-center px-8 py-12 md:px-12 lg:pr-8">
-          <motion.h2
-            initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }}
-            transition={{ duration:0.6 }}
-            className="text-white text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.1] mb-5"
-          >
-            U:DO Craft Popup
-          </motion.h2>
-          <motion.p
-            initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }}
-            transition={{ duration:0.6, delay:0.1 }}
-            className="text-white/75 text-base sm:text-lg leading-relaxed max-w-lg mb-8"
-          >
-            Перетворіть ваш захід на незабутній досвід. Виїзний попап-стенд з живою кастомізацією мерчу — гості створюють унікальний одяг і забирають його одразу.
-          </motion.p>
-          <motion.div
-            initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }}
-            transition={{ duration:0.6, delay:0.2 }}
-            className="flex flex-wrap gap-3"
-          >
-            <AnimBtnWhite href="/popup">Дізнатись більше</AnimBtnWhite>
-            <Link href="#contact?ref=popup"
-              className="group inline-flex items-center gap-2 border-2 border-white/30 text-white font-bold text-sm px-7 py-3.5 rounded-full hover:border-white hover:bg-white/10 active:scale-95 transition-all duration-200">
-              <span>Обговорити захід</span>
-              <motion.span className="flex items-center" initial={{ x:0 }} whileHover={{ x:4 }} transition={{ duration:0.2 }}>
-                <ArrowRight className="w-4 h-4" />
-              </motion.span>
-            </Link>
-          </motion.div>
-        </div>
-
-        {/* Right — swipeable step carousel */}
-        <div className="px-8 py-10 lg:px-10 lg:w-[420px]">
-          <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-4">Як це працює</p>
-          <PopupStepCarousel />
+          {/* Right — swipeable step carousel */}
+          <div className="px-8 py-10 lg:px-10 lg:w-[420px]">
+            <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-4">Як це працює</p>
+            <PopupStepCarousel />
+          </div>
         </div>
       </div>
 
-      {/* Bottom — white feature bar with dividers */}
-      <div className="bg-white mx-4 mb-4 rounded-2xl overflow-hidden">
+      {/* Feature bar — separate white card below, same gap as between service cards */}
+      <div className="rounded-3xl overflow-hidden border border-border bg-white">
         <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-gray-100">
           {FEATURES.map((f, i) => (
             <motion.div
               key={f.label}
               initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.06 }}
-              className="flex flex-col gap-1.5 px-5 py-5"
+              className="flex flex-col gap-1.5 px-6 py-6"
             >
               <span className="text-xl leading-none mb-0.5" aria-hidden="true">{f.icon}</span>
               <p className="text-[13px] font-semibold text-gray-900 leading-snug">{f.label}</p>
@@ -343,7 +344,7 @@ function PopupSection() {
           ))}
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -875,7 +876,7 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* SERVICES — bento grid */}
+      {/* SERVICES + POPUP — one section, consistent gap */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
         <FadeUp>
           <div className="mb-10">
@@ -884,83 +885,79 @@ export default function HomePage() {
           </div>
         </FadeUp>
 
-        {/* Bento: 2-col on md+, stacked on mobile */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="flex flex-col gap-4">
 
-          {/* Card 1 — Box of Touch (tall, spans 2 rows on desktop) */}
-          <motion.div
-            variants={cardVariant}
-            initial="hidden" whileInView="visible" viewport={{ once: true }}
-            className="relative bg-gray-950 rounded-3xl overflow-hidden flex flex-col justify-between min-h-[340px] md:row-span-2 group"
-          >
-            {/* Texture overlay */}
-            <div className="absolute inset-0 opacity-20"
-              style={{ backgroundImage: "radial-gradient(circle at 30% 20%, #4f46e5 0%, transparent 60%), radial-gradient(circle at 80% 80%, #7c3aed 0%, transparent 50%)" }} />
-            <div className="relative z-10 flex flex-col h-full p-8 md:p-10">
-              <div className="flex-1">
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-white/40 mb-6">
-                  <span className="w-1 h-1 rounded-full bg-white/30" />
-                  Семпли
-                </span>
-                <h3 className="text-white text-3xl md:text-4xl font-black tracking-tight leading-tight mb-4">
-                  {get("home_services", "service1_title", "Box of Touch")}
-                </h3>
-                <p className="text-white/55 text-sm leading-relaxed max-w-sm">
-                  {get("home_services", "service1_desc", "Замов набір зразків тканин, кольорів та виробів — відчуй якість до того, як зробити тираж.")}
-                </p>
-              </div>
-              {/* Bottom row */}
-              <div className="flex items-end justify-between mt-10 gap-4">
-                <Link href="#contact?ref=box"
-                  className="inline-flex items-center gap-2 bg-white text-gray-900 text-sm font-bold px-5 py-2.5 rounded-full hover:bg-gray-100 active:scale-95 transition-all duration-200 group-hover:shadow-lg">
-                  {get("home_services", "service1_cta", "Замовити зразки")}
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-                {/* Decorative swatch dots */}
-                <div className="flex gap-1.5 shrink-0">
-                  {["#1B18AC","#111","#e5e5e5","#d4a574","#2d5a27"].map((c) => (
-                    <span key={c} className="w-5 h-5 rounded-full border border-white/10 shrink-0" style={{ background: c }} />
-                  ))}
+          {/* Row 1 — two equal-height service cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            {/* Card 1 — Box of Touch */}
+            <motion.div
+              variants={cardVariant}
+              initial="hidden" whileInView="visible" viewport={{ once: true }}
+              className="relative bg-gray-950 rounded-3xl overflow-hidden flex flex-col min-h-[280px] group"
+            >
+              <div className="absolute inset-0 opacity-20"
+                style={{ backgroundImage: "radial-gradient(circle at 30% 20%, #4f46e5 0%, transparent 60%), radial-gradient(circle at 80% 80%, #7c3aed 0%, transparent 50%)" }} />
+              <div className="relative z-10 flex flex-col flex-1 p-8">
+                <div className="flex-1">
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-white/40 mb-5">
+                    <span className="w-1 h-1 rounded-full bg-white/30" />
+                    Семпли
+                  </span>
+                  <h3 className="text-white text-3xl font-black tracking-tight leading-tight mb-3">
+                    {get("home_services", "service1_title", "Box of Touch")}
+                  </h3>
+                  <p className="text-white/55 text-sm leading-relaxed max-w-sm">
+                    {get("home_services", "service1_desc", "Замов набір зразків тканин, кольорів та виробів — відчуй якість до того, як зробити тираж.")}
+                  </p>
+                </div>
+                <div className="mt-8">
+                  <Link href="#contact?ref=box"
+                    className="inline-flex items-center gap-2 bg-white text-gray-900 text-sm font-bold px-5 py-2.5 rounded-full hover:bg-gray-100 active:scale-95 transition-all duration-200">
+                    {get("home_services", "service1_cta", "Замовити зразки")}
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
                 </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
 
-          {/* Card 2 — Designer (top right) */}
-          <motion.div
-            variants={cardVariant}
-            initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }}
-            className="relative rounded-3xl overflow-hidden flex flex-col justify-between min-h-[220px] group"
-          >
-            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('/designer-bg.jpg')" }} />
-            <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-black/30" />
-            <div className="relative z-10 flex flex-col h-full p-7">
-              <div className="flex-1">
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-white/40 mb-4">
-                  <span className="w-1 h-1 rounded-full bg-white/30" />
-                  Дизайн
-                </span>
-                <h3 className="text-white text-2xl font-black tracking-tight leading-tight mb-2">
-                  {get("home_services", "service2_title", "Найми дизайнера")}
-                </h3>
-                <p className="text-white/60 text-sm leading-relaxed max-w-xs">
-                  {get("home_services", "service2_desc", "Немає готового логотипу? Наш дизайнер допоможе створити фірмовий стиль або адаптує логотип для нанесення.")}
-                </p>
+            {/* Card 2 — Designer */}
+            <motion.div
+              variants={cardVariant}
+              initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }}
+              className="relative rounded-3xl overflow-hidden flex flex-col min-h-[280px] group"
+            >
+              <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('/designer-bg.jpg')" }} />
+              <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-black/30" />
+              <div className="relative z-10 flex flex-col flex-1 p-8">
+                <div className="flex-1">
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-white/40 mb-5">
+                    <span className="w-1 h-1 rounded-full bg-white/30" />
+                    Дизайн
+                  </span>
+                  <h3 className="text-white text-3xl font-black tracking-tight leading-tight mb-3">
+                    {get("home_services", "service2_title", "Найми дизайнера")}
+                  </h3>
+                  <p className="text-white/60 text-sm leading-relaxed max-w-xs">
+                    {get("home_services", "service2_desc", "Немає готового логотипу? Наш дизайнер допоможе створити фірмовий стиль або адаптує логотип для нанесення.")}
+                  </p>
+                </div>
+                <div className="mt-8">
+                  <Link href="#contact?ref=designer"
+                    className="inline-flex items-center gap-2 bg-primary text-white text-sm font-bold px-5 py-2.5 rounded-full hover:bg-primary/90 active:scale-95 transition-all duration-200">
+                    {get("home_services", "service2_cta", "Обговорити проєкт")}
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
               </div>
-              <Link href="#contact?ref=designer"
-                className="mt-6 inline-flex items-center gap-2 bg-primary text-white text-sm font-bold px-5 py-2.5 rounded-full hover:bg-primary/90 active:scale-95 transition-all duration-200 w-fit">
-                {get("home_services", "service2_cta", "Обговорити проєкт")}
-                <ArrowRight className="w-4 h-6" />
-              </Link>
-            </div>
-          </motion.div>
+            </motion.div>
+
+          </div>
+
+          {/* Row 2 — Popup, same gap-4 as between cards above */}
+          <PopupSection />
 
         </div>
-      </section>
-
-      {/* POPUP SERVICE */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
-        <PopupSection />
       </section>
 
       {/* HOW IT WORKS */}
