@@ -9,3 +9,4 @@ export * from './components/file-viewer';
 // Shared viewer / analytics components
 export { MockupViewer } from './components/MockupViewer';
 export { ClarityInit } from './components/ClarityInit';
+export { LogoLoader } from './components/LogoLoader';
