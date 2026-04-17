@@ -4,9 +4,8 @@
 // Never import it directly — always use the dynamic wrapper in BlockEditor.tsx.
 
 import { useCallback, useEffect, useState } from "react";
-import { useCreateBlockNote } from "@blocknote/react";
-import { BlockNoteView } from "@blocknote/mantine";
-import "@blocknote/mantine/style.css";
+import { useCreateBlockNote, BlockNoteView } from "@blocknote/react";
+import "@blocknote/react/style.css";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

@@ -2,9 +2,8 @@
 
 // Client-only — loaded via dynamic import (ssr: false) from LandingSectionEditor.
 import { useEffect, useState } from "react";
-import { useCreateBlockNote } from "@blocknote/react";
-import { BlockNoteView } from "@blocknote/mantine";
-import "@blocknote/mantine/style.css";
+import { useCreateBlockNote, BlockNoteView } from "@blocknote/react";
+import "@blocknote/react/style.css";
 import { Label } from "@/components/ui/label";
 
 interface RichFieldProps {
