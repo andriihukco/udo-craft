@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ArrowLeft, Layers, LayoutList, Loader2, Palette, Pencil, Ruler, Shapes, Type, Upload } from "lucide-react";
+import { ArrowLeft, Layers, LayoutList, Loader2, Palette, Pencil, Ruler, Shapes, Shirt, Type, Upload } from "lucide-react";
 import { type SidebarTabId } from "@udo-craft/shared";
 import { CustomizerMobileSheet } from "./CustomizerMobileSheet";
 
@@ -39,6 +39,8 @@ interface CustomizerLayoutProps {
   mobileTabSheet?: React.ReactNode;
   mobilePriceSheet?: React.ReactNode;
   onClose: () => void;
+  /** Layer count for badge on Шари tab */
+  layerCount?: number;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────
@@ -48,7 +50,7 @@ export function CustomizerLayout({
   sidebar, panel, activeTab, onTabChange, onPriceOpen,
   leftPanel, canvas, rightPanel, stickyButton,
   mobileTabSheet, mobilePriceSheet,
-  onClose,
+  onClose, layerCount = 0,
 }: CustomizerLayoutProps) {
   const isNewLayout = sidebar !== undefined || panel !== undefined;
 
@@ -72,7 +74,7 @@ export function CustomizerLayout({
             <div className="lg:hidden w-full h-11 mb-3 flex items-center justify-between bg-card rounded-xl px-3 border border-border">
               <button
                 onClick={() => { if (!confirm("Повернутися? Незбережені зміни буде втрачено.")) return; onClose(); }}
-                className="cursor-pointer flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                className="cursor-pointer flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
               >
                 <ArrowLeft className="size-3.5" /> Назад
               </button>
@@ -107,7 +109,7 @@ export function CustomizerLayout({
             <div className="lg:hidden w-full h-11 mb-3 flex items-center justify-between bg-card rounded-xl px-3 border border-border">
               <button
                 onClick={() => { if (!confirm("Повернутися? Незбережені зміни буде втрачено.")) return; onClose(); }}
-                className="cursor-pointer flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                className="cursor-pointer flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
               >
                 <ArrowLeft className="size-3.5" /> Назад
               </button>
@@ -143,36 +145,43 @@ export function CustomizerLayout({
                 onClick={() => onTabChange?.(activeTab === tab.id ? null : tab.id)}
                 aria-label={tab.label}
                 aria-pressed={activeTab === tab.id}
-                className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors min-h-[44px] ${activeTab === tab.id ? "text-primary border-t-2 border-primary -mt-px" : "text-muted-foreground"}`}
+                className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset ${activeTab === tab.id ? "text-primary border-t-2 border-primary -mt-px" : "text-muted-foreground"}`}
               >
-                <tab.Icon className="size-4" />
+                <span className="relative">
+                  <tab.Icon className="size-4" />
+                  {tab.id === "layers" && layerCount > 0 && (
+                    <span className="absolute -top-1 -right-1.5 min-w-[14px] h-3.5 rounded-full bg-primary text-[9px] font-black text-primary-foreground flex items-center justify-center px-0.5 leading-none">
+                      {layerCount > 9 ? "9+" : layerCount}
+                    </span>
+                  )}
+                </span>
                 {tab.label}
               </button>
             ))}
             <button
               onClick={onPriceOpen}
               aria-label="Тираж та ціна"
-              className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors min-h-[44px] text-muted-foreground"
+              className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors min-h-[44px] text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
             >
-              <Ruler className="size-4" />
+              <Shirt className="size-4" />
               Тираж
             </button>
           </div>
         </div>
       ) : (
         /* Legacy layout: Налаштування + Тираж */
-        <div className="lg:hidden relative z-[9999] shrink-0 border-t border-border bg-card" style={{ height: 56 }}>
+        <div className="lg:hidden relative z-[9999] shrink-0 border-t border-border bg-card h-14">
           <div className="flex h-full">
             <button
               onClick={() => setMobileSheet(mobileSheet === "config" ? null : "config")}
-              className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors ${mobileSheet === "config" ? "text-primary border-t-2 border-primary -mt-px" : "text-muted-foreground"}`}
+              className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset ${mobileSheet === "config" ? "text-primary border-t-2 border-primary -mt-px" : "text-muted-foreground"}`}
             >
               <Palette className="size-4" />
               Налаштування
             </button>
             <button
               onClick={() => setMobileSheet(mobileSheet === "price" ? null : "price")}
-              className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors ${mobileSheet === "price" ? "text-primary border-t-2 border-primary -mt-px" : "text-muted-foreground"}`}
+              className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset ${mobileSheet === "price" ? "text-primary border-t-2 border-primary -mt-px" : "text-muted-foreground"}`}
             >
               <Ruler className="size-4" />
               Тираж та ціна

@@ -22,6 +22,7 @@ import type { TextLayerPatch } from "./editor/TextPanel";
 import LayersList from "@/components/LayersList";
 import ShapesPanel from "./editor/ShapesPanel";
 import type { TextComposition } from "@udo-craft/shared";
+import { useLayersBadge } from "@/hooks/useLayersBadge";
 
 interface ProductWithConfig extends Product {
   size_chart_id?: string | null;
@@ -101,6 +102,9 @@ export function Customizer({
 
   const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
   const [mobilePriceOpen, setMobilePriceOpen] = useState(false);
+
+  // Tab title badge — shows layer count
+  useLayersBadge(s.layers.length, `${product.name} — U:DO CRAFT`);
 
   const productImages: Record<string, string> =
     (s.selectedVariant?.images && Object.keys(s.selectedVariant.images).length > 0
@@ -214,7 +218,7 @@ export function Customizer({
 
   // ── Sidebar (desktop icon strip) ─────────────────────────────────────
 
-  const sidebar = <EditorSidebar activeTab={s.activeTab} onTabChange={s.setActiveTab} onBack={onClose} />;
+  const sidebar = <EditorSidebar activeTab={s.activeTab} onTabChange={s.setActiveTab} onBack={onClose} layerCount={s.layers.length} />;
 
   // ── Animated panel column (desktop) ──────────────────────────────────
 
@@ -334,7 +338,7 @@ export function Customizer({
         onClick={() => setAiDrawerOpen(true)}
         className="w-full flex items-center gap-3 h-12 px-4 rounded-full border border-border bg-muted/40 hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-muted/40"
       >
-        <MirrorRound className="size-5 text-primary shrink-0" />
+        <MirrorRound className="size-5 text-primary shrink-0" aria-hidden="true" />
         <div className="text-left">
           <p className="text-sm font-medium text-foreground leading-tight">Приміряти на людину</p>
           <p className="text-[10px] text-muted-foreground leading-tight">З допомогою AI</p>
@@ -342,7 +346,7 @@ export function Customizer({
       </button>
 
       {(s.addDisabledReason && !s.addingToCart && !s.removingBg) && (
-        <p className="text-xs text-amber-600 text-center">{s.addDisabledReason}</p>
+        <p className="text-xs text-destructive text-center">{s.addDisabledReason}</p>
       )}
       <Button
         className="w-full h-11 text-sm font-semibold"
@@ -417,6 +421,7 @@ export function Customizer({
         rightPanel={rightPanel}
         stickyButton={stickyButton}
         onClose={onClose}
+        layerCount={s.layers.length}
         mobileTabSheet={
           <MobileSheet
             open={!!s.activeTab && !mobilePriceOpen}
@@ -433,7 +438,7 @@ export function Customizer({
               <div className="flex justify-center pt-2.5 pb-1 shrink-0"><div className="w-10 h-1 rounded-full bg-border" /></div>
               <div className="flex items-center justify-between px-4 pb-3 shrink-0">
                 <p className="text-sm font-semibold">Тираж та ціна</p>
-                <button onClick={() => setMobilePriceOpen(false)} className="size-7 rounded-full flex items-center justify-center hover:bg-muted transition-colors"><X className="size-4" /></button>
+                <button onClick={() => setMobilePriceOpen(false)} aria-label="Закрити" className="size-7 rounded-full flex items-center justify-center hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><X className="size-4" /></button>
               </div>
               <div className="overflow-y-auto px-4 pb-2">{rightPanel}</div>
               <div className="shrink-0 border-t border-border px-4 py-3 pb-[max(12px,env(safe-area-inset-bottom))]">

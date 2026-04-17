@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { fabric } from "fabric";
 import { Product, PrintZone, PRINT_TYPES, TEXT_FONTS, type PrintLayer, type PrintTypeId, type TextFontId } from "@udo-craft/shared";
-import { AlignCenter, AlignLeft, AlignRight, Bold, BringToFront, Copy, Eraser, FlipHorizontal, Focus, Italic, Loader2, Pencil, RotateCcw, RotateCw, SendToBack, Trash2 } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, Bold, Copy, Eraser, Focus, Italic, Loader2, Pencil, RotateCcw, RotateCw, Shirt, Trash2 } from "lucide-react";
 import { removeBgClient } from "@/lib/remove-bg-client";
 import { toast } from "sonner";
 
@@ -709,15 +709,6 @@ export default function ProductCanvas({
     setHasObjects(canvas.getObjects().some((item) => (item as any)._isLayer));
   }, [onLayerDelete]);
 
-  const flipSelected = useCallback(() => {
-    const canvas = fabricRef.current;
-    if (!canvas) return;
-    const obj = canvas.getActiveObject();
-    if (!obj) return;
-    obj.set("flipX", !obj.flipX);
-    canvas.renderAll();
-  }, []);
-
   const centerSelected = useCallback(() => {
     const canvas = fabricRef.current;
     if (!canvas) return;
@@ -922,23 +913,6 @@ export default function ProductCanvas({
             <ToolBtn onClick={centerSelected} title="По центру" label="Центр" disabled={isCentered}>
               <Focus className="size-3.5" />
             </ToolBtn>
-            <ToolBtn onClick={flipSelected} title="Відзеркалити" label="Дзеркало">
-              <FlipHorizontal className="size-3.5" />
-            </ToolBtn>
-            <ToolBtn onClick={() => {
-              const canvas = fabricRef.current;
-              const obj = canvas?.getActiveObject();
-              if (obj) { canvas?.bringForward(obj); canvas?.renderAll(); }
-            }} title="На передній план" label="Вперед">
-              <BringToFront className="size-3.5" />
-            </ToolBtn>
-            <ToolBtn onClick={() => {
-              const canvas = fabricRef.current;
-              const obj = canvas?.getActiveObject();
-              if (obj) { canvas?.sendBackwards(obj); canvas?.renderAll(); }
-            }} title="На задній план" label="Назад">
-              <SendToBack className="size-3.5" />
-            </ToolBtn>
             {onLayerDuplicate && (
               <ToolBtn onClick={() => onLayerDuplicate(activeLayer)} title="Дублювати" label="Копія">
                 <Copy className="size-3.5" />
@@ -954,7 +928,7 @@ export default function ProductCanvas({
                 <select
                   value={activeLayer.textFont ?? "Montserrat"}
                   onChange={(e) => patch({ textFont: e.target.value as typeof activeLayer.textFont })}
-                  className="h-8 px-1.5 text-xs rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary max-w-[110px] shrink-0"
+                  className="h-8 px-1.5 text-xs rounded-lg border border-border bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary max-w-[110px] shrink-0"
                   style={{ fontFamily: activeLayer.textFont ?? "Montserrat" }}
                 >
                   {TEXT_FONTS.map(f => (
@@ -963,11 +937,11 @@ export default function ProductCanvas({
                 </select>
                 {/* Font size */}
                 <div className="flex items-center gap-0.5 shrink-0">
-                  <button type="button" onClick={() => patch({ textFontSize: Math.max(8, (activeLayer.textFontSize ?? 36) - 2) })}
-                    className="size-6 flex items-center justify-center rounded border border-border text-muted-foreground hover:bg-muted text-xs font-bold">−</button>
+                  <button type="button" aria-label="Зменшити розмір шрифту" onClick={() => patch({ textFontSize: Math.max(8, (activeLayer.textFontSize ?? 36) - 2) })}
+                    className="size-6 flex items-center justify-center rounded border border-border text-muted-foreground hover:bg-muted text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">−</button>
                   <span className="w-8 text-center text-xs tabular-nums">{activeLayer.textFontSize ?? 36}</span>
-                  <button type="button" onClick={() => patch({ textFontSize: Math.min(200, (activeLayer.textFontSize ?? 36) + 2) })}
-                    className="size-6 flex items-center justify-center rounded border border-border text-muted-foreground hover:bg-muted text-xs font-bold">+</button>
+                  <button type="button" aria-label="Збільшити розмір шрифту" onClick={() => patch({ textFontSize: Math.min(200, (activeLayer.textFontSize ?? 36) + 2) })}
+                    className="size-6 flex items-center justify-center rounded border border-border text-muted-foreground hover:bg-muted text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">+</button>
                 </div>
                 <ToolBtn title="Жирний" label="Ж" active={!!activeLayer.textBold} onClick={() => patch({ textBold: !activeLayer.textBold })}>
                   <Bold className="size-3.5" />
@@ -1051,6 +1025,7 @@ export default function ProductCanvas({
             <div className="flex items-center gap-1.5 shrink-0">
               <span className="text-[9px] text-muted-foreground">Прозорість</span>
               <input type="range" min={0} max={100}
+                aria-label="Прозорість шару"
                 value={Math.round((activeLayer.opacity ?? 1) * 100)}
                 onChange={(e) => {
                   const v = Number(e.target.value) / 100;
@@ -1081,8 +1056,14 @@ export default function ProductCanvas({
           </div>
           {/* Skeleton overlay — shown until background image is loaded */}
           {!backgroundLoaded && (
-            <div className="absolute inset-0 rounded-2xl overflow-hidden z-10 pointer-events-none">
-              <div className="w-full h-full bg-muted animate-pulse" />
+            <div className="absolute inset-0 rounded-2xl overflow-hidden z-10 pointer-events-none bg-muted/60">
+              <div className="w-full h-full flex flex-col items-center justify-center gap-3">
+                <Shirt className="w-12 h-12 opacity-15 text-foreground" aria-hidden="true" />
+                <span className="text-[11px] font-medium text-muted-foreground/60 tracking-wide select-none">Завантаження зображення...</span>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-[shimmer_1.4s_ease-in-out_infinite]"
+                style={{ backgroundSize: "200% 100%", animation: "shimmer 1.4s ease-in-out infinite" }}
+              />
             </div>
           )}
         </div>
