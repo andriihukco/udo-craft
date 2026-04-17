@@ -950,34 +950,7 @@ export default function HomePage() {
               <Link href="#contact?ref=designer"
                 className="mt-6 inline-flex items-center gap-2 bg-primary text-white text-sm font-bold px-5 py-2.5 rounded-full hover:bg-primary/90 active:scale-95 transition-all duration-200 w-fit">
                 {get("home_services", "service2_cta", "Обговорити проєкт")}
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </motion.div>
-
-          {/* Card 3 — Popup teaser (bottom right) */}
-          <motion.div
-            variants={cardVariant}
-            initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }}
-            className="relative rounded-3xl overflow-hidden flex flex-col justify-between min-h-[160px] bg-primary group"
-          >
-            {/* Subtle radial glow */}
-            <div className="absolute inset-0 opacity-30"
-              style={{ backgroundImage: "radial-gradient(circle at 80% 50%, #ffffff22 0%, transparent 60%)" }} />
-            <div className="relative z-10 flex items-center justify-between h-full p-7 gap-4">
-              <div>
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-white/40 mb-3">
-                  <span className="w-1 h-1 rounded-full bg-white/30" />
-                  Захід
-                </span>
-                <h3 className="text-white text-xl font-black tracking-tight leading-tight">
-                  U:DO Craft Popup
-                </h3>
-                <p className="text-white/55 text-sm mt-1">Виїзна кастомізація мерчу</p>
-              </div>
-              <Link href="/popup"
-                className="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 text-white transition-all duration-200 group-hover:scale-110">
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-6" />
               </Link>
             </div>
           </motion.div>
