@@ -10,6 +10,7 @@ import { MockupViewer } from "@/components/MockupViewer";
 import { BrandLogoFull } from "@/components/brand-logo";
 import { LogoLoader } from "@udo-craft/ui";
 import { createClient } from "@/lib/supabase/client";
+import { useCms } from "@/hooks/useCms";
 import { User, ShoppingBag, ArrowRight, ChevronDown, Instagram, Send, X, Fullscreen, Shrink, Menu } from "lucide-react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 
@@ -258,7 +259,7 @@ function AnimBtn({ href, children, variant = "primary", className = "" }: {
 // White variant for dark backgrounds
 function AnimBtnWhite({ href, children, className = "" }: { href: string; children: React.ReactNode; className?: string }) {
   return (
-    <Link href={href} className={`group inline-flex items-center gap-2 bg-white text-primary font-bold text-sm px-7 py-3.5 rounded-full hover:bg-gray-50 active:scale-95 transition-all duration-200 shadow-lg hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${className}`}>
+    <Link href={href} className={`group inline-flex items-center gap-2 bg-white text-primary font-bold text-sm px-7 py-3.5 rounded-full hover:bg-white/90 active:scale-95 transition-all duration-200 shadow-lg hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${className}`}>
       <span>{children}</span>
       <motion.span
         className="flex items-center"
@@ -349,6 +350,7 @@ function PopupSection() {
 
 export default function HomePage() {
   const router = useRouter();
+  const { get } = useCms();
   const [products, setProducts]     = useState<ProductWithCategory[]>([]);
   const [loading, setLoading]       = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -708,7 +710,7 @@ export default function HomePage() {
             transition={{ duration: 0.75, delay: 1.65, ease: [0.22, 1, 0.36, 1] }}
             className="text-white text-4xl sm:text-5xl lg:text-[3.5rem] font-black leading-[1.05] tracking-tight"
           >
-            Одяг, який стає частиною <span className="text-white/70">вашої корпоративної ДНК</span>
+            {get("home_hero", "heading", "Одяг, який стає частиною вашої корпоративної ДНК")}
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -716,7 +718,7 @@ export default function HomePage() {
             transition={{ duration: 0.6, delay: 1.85 }}
             className="text-white/80 mt-5 text-base sm:text-lg leading-relaxed max-w-xl mx-auto"
           >
-            Ринок перенасичений дешевим трендовим одягом. Ми створюємо речі, які стають улюбленими в гардеробі. Ваш мерч — це інструмент стратегічної комунікації.
+            {get("home_hero", "subheading", "Ринок перенасичений дешевим трендовим одягом. Ми створюємо речі, які стають улюбленими в гардеробі. Ваш мерч — це інструмент стратегічної комунікації.")}
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -724,12 +726,12 @@ export default function HomePage() {
             transition={{ duration: 0.55, delay: 2.05 }}
             className="mt-8 flex flex-wrap justify-center gap-3"
           >
-            <AnimBtnWhite href="#collections">
-              Переглянути каталог
+            <AnimBtnWhite href={get("home_hero", "cta_primary_url", "#collections")}>
+              {get("home_hero", "cta_primary_text", "Переглянути каталог")}
             </AnimBtnWhite>
-            <Link href="#contact"
+            <Link href={get("home_hero", "cta_secondary_url", "#contact")}
               className="group inline-flex items-center gap-2 border-2 border-white/30 text-white font-bold text-sm px-7 py-3.5 rounded-full hover:bg-white/10 hover:border-white active:scale-95 transition-all duration-200">
-              <span>Зв&apos;язатись</span>
+              <span>{get("home_hero", "cta_secondary_text", "Зв'язатись")}</span>
               <motion.span className="flex items-center" initial={{ x: 0 }} whileHover={{ x: 4 }} transition={{ duration: 0.2 }}>
                 <ArrowRight className="w-4 h-4" />
               </motion.span>
@@ -741,11 +743,11 @@ export default function HomePage() {
             transition={{ duration: 0.5, delay: 2.25 }}
             className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-1 text-white/70 text-xs font-medium"
           >
-            <span>Від 10 одиниць</span>
+            <span>{get("home_hero", "badge1", "Від 10 одиниць")}</span>
             <span className="text-white/40">•</span>
-            <span>Гарантія якості</span>
+            <span>{get("home_hero", "badge2", "Гарантія якості")}</span>
             <span className="text-white/40">•</span>
-            <span>7–14 днів на виготовлення</span>
+            <span>{get("home_hero", "badge3", "7–14 днів на виготовлення")}</span>
           </motion.div>
         </motion.div>
         <motion.div
@@ -779,10 +781,10 @@ export default function HomePage() {
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-border">
               {[
-                { value: 500, suffix: "+",   label: "Задоволених клієнтів" },
-                { value: 15,  suffix: "%",   label: "Знижка від 100 шт" },
-                { value: 14,  suffix: " дн", label: "Середній термін" },
-                { value: 100, suffix: "%",   label: "Контроль якості" },
+                { value: Number(get("home_stats", "stat1_value", "500")), suffix: get("home_stats", "stat1_suffix", "+"),   label: get("home_stats", "stat1_label", "Задоволених клієнтів") },
+                { value: Number(get("home_stats", "stat2_value", "15")),  suffix: get("home_stats", "stat2_suffix", "%"),   label: get("home_stats", "stat2_label", "Знижка від 100 шт") },
+                { value: Number(get("home_stats", "stat3_value", "14")),  suffix: get("home_stats", "stat3_suffix", " дн"), label: get("home_stats", "stat3_label", "Середній термін") },
+                { value: Number(get("home_stats", "stat4_value", "100")), suffix: get("home_stats", "stat4_suffix", "%"),   label: get("home_stats", "stat4_label", "Контроль якості") },
               ].map((s) => (
                 <div key={s.label} className="py-6 px-4 sm:px-6 text-center">
                   <p className="text-2xl font-black text-primary">
@@ -833,7 +835,7 @@ export default function HomePage() {
           activeCategoryItems.length === 0 ? (
             <div className="text-center py-16">
               <p className="text-3xl mb-3">🧺</p>
-              <p className="text-gray-500 text-sm font-medium">У цій категорії поки немає товарів</p>
+              <p className="text-muted-foreground text-sm font-medium">У цій категорії поки немає товарів</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
@@ -856,7 +858,7 @@ export default function HomePage() {
           )
         ) : clothingList.length === 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => <div key={i} className="aspect-square bg-gray-100 rounded-2xl animate-pulse" />)}
+            {[...Array(4)].map((_, i) => <div key={i} className="aspect-square bg-muted rounded-2xl animate-pulse" />)}
           </div>
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
@@ -879,30 +881,30 @@ export default function HomePage() {
         <FadeUp>
           <div className="mb-10">
             <p className="text-xs font-bold uppercase tracking-widest mb-2 text-primary">Додаткові послуги</p>
-            <h2 className="text-3xl font-black tracking-tight">Більше, ніж просто мерч</h2>
+            <h2 className="text-3xl font-black tracking-tight">{get("home_services", "heading", "Більше, ніж просто мерч")}</h2>
           </div>
         </FadeUp>
         <StaggerGrid className="grid md:grid-cols-2 gap-5">
           <motion.div variants={cardVariant} className="relative bg-gray-900 rounded-2xl p-8 overflow-hidden flex flex-col justify-between min-h-[280px] hover:shadow-xl transition-shadow duration-300">
             <div>
               <span className="inline-block text-xs font-bold uppercase tracking-widest text-white/50 mb-4">Семпли</span>
-              <h3 className="text-white text-2xl font-black mb-3">Box of Touch</h3>
-              <p className="text-gray-400 text-sm leading-relaxed max-w-xs">Замов набір зразків тканин, кольорів та виробів — відчуй якість до того, як зробити тираж.</p>
+              <h3 className="text-white text-2xl font-black mb-3">{get("home_services", "service1_title", "Box of Touch")}</h3>
+              <p className="text-gray-400 text-sm leading-relaxed max-w-xs">{get("home_services", "service1_desc", "Замов набір зразків тканин, кольорів та виробів — відчуй якість до того, як зробити тираж.")}</p>
             </div>
             <Link href="#contact?ref=box" className="mt-6 inline-flex items-center gap-2 bg-white text-gray-900 text-sm font-bold px-5 py-2.5 rounded-full hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all duration-200 w-fit">
-              Замовити зразки <ArrowRight className="w-4 h-4" />
+              {get("home_services", "service1_cta", "Замовити зразки")} <ArrowRight className="w-4 h-4" />
             </Link>
           </motion.div>
-          <motion.div variants={cardVariant} className="relative rounded-2xl p-8 overflow-hidden flex flex-col justify-between min-h-[280px] border border-gray-200 hover:shadow-xl transition-shadow duration-300">
+          <motion.div variants={cardVariant} className="relative rounded-2xl p-8 overflow-hidden flex flex-col justify-between min-h-[280px] border border-border hover:shadow-xl transition-shadow duration-300">
             <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('/designer-bg.jpg')" }} />
             <div className="absolute inset-0 bg-black/60" />
             <div className="relative z-10">
               <span className="inline-block text-xs font-bold uppercase tracking-widest mb-4 text-white/80">Дизайн</span>
-              <h3 className="text-2xl font-black mb-3 text-white">Найми дизайнера</h3>
-              <p className="text-white/90 text-sm leading-relaxed max-w-xs">Немає готового логотипу? Наш дизайнер допоможе створити фірмовий стиль або адаптує логотип для нанесення.</p>
+              <h3 className="text-2xl font-black mb-3 text-white">{get("home_services", "service2_title", "Найми дизайнера")}</h3>
+              <p className="text-white/90 text-sm leading-relaxed max-w-xs">{get("home_services", "service2_desc", "Немає готового логотипу? Наш дизайнер допоможе створити фірмовий стиль або адаптує логотип для нанесення.")}</p>
             </div>
             <Link href="#contact?ref=designer" className="relative z-10 mt-6 inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm font-bold px-5 py-2.5 rounded-full hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all duration-200 w-fit">
-              Обговорити проєкт <ArrowRight className="w-4 h-4" />
+              {get("home_services", "service2_cta", "Обговорити проєкт")} <ArrowRight className="w-4 h-4" />
             </Link>
           </motion.div>
         </StaggerGrid>
@@ -950,7 +952,7 @@ export default function HomePage() {
       </section>
 
       {/* WHY US */}
-      <section className="bg-white py-24 sm:py-32">
+      <section className="bg-background py-24 sm:py-32">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <FadeUp>
             <div className="mb-16 text-center">
@@ -989,7 +991,7 @@ export default function HomePage() {
       </div>
 
       {/* TESTIMONIALS */}
-      <section className="bg-white py-24 sm:py-32">
+      <section className="bg-background py-24 sm:py-32">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <FadeUp>
             <div className="mb-16">
@@ -1042,16 +1044,16 @@ export default function HomePage() {
                 <div>
                   <p className="text-xs font-bold uppercase tracking-widest mb-5 text-primary">Контакти</p>
                   <h2 className="text-white text-4xl sm:text-5xl font-black tracking-tight leading-[1.05] mb-6">
-                    Зв&apos;яжіться<br />з нами
+                    {get("home_contact", "heading", "Зв'яжіться з нами")}
                   </h2>
                   <p className="text-gray-400 text-base leading-relaxed mb-10 max-w-sm">
-                    Розкажіть про ваш проєкт — ми підберемо оптимальне рішення та надішлемо пропозицію протягом 24 годин.
+                    {get("home_contact", "subtext", "Розкажіть про ваш проєкт — ми підберемо оптимальне рішення та надішлемо пропозицію протягом 24 годин.")}
                   </p>
                   <div className="space-y-5 mb-10">
                     {[
-                      { label: "Email",   value: "info@udocraft.com",              href: "mailto:info@udocraft.com" },
-                      { label: "Телефон", value: "+380 63 070 33 072",             href: "tel:+380630703072" },
-                      { label: "Адреса",  value: "м. Львів, вул. Джерельна, 69",  href: "#" },
+                      { label: "Email",   value: get("home_contact", "email",   "info@udocraft.com"),             href: `mailto:${get("home_contact", "email", "info@udocraft.com")}` },
+                      { label: "Телефон", value: get("home_contact", "phone",   "+380 63 070 33 072"),            href: `tel:${get("home_contact", "phone", "+380630703072").replace(/\s/g, "")}` },
+                      { label: "Адреса",  value: get("home_contact", "address", "м. Львів, вул. Джерельна, 69"), href: "#" },
                     ].map((c) => (
                       <a key={c.label} href={c.href}
                         className="group flex items-start gap-4 hover:opacity-80 transition-opacity duration-200">
@@ -1061,11 +1063,11 @@ export default function HomePage() {
                     ))}
                   </div>
                   <div className="flex gap-3">
-                    <a href="https://www.instagram.com/u.do.craft/" target="_blank" rel="noopener noreferrer"
+                    <a href={get("home_contact", "instagram", "https://www.instagram.com/u.do.craft/")} target="_blank" rel="noopener noreferrer"
                       className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40">
                       <Instagram className="w-4 h-4" aria-hidden="true" />
                     </a>
-                    <a href="https://t.me/udostore" target="_blank" rel="noopener noreferrer"
+                    <a href={get("home_contact", "telegram", "https://t.me/udostore")} target="_blank" rel="noopener noreferrer"
                       className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40">
                       <Send className="w-4 h-4" aria-hidden="true" />
                     </a>
@@ -1093,15 +1095,15 @@ export default function HomePage() {
                 <BrandLogoFull className="h-8 w-auto" color="var(--color-primary)" />
               </Link>
               <p className="text-xs leading-relaxed text-gray-500 max-w-[180px]">
-                B2B мерч-платформа для команд, брендів та подій.
+                {get("footer", "tagline", "B2B мерч-платформа для команд, брендів та подій.")}
               </p>
               <div className="flex items-center gap-3">
-                <a href="https://www.instagram.com/u.do.craft/" target="_blank" rel="noopener noreferrer"
+                <a href={get("home_contact", "instagram", "https://www.instagram.com/u.do.craft/")} target="_blank" rel="noopener noreferrer"
                   aria-label="Instagram"
                   className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-200">
                   <Instagram className="w-3.5 h-3.5" aria-hidden="true" />
                 </a>
-                <a href="https://t.me/udostore" target="_blank" rel="noopener noreferrer"
+                <a href={get("home_contact", "telegram", "https://t.me/udostore")} target="_blank" rel="noopener noreferrer"
                   aria-label="Telegram"
                   className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-200">
                   <Send className="w-3.5 h-3.5" aria-hidden="true" />
@@ -1190,7 +1192,7 @@ export default function HomePage() {
         {/* Bottom bar */}
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-[11px] text-gray-600 text-center sm:text-left">
-            © {new Date().getFullYear()} U:DO CRAFT. Всі права захищені.
+            © {new Date().getFullYear()} {get("footer", "copyright", "U:DO CRAFT. Всі права захищені.")}
           </p>
           <div className="flex items-center gap-5">
             {[

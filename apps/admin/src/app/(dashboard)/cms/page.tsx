@@ -1,228 +1,271 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
+import dynamic from "next/dynamic";
+import { useState } from "react";
+import { Menu, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Save, RefreshCw, Globe, Home, Info, Briefcase, Phone } from "lucide-react";
+import { CmsTreeSidebar, CmsTreeDrawer, type TreeNode } from "./_components/CmsTree";
+import { LandingSectionEditor, type SectionConfig } from "./_components/LandingSectionEditor";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+const BlockEditor = dynamic(
+  () => import("./_components/BlockEditor").then((m) => ({ default: m.BlockEditor })),
+  { ssr: false }
+);
 
-interface CmsBlock {
-  slug: string;
-  title: string;
-  body: Record<string, string>;
-  meta?: Record<string, string>;
-}
+// ── Tree definition ───────────────────────────────────────────────────────────
 
-// ── Page sections config ──────────────────────────────────────────────────────
+const HERO_SECTION: SectionConfig = {
+  slug: "home_hero",
+  label: "Hero",
+  fields: [
+    { key: "heading",            label: "Заголовок",           type: "input",    placeholder: "Одяг, який стає частиною вашої корпоративної ДНК" },
+    { key: "subheading",         label: "Підзаголовок",        type: "textarea", placeholder: "Короткий опис під заголовком" },
+    { key: "cta_primary_text",   label: "Кнопка 1 — текст",   type: "input",    placeholder: "Переглянути каталог" },
+    { key: "cta_primary_url",    label: "Кнопка 1 — посилання", type: "input",  placeholder: "#collections" },
+    { key: "cta_secondary_text", label: "Кнопка 2 — текст",   type: "input",    placeholder: "Зв'язатись" },
+    { key: "cta_secondary_url",  label: "Кнопка 2 — посилання", type: "input",  placeholder: "#contact" },
+    { key: "badge1",             label: "Бейдж 1",             type: "input",    placeholder: "Від 10 одиниць" },
+    { key: "badge2",             label: "Бейдж 2",             type: "input",    placeholder: "Гарантія якості" },
+    { key: "badge3",             label: "Бейдж 3",             type: "input",    placeholder: "7–14 днів на виготовлення" },
+  ],
+};
 
-const PAGE_SECTIONS = [
+const STATS_SECTION: SectionConfig = {
+  slug: "home_stats",
+  label: "Статистика",
+  fields: [
+    { key: "stat1_value",  label: "Показник 1 — число",  type: "input", placeholder: "500" },
+    { key: "stat1_suffix", label: "Показник 1 — суфікс", type: "input", placeholder: "+" },
+    { key: "stat1_label",  label: "Показник 1 — підпис", type: "input", placeholder: "Задоволених клієнтів" },
+    { key: "stat2_value",  label: "Показник 2 — число",  type: "input", placeholder: "15" },
+    { key: "stat2_suffix", label: "Показник 2 — суфікс", type: "input", placeholder: "%" },
+    { key: "stat2_label",  label: "Показник 2 — підпис", type: "input", placeholder: "Знижка від 100 шт" },
+    { key: "stat3_value",  label: "Показник 3 — число",  type: "input", placeholder: "14" },
+    { key: "stat3_suffix", label: "Показник 3 — суфікс", type: "input", placeholder: " дн" },
+    { key: "stat3_label",  label: "Показник 3 — підпис", type: "input", placeholder: "Середній термін" },
+    { key: "stat4_value",  label: "Показник 4 — число",  type: "input", placeholder: "100" },
+    { key: "stat4_suffix", label: "Показник 4 — суфікс", type: "input", placeholder: "%" },
+    { key: "stat4_label",  label: "Показник 4 — підпис", type: "input", placeholder: "Контроль якості" },
+  ],
+};
+
+const SERVICES_SECTION: SectionConfig = {
+  slug: "home_services",
+  label: "Послуги",
+  fields: [
+    { key: "heading",       label: "Заголовок секції",   type: "input",    placeholder: "Більше, ніж просто мерч" },
+    { key: "service1_title", label: "Послуга 1 — назва", type: "input",    placeholder: "Box of Touch" },
+    { key: "service1_desc",  label: "Послуга 1 — опис",  type: "textarea" },
+    { key: "service1_cta",   label: "Послуга 1 — кнопка", type: "input",  placeholder: "Замовити зразки" },
+    { key: "service2_title", label: "Послуга 2 — назва", type: "input",    placeholder: "Найми дизайнера" },
+    { key: "service2_desc",  label: "Послуга 2 — опис",  type: "textarea" },
+    { key: "service2_cta",   label: "Послуга 2 — кнопка", type: "input",  placeholder: "Обговорити проєкт" },
+  ],
+};
+
+const POPUP_SECTION: SectionConfig = {
+  slug: "home_popup",
+  label: "Popup-стенд",
+  fields: [
+    { key: "heading",        label: "Заголовок",    type: "input",    placeholder: "U:DO Craft Popup" },
+    { key: "subheading",     label: "Підзаголовок", type: "textarea", placeholder: "Перетворіть ваш захід..." },
+    { key: "cta_primary",    label: "Кнопка 1",     type: "input",    placeholder: "Дізнатись більше" },
+    { key: "cta_secondary",  label: "Кнопка 2",     type: "input",    placeholder: "Обговорити захід" },
+    { key: "feature1_icon",  label: "Фіча 1 — іконка", type: "input", placeholder: "🎪" },
+    { key: "feature1_label", label: "Фіча 1 — назва",  type: "input", placeholder: "Виїзд на будь-який захід" },
+    { key: "feature1_desc",  label: "Фіча 1 — опис",   type: "input", placeholder: "Конференції, фестивалі, корпоративи" },
+    { key: "feature2_icon",  label: "Фіча 2 — іконка", type: "input", placeholder: "👕" },
+    { key: "feature2_label", label: "Фіча 2 — назва",  type: "input", placeholder: "Кастомізація на місці" },
+    { key: "feature2_desc",  label: "Фіча 2 — опис",   type: "input", placeholder: "Живий дизайн за 5 хвилин" },
+    { key: "feature3_icon",  label: "Фіча 3 — іконка", type: "input", placeholder: "⚡" },
+    { key: "feature3_label", label: "Фіча 3 — назва",  type: "input", placeholder: "Миттєвий результат" },
+    { key: "feature3_desc",  label: "Фіча 3 — опис",   type: "input", placeholder: "Готовий мерч у руки гостей" },
+    { key: "feature4_icon",  label: "Фіча 4 — іконка", type: "input", placeholder: "🎯" },
+    { key: "feature4_label", label: "Фіча 4 — назва",  type: "input", placeholder: "Від 50 учасників" },
+    { key: "feature4_desc",  label: "Фіча 4 — опис",   type: "input", placeholder: "Масштабуємо під ваш захід" },
+  ],
+};
+
+const CONTACT_SECTION: SectionConfig = {
+  slug: "home_contact",
+  label: "Контакти",
+  fields: [
+    { key: "heading",   label: "Заголовок",    type: "input",    placeholder: "Зв'яжіться з нами" },
+    { key: "subtext",   label: "Підтекст",     type: "textarea", placeholder: "Розкажіть про ваш проєкт..." },
+    { key: "email",     label: "Email",        type: "input",    placeholder: "info@udocraft.com" },
+    { key: "phone",     label: "Телефон",      type: "input",    placeholder: "+380 63 070 33 072" },
+    { key: "address",   label: "Адреса",       type: "input",    placeholder: "м. Львів, вул. Джерельна, 69" },
+    { key: "telegram",  label: "Telegram URL", type: "input",    placeholder: "https://t.me/udostore" },
+    { key: "instagram", label: "Instagram URL", type: "input",   placeholder: "https://www.instagram.com/u.do.craft/" },
+  ],
+};
+
+const FOOTER_SECTION: SectionConfig = {
+  slug: "footer",
+  label: "Футер",
+  fields: [
+    { key: "tagline",            label: "Слоган під логотипом", type: "input", placeholder: "B2B мерч-платформа для команд, брендів та подій." },
+    { key: "copyright",          label: "Копірайт",             type: "input", placeholder: "U:DO CRAFT. Всі права захищені." },
+    { key: "col_products_title", label: "Колонка «Продукти»",   type: "input", placeholder: "Продукти" },
+    { key: "col_company_title",  label: "Колонка «Компанія»",   type: "input", placeholder: "Компанія" },
+    { key: "col_support_title",  label: "Колонка «Підтримка»",  type: "input", placeholder: "Підтримка" },
+    { key: "col_contacts_title", label: "Колонка «Контакти»",   type: "input", placeholder: "Контакти" },
+  ],
+};
+
+const SEO_SECTION: SectionConfig = {
+  slug: "seo_home",
+  label: "SEO",
+  fields: [
+    { key: "title",       label: "Meta Title",       type: "input",    placeholder: "U:DO CRAFT — B2B мерч-платформа" },
+    { key: "description", label: "Meta Description", type: "textarea", placeholder: "Корпоративний мерч від 10 одиниць..." },
+    { key: "keywords",    label: "Keywords",         type: "input",    placeholder: "мерч, корпоративний одяг, футболки" },
+    { key: "og_image",    label: "OG Image URL",     type: "input",    placeholder: "https://..." },
+  ],
+};
+
+// Tree structure
+const TREE: TreeNode[] = [
   {
-    slug: "home_hero",
-    label: "Головна — Hero",
-    icon: Home,
-    fields: [
-      { key: "heading",    label: "Заголовок",    type: "input" },
-      { key: "subheading", label: "Підзаголовок", type: "input" },
-      { key: "cta_text",   label: "Кнопка CTA",   type: "input" },
-      { key: "cta_url",    label: "Посилання CTA", type: "input" },
+    id: "landing",
+    label: "Головна сторінка",
+    icon: "🏠",
+    type: "group",
+    children: [
+      { id: "home_hero",     label: "Hero",         icon: "✦",  type: "section", section: HERO_SECTION },
+      { id: "home_stats",    label: "Статистика",   icon: "📊", type: "section", section: STATS_SECTION },
+      { id: "home_services", label: "Послуги",      icon: "🛠", type: "section", section: SERVICES_SECTION },
+      { id: "home_popup",    label: "Popup-стенд",  icon: "🎪", type: "section", section: POPUP_SECTION },
+      { id: "home_contact",  label: "Контакти",     icon: "📞", type: "section", section: CONTACT_SECTION },
+      { id: "footer",        label: "Футер",        icon: "⬇️", type: "section", section: FOOTER_SECTION },
+      { id: "seo_home",      label: "SEO",          icon: "🔍", type: "section", section: SEO_SECTION },
     ],
   },
   {
-    slug: "home_about",
-    label: "Головна — Про нас",
-    icon: Info,
-    fields: [
-      { key: "heading", label: "Заголовок",  type: "input" },
-      { key: "text",    label: "Текст",      type: "textarea" },
-    ],
-  },
-  {
-    slug: "home_services",
-    label: "Головна — Послуги",
-    icon: Briefcase,
-    fields: [
-      { key: "heading",  label: "Заголовок",    type: "input" },
-      { key: "service1", label: "Послуга 1",    type: "input" },
-      { key: "service2", label: "Послуга 2",    type: "input" },
-      { key: "service3", label: "Послуга 3",    type: "input" },
-      { key: "service4", label: "Послуга 4",    type: "input" },
-    ],
-  },
-  {
-    slug: "home_contact",
-    label: "Головна — Контакти",
-    icon: Phone,
-    fields: [
-      { key: "heading",  label: "Заголовок",  type: "input" },
-      { key: "email",    label: "Email",      type: "input" },
-      { key: "phone",    label: "Телефон",    type: "input" },
-      { key: "address",  label: "Адреса",     type: "input" },
-      { key: "telegram", label: "Telegram",   type: "input" },
-      { key: "instagram",label: "Instagram",  type: "input" },
-    ],
-  },
-  {
-    slug: "seo_home",
-    label: "SEO — Головна",
-    icon: Globe,
-    fields: [
-      { key: "title",       label: "Meta Title",       type: "input" },
-      { key: "description", label: "Meta Description", type: "textarea" },
-      { key: "keywords",    label: "Keywords",         type: "input" },
+    id: "pages",
+    label: "Сторінки",
+    icon: "📄",
+    type: "group",
+    children: [
+      {
+        id: "page_privacy",
+        label: "Конфіденційність",
+        icon: "🔒",
+        type: "richpage",
+        slug: "page_privacy",
+        pageTitle: "Політика конфіденційності",
+        description: "Відображається на /privacy",
+      },
+      {
+        id: "page_terms",
+        label: "Умови та правила",
+        icon: "📋",
+        type: "richpage",
+        slug: "page_terms",
+        pageTitle: "Умови та правила",
+        description: "Відображається на /terms",
+      },
     ],
   },
 ];
 
-// ── Section Editor ────────────────────────────────────────────────────────────
+// ── Main layout ───────────────────────────────────────────────────────────────
 
-function SectionEditor({
-  section,
-  data,
-  onChange,
-  onSave,
-  saving,
-}: {
-  section: typeof PAGE_SECTIONS[0];
-  data: Record<string, string>;
-  onChange: (key: string, val: string) => void;
-  onSave: () => void;
-  saving: boolean;
-}) {
+export default function CmsPage() {
+  const [selected, setSelected] = useState<TreeNode | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const editorContent = !selected || selected.type === "group" ? (
+    <EmptyState onOpenMenu={() => setDrawerOpen(true)} />
+  ) : selected.type === "section" && selected.section ? (
+    <LandingSectionEditor key={selected.id} section={selected.section} />
+  ) : selected.type === "richpage" && selected.slug ? (
+    <BlockEditor
+      key={selected.id}
+      slug={selected.slug}
+      pageTitle={selected.pageTitle ?? selected.label}
+      description={selected.description}
+    />
+  ) : null;
+
   return (
-    <div className="space-y-4">
-      {section.fields.map((f) => (
-        <div key={f.key} className="space-y-1.5">
-          <Label>{f.label}</Label>
-          {f.type === "textarea" ? (
-            <Textarea
-              rows={4}
-              value={data[f.key] ?? ""}
-              onChange={(e) => onChange(f.key, e.target.value)}
-              className="resize-none"
-            />
-          ) : (
-            <Input
-              value={data[f.key] ?? ""}
-              onChange={(e) => onChange(f.key, e.target.value)}
-            />
+    <div className="flex h-[calc(100svh-3.5rem)] overflow-hidden">
+      {/* Desktop sidebar — hidden on mobile */}
+      <CmsTreeSidebar nodes={TREE} selected={selected} onSelect={setSelected} />
+
+      {/* Mobile drawer */}
+      <CmsTreeDrawer
+        nodes={TREE}
+        selected={selected}
+        onSelect={setSelected}
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+      />
+
+      {/* Right panel */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Mobile top bar — only visible on mobile */}
+        <div className="md:hidden flex items-center gap-3 px-4 py-3 border-b border-border bg-card shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setDrawerOpen(true)}
+            aria-label="Відкрити меню"
+          >
+            <Menu className="size-5" />
+          </Button>
+          <div className="flex-1 min-w-0">
+            {selected && selected.type !== "group" ? (
+              <div className="flex items-center gap-1.5">
+                {selected.icon && <span className="text-base" aria-hidden="true">{selected.icon}</span>}
+                <span className="text-sm font-semibold truncate">{selected.label}</span>
+              </div>
+            ) : (
+              <span className="text-sm font-semibold text-muted-foreground">Редактор сайту</span>
+            )}
+          </div>
+          {selected && selected.type !== "group" && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSelected(null)}
+              aria-label="Назад"
+            >
+              <ChevronLeft className="size-5" />
+            </Button>
           )}
         </div>
-      ))}
-      <div className="flex justify-end pt-2">
-        <Button onClick={onSave} disabled={saving}>
-          {saving ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Save className="size-4 mr-2" />}
-          Зберегти
-        </Button>
+
+        {/* Editor area */}
+        <main className="flex-1 overflow-y-auto bg-background" aria-label="Редактор контенту">
+          <div className="max-w-3xl mx-auto">
+            {editorContent}
+          </div>
+        </main>
       </div>
     </div>
   );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
-
-export default function CmsPagesPage() {
-  const [blocks, setBlocks] = useState<Record<string, Record<string, string>>>({});
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState(PAGE_SECTIONS[0].slug);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/cms");
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      const map: Record<string, Record<string, string>> = {};
-      for (const item of (data.content as CmsBlock[])) {
-        map[item.slug] = item.body ?? {};
-      }
-      setBlocks(map);
-    } catch (e: unknown) {
-      toast.error((e as Error).message || "Помилка завантаження");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  const handleChange = (slug: string, key: string, val: string) => {
-    setBlocks((prev) => ({
-      ...prev,
-      [slug]: { ...(prev[slug] ?? {}), [key]: val },
-    }));
-  };
-
-  const handleSave = async (slug: string) => {
-    setSaving(slug);
-    try {
-      const section = PAGE_SECTIONS.find((s) => s.slug === slug);
-      const res = await fetch("/api/cms", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, title: section?.label ?? slug, body: blocks[slug] ?? {} }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      toast.success("Збережено");
-    } catch (e: unknown) {
-      toast.error((e as Error).message || "Помилка");
-    } finally {
-      setSaving(null);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
+function EmptyState({ onOpenMenu }: { onOpenMenu: () => void }) {
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold">CMS — Сторінки</h1>
-          <p className="text-sm text-muted-foreground">Редагуйте контент сайту без деплою</p>
-        </div>
-        <Button variant="outline" size="icon" onClick={load}>
-          <RefreshCw className="size-4" />
-        </Button>
+    <div className="flex flex-col items-center justify-center h-full min-h-[400px] gap-4 text-center px-6 py-12">
+      <div className="text-5xl" aria-hidden="true">✦</div>
+      <div>
+        <p className="text-base font-semibold text-foreground">Оберіть розділ</p>
+        <p className="text-sm text-muted-foreground mt-1 max-w-xs">
+          Виберіть сторінку або секцію зліва, щоб почати редагування
+        </p>
       </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="flex-wrap h-auto gap-1">
-          {PAGE_SECTIONS.map((s) => (
-            <TabsTrigger key={s.slug} value={s.slug} className="gap-1.5">
-              <s.icon className="size-3.5" />
-              <span className="hidden sm:inline">{s.label}</span>
-              <span className="sm:hidden">{s.label.split(" — ")[1] ?? s.label}</span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        {PAGE_SECTIONS.map((s) => (
-          <TabsContent key={s.slug} value={s.slug}>
-            <div className="rounded-xl border border-border bg-card p-5 mt-4">
-              <p className="text-sm font-semibold mb-4">{s.label}</p>
-              <SectionEditor
-                section={s}
-                data={blocks[s.slug] ?? {}}
-                onChange={(key, val) => handleChange(s.slug, key, val)}
-                onSave={() => handleSave(s.slug)}
-                saving={saving === s.slug}
-              />
-            </div>
-          </TabsContent>
-        ))}
-      </Tabs>
+      {/* Mobile hint button */}
+      <button
+        type="button"
+        onClick={onOpenMenu}
+        className="md:hidden inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <Menu className="size-4" />
+        Відкрити меню
+      </button>
     </div>
   );
 }

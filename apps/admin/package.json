@@ -12,6 +12,9 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",
+    "@blocknote/core": "^0.48.1",
+    "@blocknote/mantine": "^0.48.1",
+    "@blocknote/react": "^0.48.1",
     "@imgly/background-removal": "^1.7.0",
     "@microsoft/clarity": "^1.0.2",
     "@radix-ui/react-collapsible": "^1.1.12",
