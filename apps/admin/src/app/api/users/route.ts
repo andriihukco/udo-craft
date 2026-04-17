@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createClient } from "@/lib/supabase/server";
+import { sendInviteEmail } from "@/lib/email/send";
 
 // GET /api/users — list all admin users
 export async function GET() {
@@ -26,7 +27,7 @@ export async function GET() {
   return NextResponse.json({ users });
 }
 
-// POST /api/users — invite a new user
+// POST /api/users — create user with temp password + send invite email
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -34,16 +35,53 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
   const { email, full_name, role = "viewer" } = body;
-
   if (!email) return NextResponse.json({ error: "Email required" }, { status: 400 });
 
+  // Generate a secure temp password
+  const tempPassword = generateTempPassword();
+
   const service = createServiceClient();
-  const { data, error } = await service.auth.admin.inviteUserByEmail(email, {
-    data: { full_name, role },
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+
+  // Create the user with confirmed email + temp password
+  const { data, error } = await service.auth.admin.createUser({
+    email,
+    password: tempPassword,
+    email_confirm: true,
+    user_metadata: {
+      full_name: full_name ?? "",
+      role,
+      must_change_password: true, // flag for first-login redirect
+    },
   });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://admin.u-do-craft.store";
+  const inviterName = user.user_metadata?.full_name ?? user.email?.split("@")[0];
+
+  // Send invite email via Resend
+  try {
+    await sendInviteEmail({
+      to: email,
+      tempPassword,
+      loginUrl: `${appUrl}/login`,
+      inviterName,
+    });
+  } catch (emailErr) {
+    console.error("[invite] email send failed:", emailErr);
+    // Don't fail the whole request — user is created, email is best-effort
+  }
+
   return NextResponse.json({ user: data.user }, { status: 201 });
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function generateTempPassword(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$";
+  let pass = "";
+  for (let i = 0; i < 12; i++) {
+    pass += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return pass;
 }

@@ -302,7 +302,7 @@ function PopupSection() {
             className="flex flex-wrap gap-3"
           >
             <AnimBtnWhite href="/popup">Дізнатись більше</AnimBtnWhite>
-            <Link href="#contact"
+            <Link href="#contact?ref=popup"
               className="group inline-flex items-center gap-2 border-2 border-white/40 text-white font-bold text-sm px-7 py-3.5 rounded-full hover:border-white hover:bg-white/10 active:scale-95 transition-all duration-200">
               <span>Обговорити захід</span>
               <motion.span className="flex items-center" initial={{ x:0 }} whileHover={{ x:4 }} transition={{ duration:0.2 }}>
@@ -889,7 +889,7 @@ export default function HomePage() {
               <h3 className="text-white text-2xl font-black mb-3">Box of Touch</h3>
               <p className="text-gray-400 text-sm leading-relaxed max-w-xs">Замов набір зразків тканин, кольорів та виробів — відчуй якість до того, як зробити тираж.</p>
             </div>
-            <Link href="#contact" className="mt-6 inline-flex items-center gap-2 bg-white text-gray-900 text-sm font-bold px-5 py-2.5 rounded-full hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all duration-200 w-fit">
+            <Link href="#contact?ref=box" className="mt-6 inline-flex items-center gap-2 bg-white text-gray-900 text-sm font-bold px-5 py-2.5 rounded-full hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all duration-200 w-fit">
               Замовити зразки <ArrowRight className="w-4 h-4" />
             </Link>
           </motion.div>
@@ -901,7 +901,7 @@ export default function HomePage() {
               <h3 className="text-2xl font-black mb-3 text-white">Найми дизайнера</h3>
               <p className="text-white/90 text-sm leading-relaxed max-w-xs">Немає готового логотипу? Наш дизайнер допоможе створити фірмовий стиль або адаптує логотип для нанесення.</p>
             </div>
-            <Link href="#contact" className="relative z-10 mt-6 inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm font-bold px-5 py-2.5 rounded-full hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all duration-200 w-fit">
+            <Link href="#contact?ref=designer" className="relative z-10 mt-6 inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm font-bold px-5 py-2.5 rounded-full hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all duration-200 w-fit">
               Обговорити проєкт <ArrowRight className="w-4 h-4" />
             </Link>
           </motion.div>

@@ -19,9 +19,11 @@ type TopicValue = typeof TOPICS[number]["value"];
 
 function detectSource(): string {
   if (typeof window === "undefined") return "contact_form";
-  const hash = window.location.hash.replace("#", "");
+  // Support both ?ref= query param and hash-embedded params like #contact?ref=popup
   const params = new URLSearchParams(window.location.search);
-  const ref = params.get("ref") ?? params.get("from") ?? hash;
+  const hashParts = window.location.hash.split("?");
+  const hashParams = hashParts.length > 1 ? new URLSearchParams(hashParts[1]) : new URLSearchParams();
+  const ref = params.get("ref") ?? params.get("from") ?? hashParams.get("ref") ?? hashParts[0].replace("#", "");
   if (!ref) return "contact_form";
   const map: Record<string, string> = {
     popup: "popup_section", box: "box_of_touch",
@@ -34,6 +36,7 @@ function topicFromSource(source: string): TopicValue {
   if (source.includes("popup"))    return "popup";
   if (source.includes("box"))      return "box";
   if (source.includes("designer")) return "designer";
+  if (source.includes("bulk"))     return "bulk";
   return "merch";
 }
 
@@ -55,9 +58,14 @@ export function ContactForm({ defaultTopic }: { defaultTopic?: TopicValue }) {
   const [source, setSource]         = useState("contact_form");
 
   useEffect(() => {
-    const s = detectSource();
-    setSource(s);
-    if (!defaultTopic) setTopic(topicFromSource(s));
+    const apply = () => {
+      const s = detectSource();
+      setSource(s);
+      if (!defaultTopic) setTopic(topicFromSource(s));
+    };
+    apply();
+    window.addEventListener("hashchange", apply);
+    return () => window.removeEventListener("hashchange", apply);
   }, [defaultTopic]);
 
   const selectedTopic = TOPICS.find((t) => t.value === topic)!;
