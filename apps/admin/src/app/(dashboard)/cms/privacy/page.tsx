@@ -1,8 +1,10 @@
-import { RichContentEditor } from "../_components/RichContentEditor";
+"use client";
+
+import { BlockEditor } from "../_components/BlockEditor";
 
 export default function CmsPrivacyPage() {
   return (
-    <RichContentEditor
+    <BlockEditor
       slug="page_privacy"
       pageTitle="Політика конфіденційності"
       description="Текст відображається на сторінці /privacy клієнтського сайту"

@@ -34,7 +34,6 @@ import {
 import {
   Collapsible,
   CollapsibleContent,
-  CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
 // ── Nav structure ─────────────────────────────────────────────────────────────
@@ -222,17 +221,16 @@ export function AppSidebar({ user }: AppSidebarProps) {
         className="group/collapsible"
       >
         <SidebarMenuItem>
-          <CollapsibleTrigger asChild>
-            <SidebarMenuButton
-              tooltip={item.title}
-              isActive={isGroupActive}
-              aria-current={isGroupActive ? "page" : undefined}
-            >
-              <item.icon aria-hidden="true" />
-              <span>{item.title}</span>
-              <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-            </SidebarMenuButton>
-          </CollapsibleTrigger>
+          <SidebarMenuButton
+            tooltip={item.title}
+            isActive={isGroupActive}
+            aria-current={isGroupActive ? "page" : undefined}
+            onClick={() => setOpenGroups((prev) => ({ ...prev, [item.url]: !isOpen }))}
+          >
+            <item.icon aria-hidden="true" />
+            <span>{item.title}</span>
+            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+          </SidebarMenuButton>
           <CollapsibleContent>
             <SidebarMenuSub>
               {item.children?.map((child) => {
