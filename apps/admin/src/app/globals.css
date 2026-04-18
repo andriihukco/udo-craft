@@ -86,38 +86,4 @@
   100% { background-position: 200% 0; }
 }
 
-/* ── BlockNote Notion-style overrides ─────────────────────────────────────── */
-.bn-notion-wrap .bn-container,
-.bn-notion-wrap .bn-root {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-}
 
-.bn-notion-wrap .bn-editor {
-  padding: 0 !important;
-  font-size: 1rem;
-  line-height: 1.7;
-  color: inherit;
-}
-
-.bn-notion-wrap .ProseMirror {
-  padding: 0 !important;
-  min-height: 300px;
-}
-
-.bn-notion-wrap .bn-block-outer:first-child .bn-block-content {
-  padding-top: 0;
-}
-
-/* Hide drag handle in read-only / view mode */
-.bn-preview .bn-side-menu,
-.bn-view-mode .bn-side-menu {
-  display: none !important;
-}
-
-/* View mode — no text cursor on blocks */
-.bn-view-mode .bn-editor {
-  cursor: default;
-}

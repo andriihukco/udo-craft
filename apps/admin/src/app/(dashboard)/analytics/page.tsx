@@ -9,6 +9,8 @@ import { RefreshCw, ChevronLeft, ChevronRight, CalendarDays } from "lucide-react
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { MetricCard, calcTrend, fmtCurrency } from "@/components/metrics";
 import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
+import { BarChart2 } from "lucide-react";
 
 // ─── Date Range Types ─────────────────────────────────────────────────────────
 
@@ -491,31 +493,44 @@ export default function AnalyticsPage() {
 
   return (
     <div className="flex flex-1 h-0 flex-col overflow-hidden">
-      {/* Header */}
-      <div className="h-12 px-4 border-b border-border shrink-0 flex items-center gap-3">
-        <p className="font-semibold text-base shrink-0">Аналітика</p>
-        <div className="flex items-center gap-2 ml-auto flex-wrap">
-          {QUICK_CHIPS.map(chip => (
-            <Button
-              key={chip.key}
-              type="button"
-              variant={range.preset === chip.key ? "default" : "outline"}
-              size="sm"
-              className="h-7 text-xs px-2"
-              onClick={() => applyQuickChip(chip.key)}
-            >
-              {chip.label}
-            </Button>
-          ))}
-          <DateRangePicker range={range} onChange={r => setRange(r)} />
-          <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={fetchAnalytics} disabled={loading}>
-            <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
-          </Button>
-        </div>
-      </div>
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+      <PageHeader
+        title="Аналітика"
+        actions={
+          <div className="flex items-center gap-2 flex-wrap">
+            {QUICK_CHIPS.map(chip => (
+              <Button
+                key={chip.key}
+                type="button"
+                variant={range.preset === chip.key ? "default" : "outline"}
+                size="sm"
+                className="h-7 text-xs px-2"
+                onClick={() => applyQuickChip(chip.key)}
+              >
+                {chip.label}
+              </Button>
+            ))}
+            <DateRangePicker range={range} onChange={r => setRange(r)} />
+            <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={fetchAnalytics} disabled={loading}>
+              <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
+            </Button>
+          </div>
+        }
+      />
       {loading && !d ? skeletonRows : d ? (
+        d.sessions === 0 && d.totalOrders === 0 && d.totalRevenue === 0 ? (
+          <EmptyState
+            icon={BarChart2}
+            title="Даних ще немає"
+            description="Аналітика з'явиться після перших відвідувань та замовлень за обраний період"
+            action={
+              <Button variant="outline" size="sm" onClick={() => applyQuickChip("max")}>
+                Показати весь час
+              </Button>
+            }
+          />
+        ) : (
         <>
           {/* ── Traffic ── */}
           <div>
@@ -580,6 +595,7 @@ export default function AnalyticsPage() {
             </CardContent>
           </Card>
         </>
+        )
       ) : (
         <div className="text-center py-12">
           <p className="text-muted-foreground">Не вдалося завантажити аналітику</p>

@@ -43,8 +43,8 @@ export function ProductCardInline({ product, variants, materials, onOpen, onAddW
   const activeVariant = hasVariants ? variants.find((v) => v.id === displayVariantId) ?? null : null;
 
   const imgs = (() => {
-    const productImgs = resolveProductImages((product as any).product_images, product.images);
-    const variantImgs = activeVariant ? resolveProductImages((activeVariant as any).variant_images, activeVariant.images) : null;
+    const productImgs = resolveProductImages(product.product_images, product.images);
+    const variantImgs = activeVariant ? resolveProductImages(activeVariant.variant_images, activeVariant.images) : null;
     return getCustomizableImages(variantImgs?.length ? variantImgs : productImgs);
   })();
   const imgUrl = imgs.front ?? Object.values(imgs)[0] ?? "";
@@ -104,7 +104,7 @@ export function ProductCardInline({ product, variants, materials, onOpen, onAddW
           </div>
           {product.description && (
             <div className="mt-1">
-              <p className={`text-xs text-gray-500 ${descExpanded ? "" : "line-clamp-2"}`}>
+              <p className={`text-xs text-muted-foreground ${descExpanded ? "" : "line-clamp-2"}`}>
                 {product.description}
               </p>
               {product.description.length > 80 && (

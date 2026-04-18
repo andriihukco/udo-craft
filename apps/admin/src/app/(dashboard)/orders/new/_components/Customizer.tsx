@@ -90,8 +90,8 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
   const defaultVariant = initialVariant ?? variants[0] ?? null;
   const defaultColor = defaultVariant ? (materials.find((m) => m.id === defaultVariant.material_id)?.name ?? "black") : "black";
   const firstImageKey = (() => {
-    const productImgs = resolveProductImages((product as any).product_images, product.images ?? {});
-    const variantImgs = defaultVariant ? resolveProductImages((defaultVariant as any).variant_images, defaultVariant.images ?? {}) : null;
+    const productImgs = resolveProductImages(product.product_images, product.images ?? {});
+    const variantImgs = defaultVariant ? resolveProductImages(defaultVariant.variant_images, defaultVariant.images ?? {}) : null;
     const imgs = getCustomizableImages(variantImgs?.length ? variantImgs : productImgs);
     return Object.keys(imgs)[0] ?? "front";
   })();
@@ -116,7 +116,7 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
 
   const productImages = getCustomizableImages(
     resolveProductImages(
-      (selectedVariant as any)?.variant_images ?? (product as any).product_images,
+      selectedVariant?.variant_images ?? product.product_images,
       selectedVariant?.images ?? product.images ?? {}
     )
   );
@@ -319,15 +319,15 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
   const canvasPanel = (
     <ProductCanvas product={product} printZones={printZones} layers={layers} activeSide={activeSide}
       onSideChange={(side) => {
-        const productImgs = resolveProductImages((product as any).product_images, product.images ?? {});
-        const variantImgs = selectedVariant ? resolveProductImages((selectedVariant as any).variant_images, selectedVariant.images ?? {}) : null;
+        const productImgs = resolveProductImages(product.product_images, product.images ?? {});
+        const variantImgs = selectedVariant ? resolveProductImages(selectedVariant.variant_images, selectedVariant.images ?? {}) : null;
         const imgs = getCustomizableImages(variantImgs?.length ? variantImgs : productImgs);
         if (!imgs[side]) return;
         setActiveSide(side);
       }}
       variantImages={(() => {
         if (!selectedVariant) return undefined;
-        const vi = resolveProductImages((selectedVariant as any).variant_images, selectedVariant.images ?? {});
+        const vi = resolveProductImages(selectedVariant.variant_images, selectedVariant.images ?? {});
         const imgs = getCustomizableImages(vi);
         return Object.keys(imgs).length > 0 ? imgs : undefined;
       })()}
@@ -395,8 +395,8 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
 
   // Product thumbnail for the info card
   const productThumb = (() => {
-    const productImgs = resolveProductImages((product as any).product_images, product.images ?? {});
-    const variantImgs = selectedVariant ? resolveProductImages((selectedVariant as any).variant_images, selectedVariant.images ?? {}) : null;
+    const productImgs = resolveProductImages(product.product_images, product.images ?? {});
+    const variantImgs = selectedVariant ? resolveProductImages(selectedVariant.variant_images, selectedVariant.images ?? {}) : null;
     const imgs = getCustomizableImages(variantImgs?.length ? variantImgs : productImgs);
     return Object.values(imgs)[0] ?? "";
   })();

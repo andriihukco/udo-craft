@@ -1,6 +1,5 @@
 import { Metadata } from "next";
 import { createServiceClient } from "@/lib/supabase/service";
-import { BlockNoteEditor } from "@blocknote/core";
 
 export const metadata: Metadata = {
   title: "Умови та правила — U:DO CRAFT",
@@ -14,7 +13,7 @@ async function getContent() {
       .select("body")
       .eq("slug", "page_terms")
       .single();
-    return data?.body as { title?: string; blocks?: unknown[] } | null;
+    return data?.body as { title?: string; html?: string } | null;
   } catch {
     return null;
   }
@@ -22,13 +21,7 @@ async function getContent() {
 
 export default async function TermsPage() {
   const content = await getContent();
-
-  let html = "";
-  if (Array.isArray(content?.blocks) && content.blocks.length > 0) {
-    const editor = BlockNoteEditor.create();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    html = await editor.blocksToHTMLLossy(content.blocks as any);
-  }
+  const html = content?.html ?? "";
 
   return (
     <main className="min-h-screen bg-background">

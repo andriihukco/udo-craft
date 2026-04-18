@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
 import { Activity, Bell, Loader2, Lock, User } from "lucide-react";
 import { SystemTab } from "./_components/SystemTab";
+import { PageHeader } from "@/components/page-header";
 
 function NotifRow({ label, desc, checked, onChange, disabled }: { label: string; desc: string; checked: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
   return (
@@ -102,9 +103,9 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-1 h-0 flex-col overflow-hidden">
       {/* Header + tabs */}
-      <div className="h-12 px-4 border-b border-border shrink-0 flex items-center gap-1">
-        <p className="font-semibold text-base mr-4 shrink-0 hidden sm:block">Налаштування</p>
-        <nav className="flex h-full">
+      <div className="px-4 pt-4 border-b border-border shrink-0">
+        <PageHeader title="Налаштування" />
+        <nav className="flex h-10">
           {TABS.map(({ key, icon: Icon, label }) => (
             <button
               key={key}
