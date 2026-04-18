@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { fmtTime } from "@/lib/utils";
+import { PageHeader } from "@/components/page-header";
 
 type LeadSource = "web" | "telegram" | "instagram";
 
@@ -371,8 +372,12 @@ export default function MessagesPage() {
   };
 
   return (
-    <div className="flex flex-1 h-0 overflow-hidden relative">
+    <div className="flex flex-1 h-0 flex-col overflow-hidden relative">
       {viewerUrl && <FileViewer url={viewerUrl} onClose={() => setViewerUrl(null)} />}
+      <div className="px-4 pt-4 pb-2 border-b border-border shrink-0">
+        <PageHeader title="Повідомлення" />
+      </div>
+      <div className="flex flex-1 h-0 overflow-hidden relative">
 
       {/* ── Chat list — full screen on mobile, fixed sidebar on desktop ── */}
       <div className={`${selectedLead ? "hidden md:flex" : "flex"} w-full md:w-72 shrink-0 flex-col border-r border-border bg-card`}>
@@ -401,7 +406,12 @@ export default function MessagesPage() {
           {loading ? (
             <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
           ) : filteredLeads.length === 0 ? (
-            <EmptyState icon={MessageCircle} title="Немає чатів" className="py-10" />
+            <EmptyState
+              icon={MessageCircle}
+              title={searchQuery || sourceFilter !== "all" ? "Нічого не знайдено" : "Немає розмов"}
+              description={searchQuery || sourceFilter !== "all" ? "Спробуйте змінити фільтри" : "Нові повідомлення від клієнтів з'являться тут"}
+              className="py-10"
+            />
           ) : filteredLeads.map((lead) => {
             const isUnread = unreadIds.has(lead.id);
             const isActive = selectedLead?.id === lead.id;
@@ -739,9 +749,10 @@ export default function MessagesPage() {
         </div>
       ) : (
         <div className="hidden md:flex flex-1 items-center justify-center bg-muted/20">
-          <EmptyState icon={MessageCircle} title="Виберіть чат" description="Натисніть на контакт зліва" />
+          <EmptyState icon={MessageCircle} title="Оберіть розмову" description="Натисніть на контакт зліва" />
         </div>
       )}
+      </div>
     </div>
   );
 }

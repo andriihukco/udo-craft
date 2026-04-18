@@ -1,15 +1,35 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Pencil, X, Check, RefreshCw, Palette, ImageIcon } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Plus, Trash2, Pencil, Check, Palette, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Material, ProductColorVariant } from "@udo-craft/shared";
 import type { ProductImage } from "@udo-craft/shared";
 import { ProductImageManager } from "@udo-craft/ui";
+import { EmptyState } from "@/components/empty-state";
 
 // ── Color Variant Editor ─────────────────────────────────────────────────────
 
@@ -32,8 +52,7 @@ function ProductColorVariantEditor({
     is_active: variant.is_active ?? true,
   });
   const [variantImages, setVariantImages] = useState<ProductImage[]>(() => {
-    // Load variant_images; fall back to legacy images Record
-    const vi = (variant as any).variant_images as ProductImage[] | undefined;
+    const vi = variant.variant_images;
     if (vi && vi.length > 0) return vi;
     const imgs = variant.images || {};
     return Object.entries(imgs).map(([key, url], i) => ({
@@ -45,7 +64,6 @@ function ProductColorVariantEditor({
   const handleSave = async () => {
     if (!form.material_id) { toast.error("Оберіть колір (матеріал)"); return; }
     setSaving(true);
-    // Build legacy images map from customizable entries (backward compat for canvas)
     const images: Record<string, string> = {};
     for (const img of variantImages) if (img.is_customizable && img.key && img.url) images[img.key] = img.url;
 
@@ -67,22 +85,47 @@ function ProductColorVariantEditor({
     }
   };
 
+  const selectedMaterial = materials.find((m) => m.id === form.material_id);
+
   return (
     <div className="border border-border bg-muted/30 rounded-lg p-3 space-y-3 mb-3">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {/* 11.1 — shadcn/ui Select with color swatch + name */}
         <div className="space-y-1.5">
           <Label>Колір (Матеріал) *</Label>
-          <select
+          <Select
             value={form.material_id}
-            onChange={(e) => setForm((f) => ({ ...f, material_id: e.target.value }))}
-            className="w-full h-9"
+            onValueChange={(value) => setForm((f) => ({ ...f, material_id: value }))}
           >
-            <option value="">— Оберіть колір —</option>
-            {materials.map((m) => (
-              <option key={m.id} value={m.id}>{m.name} ({m.hex_code})</option>
-            ))}
-          </select>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="— Оберіть колір —">
+                {selectedMaterial && (
+                  <span className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-full border flex-shrink-0"
+                      style={{ backgroundColor: selectedMaterial.hex_code }}
+                    />
+                    {selectedMaterial.name}
+                  </span>
+                )}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {materials.map((m) => (
+                <SelectItem key={m.id} value={m.id}>
+                  <span className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-full border flex-shrink-0"
+                      style={{ backgroundColor: m.hex_code }}
+                    />
+                    {m.name}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
+
         <div className="space-y-1.5">
           <Label>Порядок</Label>
           <Input
@@ -91,15 +134,17 @@ function ProductColorVariantEditor({
             onChange={(e) => setForm((f) => ({ ...f, sort_order: parseInt(e.target.value) || 0 }))}
           />
         </div>
+
+        {/* 11.2 — Switch + Label for is_active */}
         <div className="flex items-end pb-1.5">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox" checked={form.is_active}
-              onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))}
-              className="rounded"
+          <div className="flex items-center gap-2">
+            <Switch
+              id="variant-is-active"
+              checked={form.is_active}
+              onCheckedChange={(checked) => setForm((f) => ({ ...f, is_active: checked }))}
             />
-            <span className="text-sm">Активний</span>
-          </label>
+            <Label htmlFor="variant-is-active" className="cursor-pointer">Активний</Label>
+          </div>
         </div>
       </div>
 
@@ -110,6 +155,16 @@ function ProductColorVariantEditor({
         <p className="text-xs text-muted-foreground">
           Позначте «Канвас» для фото, які використовуються як сторони в редакторі принтів.
         </p>
+
+        {/* 11.4 — EmptyState when no images */}
+        {variantImages.length === 0 ? (
+          <EmptyState
+            icon={ImageIcon}
+            title="Фото не додано"
+            className="py-8"
+          />
+        ) : null}
+
         <ProductImageManager
           images={variantImages}
           onChange={setVariantImages}
@@ -134,6 +189,7 @@ export function ProductColorVariantsList({ productId }: { productId: string }) {
   const [variants, setVariants] = useState<ProductColorVariant[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [editing, setEditing] = useState<Partial<ProductColorVariant> | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     const [varRes, matRes] = await Promise.all([
@@ -146,11 +202,12 @@ export function ProductColorVariantsList({ productId }: { productId: string }) {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // 11.3 — handleDelete no longer uses window.confirm(); uses AlertDialog instead
   const handleDelete = async (id: string) => {
-    if (!confirm("Видалити варіант кольору?")) return;
     const res = await fetch(`/api/product-color-variants/${id}`, { method: "DELETE" });
     if (res.ok) { toast.success("Видалено"); fetchData(); }
     else toast.error("Помилка видалення");
+    setDeleteTargetId(null);
   };
 
   return (
@@ -181,12 +238,12 @@ export function ProductColorVariantsList({ productId }: { productId: string }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
           {variants.map((v) => {
             const material = materials.find((m) => m.id === v.material_id);
-            const vi = (v as any).variant_images as ProductImage[] | undefined;
+            const vi = v.variant_images;
             const previewUrl = vi?.find(i => i.key === "front")?.url
               ?? vi?.[0]?.url
               ?? (v.images as Record<string, string>)?.front
               ?? Object.values(v.images || {})[0];
-            
+
             return (
               <div key={v.id} className="flex items-center gap-3 p-2 rounded-lg border border-border bg-background hover:border-primary/30 transition-colors">
                 {previewUrl ? (
@@ -196,7 +253,7 @@ export function ProductColorVariantsList({ productId }: { productId: string }) {
                     <ImageIcon className="w-4 h-4 text-muted-foreground/50" />
                   </div>
                 )}
-                
+
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span
@@ -207,7 +264,7 @@ export function ProductColorVariantsList({ productId }: { productId: string }) {
                     <span className="text-sm font-medium truncate">{material?.name || "Невідомий колір"}</span>
                   </div>
                   <p className="text-[10px] text-muted-foreground mt-0.5">
-                    {(((v as any).variant_images as ProductImage[] | undefined)?.length ?? Object.keys(v.images || {}).length)} фотографій
+                    {(v.variant_images?.length ?? Object.keys(v.images || {}).length)} фотографій
                     {!v.is_active && " · Неактивний"}
                   </p>
                 </div>
@@ -217,10 +274,35 @@ export function ProductColorVariantsList({ productId }: { productId: string }) {
                     onClick={() => setEditing(v)}>
                     <Pencil className="w-3.5 h-3.5" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                    onClick={() => handleDelete(v.id)}>
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
+
+                  {/* 11.3 — AlertDialog for delete confirmation */}
+                  <AlertDialog open={deleteTargetId === v.id} onOpenChange={(open) => !open && setDeleteTargetId(null)}>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                        onClick={() => setDeleteTargetId(v.id)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Видалити варіант кольору?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Варіант «{material?.name || "Невідомий колір"}» та всі його фотографії будуть видалені. Цю дію не можна скасувати.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Скасувати</AlertDialogCancel>
+                        <AlertDialogAction
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          onClick={() => handleDelete(v.id)}
+                        >
+                          Видалити
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             );

@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { Loader2 } from "lucide-react";
 
-const BlockNoteEditor = dynamic(() => import("./BlockNoteEditor"), {
+const NovelEditor = dynamic(() => import("./NovelEditor"), {
   ssr: false,
   loading: () => (
     <div className="flex items-center justify-center py-20">
@@ -20,5 +20,5 @@ export interface BlockEditorProps {
 }
 
 export function BlockEditor(props: BlockEditorProps) {
-  return <BlockNoteEditor {...props} />;
+  return <NovelEditor {...props} />;
 }

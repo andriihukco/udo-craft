@@ -13,9 +13,11 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Search, Mail, ExternalLink, Loader2, X, MessageCircle, Phone, Calendar, UserPlus, Trash2 } from "lucide-react";
+import { Search, Mail, ExternalLink, Loader2, X, MessageCircle, Phone, Calendar, UserPlus, Trash2, Users } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
 import { StatusBadge, type LeadStatus } from "@/components/status-badge";
 import { fmtMoney, fmtDate } from "@/lib/utils";
+import { PageHeader } from "@/components/page-header";
 
 interface Lead {
   id: string;
@@ -166,22 +168,26 @@ export default function ClientsPage() {
       <div className="flex-1 flex flex-col overflow-hidden transition-[margin] duration-200" style={{ marginRight: selected ? drawerWidth : 0 }}>
 
         {/* Header */}
-        <div className="h-12 px-4 border-b border-border shrink-0 flex items-center gap-4">
-          <p className="font-semibold text-base shrink-0">
-            Клієнти {clients.length > 0 && <span className="text-muted-foreground font-normal text-sm">({filtered.length})</span>}
-          </p>
-          <div className="relative max-w-xs w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-            <Input
-              placeholder="Пошук..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-8 h-8 text-sm"
-            />
-          </div>
-          <Button size="sm" className="ml-auto gap-1.5 shrink-0" onClick={() => setAddOpen(true)}>
-            <UserPlus className="size-3.5" /> Додати клієнта
-          </Button>
+        <div className="px-4 pt-4 pb-2 border-b border-border shrink-0">
+          <PageHeader
+            title={`Клієнти${clients.length > 0 ? ` (${filtered.length})` : ""}`}
+            actions={
+              <>
+                <div className="relative max-w-xs w-full">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Пошук..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-8 h-8 text-sm"
+                  />
+                </div>
+                <Button size="sm" className="gap-1.5 shrink-0" onClick={() => setAddOpen(true)}>
+                  <UserPlus className="size-3.5" /> Додати клієнта
+                </Button>
+              </>
+            }
+          />
         </div>
 
         {/* Table */}
@@ -191,8 +197,22 @@ export default function ClientsPage() {
               <Loader2 className="size-5 animate-spin text-muted-foreground" />
             </div>
           ) : filtered.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-              Клієнтів не знайдено
+            <div className="flex items-center justify-center h-full">
+              {search ? (
+                <EmptyState
+                  icon={Search}
+                  title="Нічого не знайдено"
+                  description="Спробуйте змінити запит пошуку"
+                  action={<Button variant="outline" size="sm" onClick={() => setSearch("")}>Скинути пошук</Button>}
+                />
+              ) : (
+                <EmptyState
+                  icon={Users}
+                  title="Клієнтів ще немає"
+                  description="Додайте першого клієнта вручну або він з'явиться після першого замовлення"
+                  action={<Button size="sm" className="gap-1.5" onClick={() => setAddOpen(true)}><UserPlus className="size-3.5" /> Додати клієнта</Button>}
+                />
+              )}
             </div>
           ) : (
             <Table>
@@ -202,7 +222,7 @@ export default function ClientsPage() {
                   <TableHead>Замовлень</TableHead>
                   <TableHead>Загальна сума</TableHead>
                   <TableHead>Останнє замовлення</TableHead>
-                  <TableHead className="w-10" />
+                  <TableHead className="w-10"><span className="sr-only">Дії</span></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

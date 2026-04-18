@@ -228,7 +228,7 @@ export default function UsersPage() {
                 <TableHead className="hidden md:table-cell">Зареєстрований</TableHead>
                 <TableHead className="hidden md:table-cell">Останній вхід</TableHead>
                 <TableHead className="hidden sm:table-cell">Статус</TableHead>
-                <TableHead className="w-16" />
+                <TableHead className="w-16"><span className="sr-only">Дії</span></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

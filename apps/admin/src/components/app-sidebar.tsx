@@ -35,6 +35,16 @@ import {
   Collapsible,
   CollapsibleContent,
 } from "@/components/ui/collapsible";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // ── Nav structure ─────────────────────────────────────────────────────────────
 
@@ -67,9 +77,16 @@ const CATALOG_NAV: NavItem[] = [
     children: [
       { title: "Товари",      url: "/products" },
       { title: "Категорії",   url: "/products?tab=categories" },
-      { title: "Кольори",     url: "/products?tab=materials" },
-      { title: "Ціни друку",  url: "/products?tab=print_pricing" },
-      { title: "Принти",      url: "/products?tab=prints" },
+    ],
+  },
+  {
+    title: "Налаштування каталогу",
+    url: "/settings/catalog",
+    icon: Settings,
+    children: [
+      { title: "Кольори",     url: "/settings/catalog" },
+      { title: "Ціни друку",  url: "/settings/catalog?tab=print_pricing" },
+      { title: "Принти",      url: "/settings/catalog?tab=prints" },
     ],
   },
 ];
@@ -111,10 +128,12 @@ export function AppSidebar({ user }: AppSidebarProps) {
   const supabase = React.useMemo(() => createClient(), []);
   const [badges, setBadges] = React.useState({ orders: 0, messages: 0 });
   const [unreadMessages, setUnreadMessages] = React.useState(0);
+  const [pendingUrl, setPendingUrl] = React.useState<string | null>(null);
 
   // Track which collapsibles are open
   const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>({
     "/products": pathname.startsWith("/products"),
+    "/settings/catalog": pathname.startsWith("/settings/catalog"),
     "/cms": pathname.startsWith("/cms"),
   });
 
@@ -168,13 +187,18 @@ export function AppSidebar({ user }: AppSidebarProps) {
     if (isMobile) setOpenMobile(false);
     const hasDraft = typeof sessionStorage !== "undefined" && !!sessionStorage.getItem("new-order-draft");
     if (hasDraft && !isActive) {
-      if (confirm("Покинути сторінку? Незбережене замовлення буде втрачено.")) {
-        sessionStorage.removeItem("new-order-draft");
-        router.push(url);
-      }
+      setPendingUrl(url);
       return false;
     }
     return true;
+  };
+
+  const handleConfirmLeave = () => {
+    if (pendingUrl) {
+      sessionStorage.removeItem("new-order-draft");
+      router.push(pendingUrl);
+    }
+    setPendingUrl(null);
   };
 
   const renderSimpleItem = (item: NavItem) => {
@@ -225,6 +249,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
             tooltip={item.title}
             isActive={isGroupActive}
             aria-current={isGroupActive ? "page" : undefined}
+            aria-expanded={isOpen}
             onClick={() => setOpenGroups((prev) => ({ ...prev, [item.url]: !isOpen }))}
           >
             <item.icon aria-hidden="true" />
@@ -260,6 +285,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
   };
 
   return (
+    <>
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className={`flex items-center py-1 px-2 ${isCollapsed ? "justify-center" : "justify-between"}`}>
@@ -316,5 +342,23 @@ export function AppSidebar({ user }: AppSidebarProps) {
 
       <SidebarRail />
     </Sidebar>
+
+    <AlertDialog open={!!pendingUrl} onOpenChange={(open) => { if (!open) setPendingUrl(null); }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Покинути сторінку?</AlertDialogTitle>
+          <AlertDialogDescription>
+            У вас є незбережене замовлення. Якщо ви покинете сторінку, всі зміни буде втрачено.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Залишитись</AlertDialogCancel>
+          <AlertDialogAction onClick={handleConfirmLeave} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            Покинути
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

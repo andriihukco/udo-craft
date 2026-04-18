@@ -125,8 +125,8 @@ export default function NewOrderPage() {
     (product: ProductWithConfig, variant: ProductColorVariant | null, size?: string | null) => {
       const mat = variant ? materials.find((m) => m.id === variant.material_id) : null;
       const imgs = (() => {
-        const productImgs = resolveProductImages((product as any).product_images, product.images);
-        const variantImgs = variant ? resolveProductImages((variant as any).variant_images, variant.images) : null;
+        const productImgs = resolveProductImages(product.product_images, product.images);
+        const variantImgs = variant ? resolveProductImages(variant.variant_images, variant.images) : null;
         return getCustomizableImages(variantImgs?.length ? variantImgs : productImgs);
       })();
       const imgUrl = imgs.front ?? Object.values(imgs)[0] ?? "";

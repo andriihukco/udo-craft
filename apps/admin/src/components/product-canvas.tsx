@@ -303,7 +303,7 @@ export default function ProductCanvas({
     if (!canvasReady) return;
     const canvas = fabricRef.current;
     if (!canvas) return;
-    const productImgs = resolveProductImages((product as any).product_images, product.images);
+    const productImgs = resolveProductImages(product.product_images, product.images);
     const images = variantImages && Object.keys(variantImages).length > 0
       ? variantImages
       : getCustomizableImages(productImgs);
@@ -951,7 +951,7 @@ export default function ProductCanvas({
       {/* Side switcher — outside canvas so Fabric's upper-canvas can't block it */}
       {onSideChange && (() => {
         const images = variantImages && Object.keys(variantImages).length > 0
-          ? variantImages : getCustomizableImages(resolveProductImages((product as any).product_images, product.images));
+          ? variantImages : getCustomizableImages(resolveProductImages(product.product_images, product.images));
         const keys = Object.keys(images).filter((k) => images[k]);
         if (keys.length <= 1) return null;
         const labelMap: Record<string, string> = { front: "Перед", back: "Зад", left: "Ліво", right: "Право" };
