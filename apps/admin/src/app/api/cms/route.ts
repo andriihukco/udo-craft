@@ -29,13 +29,20 @@ export async function PUT(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { slug, title, body: content, meta } = body;
+  const { slug, title, body: content, meta, published } = body;
   if (!slug) return NextResponse.json({ error: "slug required" }, { status: 400 });
 
   const service = createServiceClient();
+  const upsertPayload: Record<string, unknown> = {
+    slug, title, body: content, meta,
+    updated_at: new Date().toISOString(),
+    updated_by: user.id,
+  };
+  if (typeof published === "boolean") upsertPayload.published = published;
+
   const { data, error } = await service
     .from("cms_content")
-    .upsert({ slug, title, body: content, meta, updated_at: new Date().toISOString(), updated_by: user.id }, { onConflict: "slug" })
+    .upsert(upsertPayload, { onConflict: "slug" })
     .select()
     .single();
 

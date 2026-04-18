@@ -7,6 +7,62 @@ export const PX_TO_MM_RATIO = 0.5; // Example ratio
 export const PrintZoneSideEnum = z.enum(["front", "back"]);
 export const LeadStatusEnum = z.enum(["draft", "new", "in_progress", "production", "completed", "archived"]);
 
+// ── Product image model ─────────────────────────────────────────────────────
+
+export const ProductImageSchema = z.object({
+  key:             z.string(),                    // "front" | "back" | "lifestyle_1" | any string
+  url:             z.string(),
+  label:           z.string().default(""),        // human-readable, shown in admin
+  is_customizable: z.boolean().default(false),    // true = canvas side, false = gallery only
+  sort_order:      z.number().int().default(0),
+});
+
+export type ProductImage = z.infer<typeof ProductImageSchema>;
+
+/**
+ * Returns only customizable images as a legacy { key: url } map.
+ * Drop-in replacement for reading product.images in canvas code.
+ */
+export function getCustomizableImages(imgs: ProductImage[]): Record<string, string> {
+  return Object.fromEntries(
+    imgs
+      .filter((i) => i.is_customizable && i.url)
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map((i) => [i.key, i.url])
+  );
+}
+
+/**
+ * Returns all images (customizable + gallery) as a { key: url } map.
+ */
+export function getAllImages(imgs: ProductImage[]): Record<string, string> {
+  return Object.fromEntries(
+    imgs
+      .filter((i) => i.url)
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map((i) => [i.key, i.url])
+  );
+}
+
+/**
+ * Reads new product_images/variant_images column with fallback to legacy images Record.
+ * Use this everywhere instead of reading .images directly.
+ */
+export function resolveProductImages(
+  productImages: ProductImage[] | undefined | null,
+  legacyImages: Record<string, string> | undefined | null
+): ProductImage[] {
+  if (productImages && productImages.length > 0) return productImages;
+  // Convert legacy Record to ProductImage array, all marked customizable
+  return Object.entries(legacyImages ?? {}).map(([key, url], i) => ({
+    key,
+    url,
+    label: key,
+    is_customizable: true,
+    sort_order: i,
+  }));
+}
+
 // Zod Schemas
 export const ProductSchema = z.object({
   id: z.string().uuid(),
@@ -14,7 +70,8 @@ export const ProductSchema = z.object({
   slug: z.string(),
   description: z.string().default(""),
   base_price_cents: z.number().int(),
-  images: z.record(z.string(), z.string()), // flexible: { front: url, back: url, left: url, ... }
+  images: z.record(z.string(), z.string()), // legacy — kept for backward compat
+  product_images: z.array(ProductImageSchema).default([]), // new single source of truth
   px_to_mm_ratio: z.number(),
   collar_y_px: z.number().int(),
   is_active: z.boolean().default(true),
@@ -90,7 +147,8 @@ export const ProductColorVariantSchema = z.object({
   id: z.string().uuid(),
   product_id: z.string().uuid(),
   material_id: z.string().uuid(),
-  images: z.record(z.string(), z.string()),
+  images: z.record(z.string(), z.string()),          // legacy — kept for backward compat
+  variant_images: z.array(ProductImageSchema).default([]), // new single source of truth
   sort_order: z.number().int().default(0),
   is_active: z.boolean().default(true),
 });

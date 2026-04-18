@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { fabric } from "fabric";
-import { Product, PrintZone } from "@udo-craft/shared";
+import { Product, PrintZone, resolveProductImages, getCustomizableImages } from "@udo-craft/shared";
 import { AlignCenter, AlignLeft, AlignRight, Bold, BringToFront, Copy, Eraser, FlipHorizontal, Focus, Italic, Loader2, Pencil, RotateCcw, RotateCw, SendToBack, Shirt, Trash2 } from "lucide-react";
 import { removeBgClient } from "@/lib/remove-bg-client";
 import { toast } from "sonner";
@@ -303,8 +303,10 @@ export default function ProductCanvas({
     if (!canvasReady) return;
     const canvas = fabricRef.current;
     if (!canvas) return;
+    const productImgs = resolveProductImages((product as any).product_images, product.images);
     const images = variantImages && Object.keys(variantImages).length > 0
-      ? variantImages : (product.images ?? {});
+      ? variantImages
+      : getCustomizableImages(productImgs);
     const imgUrl = images[activeSide] ?? (activeSide !== "front" ? images.front : null) ?? Object.values(images)[0];
     if (!imgUrl) return;
     let cancelled = false;
@@ -949,7 +951,7 @@ export default function ProductCanvas({
       {/* Side switcher — outside canvas so Fabric's upper-canvas can't block it */}
       {onSideChange && (() => {
         const images = variantImages && Object.keys(variantImages).length > 0
-          ? variantImages : (product.images ?? {});
+          ? variantImages : getCustomizableImages(resolveProductImages((product as any).product_images, product.images));
         const keys = Object.keys(images).filter((k) => images[k]);
         if (keys.length <= 1) return null;
         const labelMap: Record<string, string> = { front: "Перед", back: "Зад", left: "Ліво", right: "Право" };

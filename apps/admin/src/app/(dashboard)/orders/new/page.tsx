@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { generateInvoicePDF } from "@/lib/generate-invoice";
-import { Product, PrintZone, Material, ProductColorVariant } from "@udo-craft/shared";
+import { Product, PrintZone, Material, ProductColorVariant, resolveProductImages, getCustomizableImages } from "@udo-craft/shared";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
 import { Loader2 } from "lucide-react";
@@ -124,8 +124,11 @@ export default function NewOrderPage() {
   const handleAddWithoutPrint = useCallback(
     (product: ProductWithConfig, variant: ProductColorVariant | null, size?: string | null) => {
       const mat = variant ? materials.find((m) => m.id === variant.material_id) : null;
-      const imgs = (variant?.images && Object.keys(variant.images).length > 0
-        ? variant.images : product.images) as Record<string, string> ?? {};
+      const imgs = (() => {
+        const productImgs = resolveProductImages((product as any).product_images, product.images);
+        const variantImgs = variant ? resolveProductImages((variant as any).variant_images, variant.images) : null;
+        return getCustomizableImages(variantImgs?.length ? variantImgs : productImgs);
+      })();
       const imgUrl = imgs.front ?? Object.values(imgs)[0] ?? "";
       const resolvedSize = size ?? (Array.isArray(product.available_sizes) && product.available_sizes.length > 0
         ? product.available_sizes[Math.floor(product.available_sizes.length / 2)] : "");

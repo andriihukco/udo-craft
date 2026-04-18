@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -14,6 +15,8 @@ import { toast } from "sonner";
 import { ProductColorVariantsList } from "@/components/product-color-variants";
 import PrintTypePricingManager from "@/components/print-type-pricing-manager";
 import PrintPresetsTab from "@/components/print-presets-tab";
+import { ProductImageManager } from "@udo-craft/ui";
+import type { ProductImage } from "@udo-craft/shared";
 
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -30,7 +33,7 @@ interface PrintArea {
 }
 interface Category { id: string; name: string; slug: string; is_active: boolean; sort_order: number; image_url?: string; }
 interface Material { id: string; name: string; hex_code: string; is_active: boolean; }
-interface ProductImage { tag: string; url: string; }
+interface ProductImageSlot { tag: string; url: string; }
 
 interface Product {
   id: string; name: string; slug: string; description: string; base_price_cents: number;
@@ -78,7 +81,7 @@ export default function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
   const [productForm, setProductForm] = useState(EMPTY_PRODUCT);
-  const [imageSlots, setImageSlots] = useState<ProductImage[]>([]);
+  const [productImages, setProductImages] = useState<ProductImage[]>([]);
   const [uploading, setUploading] = useState<Record<number, boolean>>({});
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [savingProduct, setSavingProduct] = useState(false);
@@ -152,7 +155,7 @@ export default function ProductsPage() {
   const openCreateProduct = () => {
     setEditingProduct(null);
     setProductForm(EMPTY_PRODUCT);
-    setImageSlots([]);
+    setProductImages([]);
     setProductModal(true);
   };
 
@@ -166,9 +169,18 @@ export default function ProductsPage() {
       category_id: p.category_id || null,
       discount_grid: p.discount_grid || [],
     });
-    const imgs = p.images || {};
-    const slots = Object.entries(imgs).map(([tag, url]) => ({ tag, url }));
-    setImageSlots(slots);
+    // Load product_images; fall back to legacy images Record
+    const pi = (p as any).product_images as ProductImage[] | undefined;
+    if (pi && pi.length > 0) {
+      setProductImages(pi);
+    } else {
+      const imgs = p.images || {};
+      setProductImages(
+        Object.entries(imgs).map(([key, url], i) => ({
+          key, url, label: key, is_customizable: true, sort_order: i,
+        }))
+      );
+    }
     if (p.size_chart_id) {
       const chart = sizeCharts.find(c => c.id === p.size_chart_id);
       if (chart) setSizeForm({ name: chart.name, rows: chart.rows?.length ? chart.rows : [] });
@@ -179,26 +191,13 @@ export default function ProductsPage() {
     setProductModal(true);
   };
 
-  const handleFileUpload = async (index: number, file: File) => {
-    setUploading(prev => ({ ...prev, [index]: true }));
-    try {
-      const fd = new FormData(); fd.append("files", file); fd.append("tags", imageSlots[index].tag || "front");
-      const r = await fetch("/api/upload", { method: "POST", body: fd });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
-      const url = data.results?.[0]?.url ?? data.urls?.[0];
-      if (url) setImageSlots(prev => prev.map((s, i) => i === index ? { ...s, url } : s));
-      else throw new Error("URL не отримано");
-    } catch (err) {
-      toast.error(`Помилка завантаження: ${err instanceof Error ? err.message : String(err)}`);
-    }
-    finally { setUploading(prev => ({ ...prev, [index]: false })); }
-  };
+  // handleFileUpload removed — ProductImageManager handles uploads internally
 
   const handleSaveProduct = async () => {
     if (!productForm.name || !productForm.slug) { toast.error("Назва та slug обов'язкові"); return; }
+    // Build legacy images map from customizable entries (backward compat for canvas)
     const images: Record<string, string> = {};
-    for (const s of imageSlots) if (s.tag && s.url) images[s.tag] = s.url;
+    for (const img of productImages) if (img.is_customizable && img.key && img.url) images[img.key] = img.url;
     setSavingProduct(true);
     try {
       // Save size chart if rows exist
@@ -211,7 +210,7 @@ export default function ProductsPage() {
       }
       const derivedSizes = sizeForm.rows.map(r => r.size?.trim()).filter(Boolean) as string[];
       const url = editingProduct ? `/api/products/${editingProduct.id}` : "/api/products";
-      const r = await fetch(url, { method: editingProduct ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...productForm, available_sizes: derivedSizes.length > 0 ? derivedSizes : productForm.available_sizes, size_chart_id: sizeChartId, images }) });
+      const r = await fetch(url, { method: editingProduct ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...productForm, available_sizes: derivedSizes.length > 0 ? derivedSizes : productForm.available_sizes, size_chart_id: sizeChartId, images, product_images: productImages }) });
       if (!r.ok) throw new Error((await r.json()).error || "Failed");
       toast.success(editingProduct ? "Продукт оновлено" : "Продукт створено");
       setProductModal(false); fetchProducts(); fetchLookups();
@@ -374,7 +373,7 @@ export default function ProductsPage() {
         <nav className="flex h-full">
           {TABS.map(({ key, icon: Icon, label }) => (
             <button key={key} onClick={() => setTab(key)}
-              className={`flex items-center gap-1.5 px-3 h-full text-sm font-medium border-b-2 transition-colors ${tab === key ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+              className={`flex items-center gap-1.5 px-3 h-full text-sm font-medium border-b-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset ${tab === key ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
               <Icon className="w-3.5 h-3.5" />{label}
             </button>
           ))}
@@ -395,7 +394,7 @@ export default function ProductsPage() {
               <div className="flex items-center gap-2 px-4 py-2 border-b border-border flex-wrap">
                 <button
                   onClick={() => setCategoryFilter("")}
-                  className={`text-xs px-3 py-1 rounded-full border transition-colors ${!categoryFilter ? "bg-foreground/10 border-foreground/30 text-foreground font-medium" : "border-border text-muted-foreground hover:border-foreground/30"}`}
+                  className={`text-xs px-3 py-1 rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${!categoryFilter ? "bg-foreground/10 border-foreground/30 text-foreground font-medium" : "border-border text-muted-foreground hover:border-foreground/30"}`}
                 >
                   Всі
                 </button>
@@ -403,7 +402,7 @@ export default function ProductsPage() {
                   <button
                     key={c.id}
                     onClick={() => setCategoryFilter(categoryFilter === c.id ? "" : c.id)}
-                    className={`text-xs px-3 py-1 rounded-full border transition-colors ${categoryFilter === c.id ? "bg-foreground/10 border-foreground/30 text-foreground font-medium" : "border-border text-muted-foreground hover:border-foreground/30"}`}
+                    className={`text-xs px-3 py-1 rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${categoryFilter === c.id ? "bg-foreground/10 border-foreground/30 text-foreground font-medium" : "border-border text-muted-foreground hover:border-foreground/30"}`}
                   >
                     {c.name}
                   </button>
@@ -443,7 +442,7 @@ export default function ProductsPage() {
                     <TableCell className="text-muted-foreground cursor-grab pr-0"><GripVertical className="w-4 h-4" /></TableCell>
                     <TableCell><Switch checked={p.is_active} onCheckedChange={() => handleToggleActive(p)} /></TableCell>
                     <TableCell>
-                      <button onClick={() => setExpandedProduct(isExpanded ? null : p.id)} className="text-muted-foreground hover:text-foreground">
+                      <button onClick={() => setExpandedProduct(isExpanded ? null : p.id)} className="text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded" aria-label={isExpanded ? "Згорнути варіанти" : "Розгорнути варіанти"} aria-expanded={isExpanded}>
                         {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                       </button>
                     </TableCell>
@@ -613,13 +612,13 @@ export default function ProductsPage() {
 
             <div className="space-y-1.5">
               <Label htmlFor="p-description">Опис для картки товару</Label>
-              <textarea
+              <Textarea
                 id="p-description"
                 value={productForm.description}
                 onChange={e => setProductForm(f => ({ ...f, description: e.target.value }))}
                 placeholder="Короткий опис, який побачить клієнт на картці товару"
                 rows={3}
-                className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                className="resize-none"
               />
             </div>
 
@@ -695,7 +694,7 @@ export default function ProductsPage() {
                       {sizeForm.rows[0] && Object.keys(sizeForm.rows[0]).map(col => (
                         <th key={col} className="px-3 py-2 text-left font-medium text-muted-foreground whitespace-nowrap">
                           <div className="flex items-center gap-1">{col}
-                            {col !== "size" && <button type="button" onClick={() => { const cols = Object.keys(sizeForm.rows[0]).filter(c => c !== col); setSizeForm(f => ({ ...f, rows: f.rows.map(r => { const n: Record<string, string> = { size: r.size || "" }; cols.forEach(c => { n[c] = r[c] || ""; }); return n; }) })); }} className="text-muted-foreground/50 hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>}
+                            {col !== "size" && <button type="button" onClick={() => { const cols = Object.keys(sizeForm.rows[0]).filter(c => c !== col); setSizeForm(f => ({ ...f, rows: f.rows.map(r => { const n: Record<string, string> = { size: r.size || "" }; cols.forEach(c => { n[c] = r[c] || ""; }); return n; }) })); }} className="text-muted-foreground/50 hover:text-destructive transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded" aria-label={`Видалити колонку ${col}`}><X className="w-3 h-3" /></button>}
                           </div>
                         </th>
                       ))}
@@ -728,7 +727,7 @@ export default function ProductsPage() {
                           </td>
                         ))}
                         <td className="px-2 py-1.5">
-                          <button type="button" onClick={() => setSizeForm(f => ({ ...f, rows: f.rows.filter((_, i) => i !== ri) }))} className="text-muted-foreground/50 hover:text-destructive transition-colors"><X className="w-3.5 h-3.5" /></button>
+                          <button type="button" onClick={() => setSizeForm(f => ({ ...f, rows: f.rows.filter((_, i) => i !== ri) }))} className="text-muted-foreground/50 hover:text-destructive transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded" aria-label="Видалити рядок"><X className="w-3.5 h-3.5" /></button>
                         </td>
                       </tr>
                     ))}
@@ -774,37 +773,26 @@ export default function ProductsPage() {
                       <span className="text-xs text-muted-foreground shrink-0">шт. →</span>
                       <Input type="number" min="1" max="99" value={row.discount_pct} onChange={e => setProductForm(f => ({ ...f, discount_grid: f.discount_grid.map((r, idx) => idx === i ? { ...r, discount_pct: parseInt(e.target.value) || 0 } : r) }))} className="h-7 w-16 text-sm text-center" placeholder="5" />
                       <span className="text-xs text-muted-foreground shrink-0">%</span>
-                      <button type="button" onClick={() => setProductForm(f => ({ ...f, discount_grid: f.discount_grid.filter((_, idx) => idx !== i) }))} className="ml-auto text-muted-foreground/50 hover:text-destructive transition-colors"><X className="w-3.5 h-3.5" /></button>
+                      <button type="button" onClick={() => setProductForm(f => ({ ...f, discount_grid: f.discount_grid.filter((_, idx) => idx !== i) }))} className="ml-auto text-muted-foreground/50 hover:text-destructive transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded" aria-label="Видалити рівень знижки"><X className="w-3.5 h-3.5" /></button>
                     </div>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Images (new only) */}
-            {!editingProduct && (
-              <div className="space-y-3 border-t pt-4">
-                <div className="flex items-center justify-between">
-                  <Label>Зображення товару</Label>
-                  <Button type="button" variant="outline" size="sm" onClick={() => setImageSlots(prev => [...prev, { tag: "", url: "" }])}><Plus className="w-3.5 h-3.5 mr-1" /> Ракурс</Button>
-                </div>
-                <div className="grid grid-cols-4 gap-3">
-                  {imageSlots.map((slot, i) => (
-                    <div key={i} className="space-y-1.5">
-                      <div className="flex items-center gap-1">
-                        <Input value={slot.tag} onChange={e => setImageSlots(prev => prev.map((s, idx) => idx === i ? { ...s, tag: e.target.value } : s))} placeholder="груди / спина..." className="h-7 text-xs flex-1" />
-                        <button type="button" onClick={() => setImageSlots(prev => prev.filter((_, idx) => idx !== i))}><X className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" /></button>
-                      </div>
-                      <div className="relative border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-all aspect-square overflow-hidden" onClick={() => fileInputRefs.current[i]?.click()}>
-                        {slot.url ? <img src={slot.url} alt={slot.tag} className="w-full h-full object-contain p-1" /> : <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-1"><ImageIcon className="w-5 h-5 opacity-40" /><span className="text-[10px]">Завантажити</span></div>}
-                        {uploading[i] && <div className="absolute inset-0 bg-background/70 flex items-center justify-center"><RefreshCw className="w-4 h-4 animate-spin text-primary" /></div>}
-                      </div>
-                      <input ref={el => { fileInputRefs.current[i] = el; }} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(i, f); }} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Images */}
+            <div className="space-y-3 border-t pt-4">
+              <Label>Фотографії товару</Label>
+              <p className="text-xs text-muted-foreground -mt-1">
+                Позначте «Канвас» для фото, які використовуються як сторони в редакторі принтів. Решта — галерея на сторінці товару.
+              </p>
+              <ProductImageManager
+                images={productImages}
+                onChange={setProductImages}
+                uploadUrl="/api/upload"
+                uploadTagPrefix="product"
+              />
+            </div>
 
             {/* Colors */}
             <div className="border-t pt-4">
@@ -908,18 +896,17 @@ export default function ProductsPage() {
               <Label>Дозволені типи нанесення</Label>
               <div className="flex flex-wrap gap-2">
                 {([
-                  { id: "dtf", label: "DTF / Принт", color: "#6366f1" },
-                  { id: "embroidery", label: "Вишивка", color: "#ec4899" },
-                  { id: "screen", label: "Шовкодрук", color: "#f59e0b" },
-                  { id: "sublimation", label: "Сублімація", color: "#06b6d4" },
-                  { id: "patch", label: "Нашивка", color: "#10b981" },
+                  { id: "dtf",         label: "DTF / Принт",  selCls: "bg-primary text-primary-foreground border-primary" },
+                  { id: "embroidery",  label: "Вишивка",       selCls: "bg-pink-500 text-white border-pink-500" },
+                  { id: "screen",      label: "Шовкодрук",     selCls: "bg-amber-500 text-white border-amber-500" },
+                  { id: "sublimation", label: "Сублімація",    selCls: "bg-cyan-500 text-white border-cyan-500" },
+                  { id: "patch",       label: "Нашивка",       selCls: "bg-emerald-500 text-white border-emerald-500" },
                 ] as const).map(t => {
                   const sel = printForm.allowed_print_types.includes(t.id);
                   return (
                     <button key={t.id} type="button"
                       onClick={() => setPrintForm(f => ({ ...f, allowed_print_types: sel ? f.allowed_print_types.filter(x => x !== t.id) : [...f.allowed_print_types, t.id] }))}
-                      className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-all ${sel ? "text-white border-transparent" : "border-border text-muted-foreground hover:border-foreground/30"}`}
-                      style={sel ? { backgroundColor: t.color } : {}}
+                      className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${sel ? t.selCls : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"}`}
                     >{t.label}</button>
                   );
                 })}
@@ -945,15 +932,21 @@ export default function ProductsPage() {
                         <div className="space-y-1">
                           <Label className="text-xs text-muted-foreground">Тип / Розмір</Label>
                           <div className="flex gap-1.5">
-                            <select
+                            <Select
                               value={row.print_type}
-                              onChange={e => setPrintForm(f => ({ ...f, pricing_grid: f.pricing_grid.map((r, i) => i === ri ? { ...r, print_type: e.target.value } : r) }))}
-                              className="h-7 text-xs px-2 flex-1"
+                              onValueChange={v => setPrintForm(f => ({ ...f, pricing_grid: f.pricing_grid.map((r, i) => i === ri ? { ...r, print_type: v } : r) }))}
                             >
-                              {printForm.allowed_print_types.map(pt => (
-                                <option key={pt} value={pt}>{pt === "dtf" ? "DTF" : pt === "embroidery" ? "Вишивка" : pt === "screen" ? "Шовкодрук" : pt === "sublimation" ? "Сублімація" : "Нашивка"}</option>
-                              ))}
-                            </select>
+                              <SelectTrigger className="h-7 text-xs flex-1">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {printForm.allowed_print_types.map(pt => (
+                                  <SelectItem key={pt} value={pt} className="text-xs">
+                                    {pt === "dtf" ? "DTF" : pt === "embroidery" ? "Вишивка" : pt === "screen" ? "Шовкодрук" : pt === "sublimation" ? "Сублімація" : "Нашивка"}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                             <Input value={row.size_label} onChange={e => setPrintForm(f => ({ ...f, pricing_grid: f.pricing_grid.map((r, i) => i === ri ? { ...r, size_label: e.target.value } : r) }))} placeholder="8-10см" className="h-7 text-xs w-20" />
                           </div>
                         </div>
@@ -965,7 +958,7 @@ export default function ProductsPage() {
                           <Label className="text-xs text-muted-foreground">Макс. см</Label>
                           <Input type="number" value={row.size_max_cm} onChange={e => setPrintForm(f => ({ ...f, pricing_grid: f.pricing_grid.map((r, i) => i === ri ? { ...r, size_max_cm: parseFloat(e.target.value) || 0 } : r) }))} className="h-7 text-xs" />
                         </div>
-                        <button type="button" onClick={() => setPrintForm(f => ({ ...f, pricing_grid: f.pricing_grid.filter((_, i) => i !== ri) }))} className="mb-0.5 text-muted-foreground/50 hover:text-destructive transition-colors self-end"><X className="w-3.5 h-3.5" /></button>
+                        <button type="button" onClick={() => setPrintForm(f => ({ ...f, pricing_grid: f.pricing_grid.filter((_, i) => i !== ri) }))} className="mb-0.5 text-muted-foreground/50 hover:text-destructive transition-colors self-end focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded" aria-label="Видалити рядок ціни"><X className="w-3.5 h-3.5" /></button>
                       </div>
 
                       {/* Qty tiers */}
@@ -981,7 +974,7 @@ export default function ProductsPage() {
                             <Input type="number" min={0} value={Math.round(tier.price_cents / 100)}
                               onChange={e => setPrintForm(f => ({ ...f, pricing_grid: f.pricing_grid.map((r, i) => i === ri ? { ...r, qty_tiers: r.qty_tiers.map((t, j) => j === ti ? { ...t, price_cents: Math.round((parseFloat(e.target.value) || 0) * 100) } : t) } : r) }))}
                               className="h-7 text-xs" />
-                            <button type="button" onClick={() => setPrintForm(f => ({ ...f, pricing_grid: f.pricing_grid.map((r, i) => i === ri ? { ...r, qty_tiers: r.qty_tiers.filter((_, j) => j !== ti) } : r) }))} className="size-7 flex items-center justify-center text-muted-foreground/50 hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
+                            <button type="button" onClick={() => setPrintForm(f => ({ ...f, pricing_grid: f.pricing_grid.map((r, i) => i === ri ? { ...r, qty_tiers: r.qty_tiers.filter((_, j) => j !== ti) } : r) }))} className="size-7 flex items-center justify-center text-muted-foreground/50 hover:text-destructive transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded" aria-label="Видалити ціновий рівень"><X className="w-3 h-3" /></button>
                           </div>
                         ))}
                         <button type="button"
