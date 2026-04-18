@@ -105,15 +105,20 @@ export function ProductCardDetailed({
 
   return (
     <div
+      role="button"
+      tabIndex={isOutOfStock ? -1 : 0}
+      aria-label={`Переглянути ${product.name}`}
+      aria-disabled={isOutOfStock}
       onClick={handleCardClick}
-      className={`bg-[#f5f5f5] rounded-2xl overflow-hidden flex flex-col cursor-pointer ${isOutOfStock ? "opacity-60 pointer-events-none" : ""}`}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleCardClick(); }}
+      className={`bg-muted rounded-2xl overflow-hidden flex flex-col cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${isOutOfStock ? "opacity-60 pointer-events-none" : ""}`}
     >
       {/* Image */}
       <div className="p-3 sm:p-4 w-full flex items-center justify-center aspect-square flex-shrink-0 relative overflow-hidden">
         {imageUrl ? (
           <img src={imageUrl} alt={product.name} className="w-full h-full object-contain" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-300">
+          <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">
             <svg className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1}
                 d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -127,19 +132,19 @@ export function ProductCardDetailed({
         {/* Name + price + description */}
         <div className="flex flex-col gap-1">
           <div className="flex items-start justify-between gap-2">
-            <p className="text-sm font-semibold text-gray-900 leading-tight">{product.name}</p>
+            <p className="text-sm font-semibold text-foreground leading-tight">{product.name}</p>
             <p className="text-sm font-bold text-primary shrink-0">від ₴{(product.base_price_cents / 100).toFixed(0)}</p>
           </div>
           {product.description && (
             <div className="mt-1">
-              <p className={`text-xs text-gray-500 ${descExpanded ? "" : "line-clamp-2"}`}>
+              <p className={`text-xs text-muted-foreground ${descExpanded ? "" : "line-clamp-2"}`}>
                 {product.description}
               </p>
               {product.description.length > 80 && (
                 <button 
                   type="button"
                   onClick={(e) => { e.stopPropagation(); setDescExpanded(!descExpanded); }}
-                  className="text-[11px] text-primary font-semibold hover:underline mt-0.5 touch-manipulation cursor-pointer"
+                  className="text-[11px] text-primary font-semibold hover:underline mt-0.5 touch-manipulation cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
                 >
                   {descExpanded ? "Згорнути" : "Розгорнути"}
                 </button>
@@ -156,11 +161,13 @@ export function ProductCardDetailed({
                 <button
                   key={size}
                   type="button"
+                  aria-pressed={selectedSize === size}
+                  aria-label={`Розмір ${size}`}
                   onClick={(e) => { e.stopPropagation(); setSelectedSize(selectedSize === size ? null : size); }}
-                  className={`min-w-[32px] text-[11px] font-semibold px-2 py-1.5 rounded-lg border transition-all duration-150 touch-manipulation ${
+                  className={`min-w-[32px] text-[11px] font-semibold px-2 py-1.5 rounded-lg border transition-all duration-150 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
                     selectedSize === size
-                      ? "bg-gray-900 text-white border-gray-900"
-                      : "bg-white text-gray-600 border-gray-200 hover:border-gray-400 hover:text-gray-900"
+                      ? "bg-foreground text-background border-foreground"
+                      : "bg-background text-muted-foreground border-border hover:border-foreground/40 hover:text-foreground"
                   }`}
                 >
                   {size}
@@ -173,7 +180,8 @@ export function ProductCardDetailed({
               <button
                 key={c.id}
                 type="button"
-                title={c.name}
+                aria-label={c.name}
+                aria-pressed={hasVariants && displayVariantId === c.id}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (!hasVariants) return;
@@ -181,8 +189,8 @@ export function ProductCardDetailed({
                 }}
                 onMouseEnter={() => hasVariants && setHoveredVariantId(c.id)}
                 onMouseLeave={() => setHoveredVariantId(null)}
-                className={`w-6 h-6 rounded-full shrink-0 touch-manipulation transition-all ${c.border ? "ring-1 ring-gray-300" : ""} ${
-                  hasVariants && displayVariantId === c.id ? "ring-2 ring-offset-1 ring-gray-900 scale-110" : ""
+                className={`w-6 h-6 rounded-full shrink-0 touch-manipulation transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${c.border ? "ring-1 ring-border" : ""} ${
+                  hasVariants && displayVariantId === c.id ? "ring-2 ring-offset-1 ring-foreground scale-110" : ""
                 }`}
                 style={{ backgroundColor: c.hex }}
               />
@@ -200,7 +208,7 @@ export function ProductCardDetailed({
             type="button"
             onClick={handleAddPrint}
             disabled={isOutOfStock}
-            className="w-full py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/90 active:scale-[0.98] transition-all duration-150 touch-manipulation"
+            className="w-full py-2.5 rounded-full bg-primary text-white text-xs font-bold hover:bg-primary/90 active:scale-[0.98] transition-all duration-150 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50"
           >
             Додати принт
           </button>
@@ -208,7 +216,7 @@ export function ProductCardDetailed({
             type="button"
             onClick={handleAddWithoutPrint}
             disabled={isOutOfStock}
-            className="w-full py-2.5 rounded-xl border border-gray-300 bg-white text-gray-900 text-xs font-bold hover:border-gray-400 hover:bg-gray-50 active:scale-[0.98] transition-all duration-150 touch-manipulation"
+            className="w-full py-2.5 rounded-full border border-border bg-background text-foreground text-xs font-bold hover:border-foreground/40 hover:bg-muted active:scale-[0.98] transition-all duration-150 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50"
           >
             Додати без принта
           </button>
