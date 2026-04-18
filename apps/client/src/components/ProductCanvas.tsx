@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { fabric } from "fabric";
-import { Product, PrintZone, PRINT_TYPES, TEXT_FONTS, type PrintLayer, type PrintTypeId, type TextFontId } from "@udo-craft/shared";
+import { Product, PrintZone, PRINT_TYPES, TEXT_FONTS, type PrintLayer, type PrintTypeId, type TextFontId, resolveProductImages, getCustomizableImages } from "@udo-craft/shared";
 import { AlignCenter, AlignLeft, AlignRight, Bold, Copy, Eraser, Focus, Italic, Loader2, Pencil, RotateCcw, RotateCw, Shirt, Trash2 } from "lucide-react";
 import { removeBgClient } from "@/lib/remove-bg-client";
 import { toast } from "sonner";
@@ -330,7 +330,10 @@ export default function ProductCanvas({
     if (!canvasReady) return;
     const canvas = fabricRef.current;
     if (!canvas) return;
-    const images = variantImages && Object.keys(variantImages).length > 0 ? variantImages : (product.images ?? {});
+    const productImgs = resolveProductImages((product as any).product_images, product.images);
+    const images = variantImages && Object.keys(variantImages).length > 0
+      ? variantImages
+      : getCustomizableImages(productImgs);
     const imgUrl = images[activeSide] ?? (activeSide !== "front" ? images.front : null) ?? Object.values(images)[0];
     if (!imgUrl) return;
     const proxy = imgUrl.startsWith("http") ? `/api/proxy-image?url=${encodeURIComponent(imgUrl)}` : imgUrl;
@@ -953,7 +956,8 @@ export default function ProductCanvas({
                 <div className="flex flex-col items-center gap-0.5 shrink-0 min-w-[44px] min-h-[48px] justify-center">
                   <input type="color" value={activeLayer.textColor ?? "#000000"}
                     onChange={(e) => patch({ textColor: e.target.value })}
-                    className="w-6 h-6 rounded border border-border cursor-pointer p-0.5 bg-background" />
+                    aria-label="Колір тексту"
+                    className="w-6 h-6 rounded border border-border cursor-pointer p-0.5 bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" />
                   <span className="text-[9px] leading-none text-muted-foreground">Колір</span>
                 </div>
                 {/* Align */}
@@ -976,13 +980,15 @@ export default function ProductCanvas({
                 <div className="flex flex-col items-center gap-0.5 shrink-0 min-w-[44px] min-h-[48px] justify-center">
                   <input type="color" value={activeLayer.svgFillColor ?? "#000000"}
                     onChange={(e) => patch({ svgFillColor: e.target.value })}
-                    className="w-6 h-6 rounded border border-border cursor-pointer p-0.5 bg-background" />
+                    aria-label="Колір заливки"
+                    className="w-6 h-6 rounded border border-border cursor-pointer p-0.5 bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" />
                   <span className="text-[9px] leading-none text-muted-foreground">Заливка</span>
                 </div>
                 <div className="flex flex-col items-center gap-0.5 shrink-0 min-w-[44px] min-h-[48px] justify-center">
                   <input type="color" value={activeLayer.svgStrokeColor ?? "#000000"}
                     onChange={(e) => patch({ svgStrokeColor: e.target.value })}
-                    className="w-6 h-6 rounded border border-border cursor-pointer p-0.5 bg-background" />
+                    aria-label="Колір обводки"
+                    className="w-6 h-6 rounded border border-border cursor-pointer p-0.5 bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" />
                   <span className="text-[9px] leading-none text-muted-foreground">Обводка</span>
                 </div>
                 <div className="w-px h-4 bg-border mx-1 shrink-0" />
@@ -1070,7 +1076,10 @@ export default function ProductCanvas({
       </div>
 
       {onSideChange && (() => {
-        const images = variantImages && Object.keys(variantImages).length > 0 ? variantImages : (product.images ?? {});
+        const productImgs = resolveProductImages((product as any).product_images, product.images);
+        const images = variantImages && Object.keys(variantImages).length > 0
+          ? variantImages
+          : getCustomizableImages(productImgs);
         const keys = Object.keys(images).filter((key) => images[key]);
         if (keys.length <= 1) return null;
         const labelMap: Record<string, string> = { front: "Перед", back: "Зад", left: "Ліво", right: "Право" };

@@ -2,8 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useState } from "react";
-import { Menu, ChevronLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ChevronUp, Menu } from "lucide-react";
 import { CmsTreeSidebar, CmsTreeDrawer, type TreeNode } from "./_components/CmsTree";
 import { LandingSectionEditor, type SectionConfig } from "./_components/LandingSectionEditor";
 
@@ -193,7 +192,7 @@ export default function CmsPage() {
       {/* Desktop sidebar — hidden on mobile */}
       <CmsTreeSidebar nodes={TREE} selected={selected} onSelect={setSelected} />
 
-      {/* Mobile drawer */}
+      {/* Mobile bottom sheet */}
       <CmsTreeDrawer
         nodes={TREE}
         selected={selected}
@@ -204,44 +203,34 @@ export default function CmsPage() {
 
       {/* Right panel */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Mobile top bar — only visible on mobile */}
-        <div className="md:hidden flex items-center gap-3 px-4 py-3 border-b border-border bg-card shrink-0">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setDrawerOpen(true)}
-            aria-label="Відкрити меню"
-          >
-            <Menu className="size-5" />
-          </Button>
-          <div className="flex-1 min-w-0">
-            {selected && selected.type !== "group" ? (
-              <div className="flex items-center gap-1.5">
-                {selected.icon && <span className="text-base" aria-hidden="true">{selected.icon}</span>}
-                <span className="text-sm font-semibold truncate">{selected.label}</span>
-              </div>
-            ) : (
-              <span className="text-sm font-semibold text-muted-foreground">Редактор сайту</span>
-            )}
-          </div>
-          {selected && selected.type !== "group" && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setSelected(null)}
-              aria-label="Назад"
-            >
-              <ChevronLeft className="size-5" />
-            </Button>
-          )}
-        </div>
-
         {/* Editor area */}
-        <main className="flex-1 overflow-y-auto bg-background" aria-label="Редактор контенту">
-          <div className="max-w-3xl mx-auto">
+        <main className="flex-1 overflow-y-auto bg-white" aria-label="Редактор контенту">
+          <div className="max-w-3xl mx-auto pb-16 md:pb-0 bg-white min-h-full">
             {editorContent}
           </div>
         </main>
+
+        {/* Mobile bottom bar — only visible on mobile */}
+        <div className="md:hidden shrink-0 border-t border-border bg-background">
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            aria-label="Відкрити меню"
+            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+          >
+            <ChevronUp className="size-5 text-muted-foreground shrink-0" />
+            <div className="flex-1 min-w-0 text-left">
+              {selected && selected.type !== "group" ? (
+                <div className="flex items-center gap-1.5">
+                  {selected.icon && <span className="text-base" aria-hidden="true">{selected.icon}</span>}
+                  <span className="text-sm font-semibold truncate">{selected.label}</span>
+                </div>
+              ) : (
+                <span className="text-sm font-semibold text-muted-foreground">Редактор сайту</span>
+              )}
+            </div>
+          </button>
+        </div>
       </div>
     </div>
   );

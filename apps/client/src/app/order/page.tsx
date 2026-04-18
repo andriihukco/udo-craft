@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Product, PrintZone, Material, ProductColorVariant } from "@udo-craft/shared";
+import { resolveProductImages, getCustomizableImages } from "@udo-craft/shared";
 import { Loader2 } from "lucide-react";
 import { OrderPageInner } from "./_main";
 

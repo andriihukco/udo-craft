@@ -174,7 +174,7 @@ export function CmsTreeSidebar({ nodes, selected, onSelect }: CmsTreeProps) {
   );
 }
 
-// ── Mobile drawer ─────────────────────────────────────────────────────────────
+// ── Mobile bottom sheet ───────────────────────────────────────────────────────
 
 export function CmsTreeDrawer({
   nodes, selected, onSelect, open, onClose,
@@ -190,28 +190,32 @@ export function CmsTreeDrawer({
         />
       )}
 
-      {/* Slide-in panel from left */}
+      {/* Bottom sheet */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label="CMS навігація"
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-card border-r border-border",
+          "fixed inset-x-0 bottom-0 z-50 bg-card border-t border-border rounded-t-2xl",
           "flex flex-col overflow-hidden transition-transform duration-300 ease-in-out md:hidden",
-          open ? "translate-x-0" : "-translate-x-full",
+          "max-h-[75svh]",
+          open ? "translate-y-0" : "translate-y-full",
         )}
       >
-        {/* Drawer header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
-          <p className="text-sm font-semibold">Редактор сайту</p>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Закрити меню"
-            className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <X className="size-4" />
-          </button>
+        {/* Handle + header */}
+        <div className="flex flex-col items-center px-4 pt-3 pb-2 border-b border-border shrink-0">
+          <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-3" aria-hidden="true" />
+          <div className="w-full flex items-center justify-between">
+            <p className="text-sm font-semibold">Редактор сайту</p>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Закрити меню"
+              className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
         </div>
 
         {/* Scrollable tree */}

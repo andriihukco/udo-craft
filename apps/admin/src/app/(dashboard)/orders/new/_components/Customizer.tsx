@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
-import { Product, PrintZone, Material, ProductColorVariant, useCustomizer, type SidebarTabId } from "@udo-craft/shared";
+import { Product, PrintZone, Material, ProductColorVariant, useCustomizer, type SidebarTabId, resolveProductImages, getCustomizableImages } from "@udo-craft/shared";
 import { ArrowLeft, X, Ruler, Loader2, Layers, Pencil, Type, Upload, LayoutList, Shapes, MirrorRound, Shirt } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -90,7 +90,9 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
   const defaultVariant = initialVariant ?? variants[0] ?? null;
   const defaultColor = defaultVariant ? (materials.find((m) => m.id === defaultVariant.material_id)?.name ?? "black") : "black";
   const firstImageKey = (() => {
-    const imgs = defaultVariant?.images && Object.keys(defaultVariant.images).length > 0 ? defaultVariant.images : product.images ?? {};
+    const productImgs = resolveProductImages((product as any).product_images, product.images ?? {});
+    const variantImgs = defaultVariant ? resolveProductImages((defaultVariant as any).variant_images, defaultVariant.images ?? {}) : null;
+    const imgs = getCustomizableImages(variantImgs?.length ? variantImgs : productImgs);
     return Object.keys(imgs)[0] ?? "front";
   })();
 
@@ -112,7 +114,12 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
   // Tab title badge
   useLayersBadge(layers.length, `${product.name} — U:DO CRAFT Admin`);
 
-  const productImages = selectedVariant?.images ?? product.images ?? {};
+  const productImages = getCustomizableImages(
+    resolveProductImages(
+      (selectedVariant as any)?.variant_images ?? (product as any).product_images,
+      selectedVariant?.images ?? product.images ?? {}
+    )
+  );
 
   const addLayerForAI = (file: File, side: string, pricing: typeof printPricing) =>
     addLayerFromHook(file, side, pricing);
@@ -311,8 +318,19 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
 
   const canvasPanel = (
     <ProductCanvas product={product} printZones={printZones} layers={layers} activeSide={activeSide}
-      onSideChange={(side) => { const imgs = selectedVariant?.images && Object.keys(selectedVariant.images).length > 0 ? selectedVariant.images : product.images ?? {}; if (!imgs[side]) return; setActiveSide(side); }}
-      variantImages={selectedVariant?.images && Object.keys(selectedVariant.images).length > 0 ? selectedVariant.images : undefined}
+      onSideChange={(side) => {
+        const productImgs = resolveProductImages((product as any).product_images, product.images ?? {});
+        const variantImgs = selectedVariant ? resolveProductImages((selectedVariant as any).variant_images, selectedVariant.images ?? {}) : null;
+        const imgs = getCustomizableImages(variantImgs?.length ? variantImgs : productImgs);
+        if (!imgs[side]) return;
+        setActiveSide(side);
+      }}
+      variantImages={(() => {
+        if (!selectedVariant) return undefined;
+        const vi = resolveProductImages((selectedVariant as any).variant_images, selectedVariant.images ?? {});
+        const imgs = getCustomizableImages(vi);
+        return Object.keys(imgs).length > 0 ? imgs : undefined;
+      })()}
       color={selectedColor} onSave={(dataUrl, side, mm) => { setMockups((prev) => ({ ...prev, [side]: dataUrl })); setOffsetTopMm(mm); }}
       onOffsetChange={setOffsetTopMm} saveRef={canvasSaveRef} fabricCanvasRef={fabricCanvasRef}
       captureRef={captureRef} activeLayerId={activeLayerId} onLayerSelect={setActiveLayerId}
@@ -376,9 +394,12 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
   ) : null;
 
   // Product thumbnail for the info card
-  const productThumb = (selectedVariant?.images && Object.keys(selectedVariant.images).length > 0
-    ? Object.values(selectedVariant.images as Record<string, string>)[0]
-    : Object.values(product.images ?? {})[0]) ?? "";
+  const productThumb = (() => {
+    const productImgs = resolveProductImages((product as any).product_images, product.images ?? {});
+    const variantImgs = selectedVariant ? resolveProductImages((selectedVariant as any).variant_images, selectedVariant.images ?? {}) : null;
+    const imgs = getCustomizableImages(variantImgs?.length ? variantImgs : productImgs);
+    return Object.values(imgs)[0] ?? "";
+  })();
 
   const productInfoCard = (
     <div className="flex items-center gap-3 pb-3 mb-3 border-b border-border">

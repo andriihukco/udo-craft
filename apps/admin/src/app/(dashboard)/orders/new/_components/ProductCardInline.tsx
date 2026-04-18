@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Product, Material, ProductColorVariant } from "@udo-craft/shared";
+import { Product, Material, ProductColorVariant, resolveProductImages, getCustomizableImages } from "@udo-craft/shared";
 
 interface ProductWithConfig extends Product {
   size_chart_id?: string | null;
@@ -42,8 +42,11 @@ export function ProductCardInline({ product, variants, materials, onOpen, onAddW
   const displayVariantId = hoveredVariantId ?? activeVariantId;
   const activeVariant = hasVariants ? variants.find((v) => v.id === displayVariantId) ?? null : null;
 
-  const imgs = (activeVariant?.images && Object.keys(activeVariant.images).length > 0
-    ? activeVariant.images : product.images) as Record<string, string> ?? {};
+  const imgs = (() => {
+    const productImgs = resolveProductImages((product as any).product_images, product.images);
+    const variantImgs = activeVariant ? resolveProductImages((activeVariant as any).variant_images, activeVariant.images) : null;
+    return getCustomizableImages(variantImgs?.length ? variantImgs : productImgs);
+  })();
   const imgUrl = imgs.front ?? Object.values(imgs)[0] ?? "";
 
   const colorDots = hasVariants && materials
