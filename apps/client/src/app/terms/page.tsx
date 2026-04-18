@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import { createServiceClient } from "@/lib/supabase/service";
+import { BlockNoteEditor } from "@blocknote/core";
 
 export const metadata: Metadata = {
   title: "Умови та правила — U:DO CRAFT",
@@ -13,7 +14,7 @@ async function getContent() {
       .select("body")
       .eq("slug", "page_terms")
       .single();
-    return data?.body as { title?: string; content?: string } | null;
+    return data?.body as { title?: string; blocks?: unknown[] } | null;
   } catch {
     return null;
   }
@@ -22,16 +23,24 @@ async function getContent() {
 export default async function TermsPage() {
   const content = await getContent();
 
+  let html = "";
+  if (Array.isArray(content?.blocks) && content.blocks.length > 0) {
+    const editor = BlockNoteEditor.create();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    html = await editor.blocksToHTMLLossy(content.blocks as any);
+  }
+
   return (
     <main className="min-h-screen bg-background">
       <div className="max-w-3xl mx-auto px-4 py-16">
         <h1 className="text-2xl font-bold mb-8">
           {content?.title || "Умови та правила"}
         </h1>
-        {content?.content ? (
-          <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap leading-relaxed">
-            {content.content}
-          </div>
+        {html ? (
+          <div
+            className="prose prose-zinc max-w-none text-foreground"
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
         ) : (
           <p className="text-muted-foreground">Контент ще не додано.</p>
         )}

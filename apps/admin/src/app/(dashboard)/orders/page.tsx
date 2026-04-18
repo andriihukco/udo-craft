@@ -844,7 +844,16 @@ export default function OrdersPage() {
                       )}
                       {selectedLead.order_items.map((item) => {
                         const product = products[item.product_id];
+                        const productImgArr = product
+                          ? (() => {
+                              const pi = (product as any).product_images;
+                              if (pi && pi.length > 0) return pi;
+                              return Object.entries(product.images || {}).map(([key, url], i) => ({ key, url, label: key, is_customizable: true, sort_order: i }));
+                            })()
+                          : [];
                         const productImg = item.technical_metadata?.product_image_url
+                          || productImgArr.find((i: any) => i.key === "front")?.url
+                          || productImgArr[0]?.url
                           || product?.images?.front
                           || Object.values(product?.images || {})[0];
                         const layers = item.technical_metadata?.layers ?? [];
@@ -859,7 +868,11 @@ export default function OrdersPage() {
                               ...(mockupBackImg ? { back: mockupBackImg } : {}),
                             };
                         // Derive side keys from layers or product images
-                        const prodImages = product?.images ?? {};
+                        const prodImages = (() => {
+                          const pi = (product as any)?.product_images;
+                          if (pi && pi.length > 0) return Object.fromEntries(pi.filter((i: any) => i.is_customizable).map((i: any) => [i.key, i.url]));
+                          return product?.images ?? {};
+                        })();
                         const layerSides = [...new Set(layers.map(l => l.side))];
                         const frontKey = layerSides[0] ?? Object.keys(prodImages)[0] ?? "front";
                         const backKey = layerSides[1] ?? Object.keys(prodImages)[1] ?? "back";

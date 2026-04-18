@@ -2,7 +2,7 @@
 
 // Client-only — loaded via dynamic import (ssr: false) from LandingSectionEditor.
 import { useEffect, useState } from "react";
-import { useCreateBlockNote, BlockNoteView } from "@blocknote/react";
+import { useCreateBlockNote, BlockNoteViewRaw } from "@blocknote/react";
 import "@blocknote/react/style.css";
 import { Label } from "@/components/ui/label";
 
@@ -30,7 +30,7 @@ export default function RichField({ label, value, onChange }: RichFieldProps) {
     <div className="space-y-1.5">
       <Label>{label}</Label>
       <div className="rounded-lg border border-border bg-background min-h-[160px] overflow-hidden">
-        <BlockNoteView
+        <BlockNoteViewRaw
           editor={editor}
           theme="light"
           onChange={() => onChange(editor.document as unknown[])}

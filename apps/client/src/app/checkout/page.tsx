@@ -396,7 +396,7 @@ export default function CheckoutPage() {
                         {item.mockupDataUrl ? (
                           <img src={item.mockupDataUrl} alt="Mockup" className="w-full h-full object-cover" />
                         ) : (
-                          <img src={item.product.images?.front} alt={item.product.name} className="w-full h-full object-contain p-2" />
+                          <img src={item.product?.images?.front ?? Object.values(item.product?.images ?? {})[0]} alt={item.product?.name} className="w-full h-full object-contain p-2" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">

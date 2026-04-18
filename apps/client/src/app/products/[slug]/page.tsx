@@ -5,16 +5,17 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Product, Material, ProductColorVariant } from "@udo-craft/shared";
+import { resolveProductImages, getCustomizableImages, getAllImages } from "@udo-craft/shared";
 import { createClient } from "@/lib/supabase/client";
 import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Minus, Plus, Loader2, Paintbrush, ShoppingBag } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-interface ProductWithMeta extends Product {
+interface ProductWithMeta extends Omit<Product, "description"> {
+  description?: string;
   category_id?: string | null;
   size_chart_id?: string | null;
   discount_grid?: { qty: number; discount_pct: number }[];
-  description?: string;
 }
 
 const SESSION_KEY = "client-order-draft";
@@ -71,10 +72,12 @@ export default function ProductDetailPage() {
       const firstVariant = prodVariants[0] ?? null;
       setSelectedVariantId(firstVariant?.id ?? null);
 
-      const imgs = firstVariant?.images && Object.keys(firstVariant.images).length > 0
-        ? firstVariant.images as Record<string, string>
-        : (prod.images ?? {}) as Record<string, string>;
-      const keys = Object.keys(imgs);
+      // Use all images (customizable + gallery) for the gallery viewer
+      const allImgs = resolveProductImages(
+        (prod as any).product_images,
+        prod.images as Record<string, string>
+      );
+      const keys = allImgs.sort((a, b) => a.sort_order - b.sort_order).map(i => i.key);
       setImageKeys(keys);
       setActiveImageKey(keys[0] ?? "front");
 
@@ -85,11 +88,14 @@ export default function ProductDetailPage() {
   }, [slug]);
 
   const selectedVariant = variants.find((v) => v.id === selectedVariantId) ?? null;
-  const currentImages = (
-    selectedVariant?.images && Object.keys(selectedVariant.images).length > 0
-      ? selectedVariant.images
-      : product?.images ?? {}
-  ) as Record<string, string>;
+
+  // All images for gallery (customizable + gallery-only)
+  const productImgArr = product
+    ? resolveProductImages((product as any).product_images, product.images as Record<string, string>)
+    : [];
+  const variantImgArr = selectedVariant ? resolveProductImages((selectedVariant as any).variant_images, selectedVariant.images as Record<string, string>) : null;
+  const activeImgArr = variantImgArr?.length ? variantImgArr : productImgArr;
+  const currentImages = getAllImages(activeImgArr);
 
   const activeImageUrl = currentImages[activeImageKey] ?? Object.values(currentImages)[0] ?? "";
 
@@ -119,10 +125,10 @@ export default function ProductDetailPage() {
     if (!product) return;
     const size = selectedSize ?? sizes[Math.floor(sizes.length / 2)] ?? "";
     const color = materials.find((m) => m.id === selectedVariant?.material_id)?.name ?? "Стандарт";
-    const variantImages = selectedVariant?.images && Object.keys(selectedVariant.images).length > 0
-      ? selectedVariant.images as Record<string, string> : null;
-    const productImage = variantImages?.front ?? (variantImages ? Object.values(variantImages)[0] : null)
-      ?? (product.images as Record<string, string>)?.front ?? Object.values(product.images ?? {})[0] ?? "";
+    const vImgs = selectedVariant ? resolveProductImages((selectedVariant as any).variant_images, selectedVariant.images as Record<string, string>) : null;
+    const pImgs = resolveProductImages((product as any).product_images, product.images as Record<string, string>);
+    const resolvedImgs = getCustomizableImages(vImgs?.length ? vImgs : pImgs);
+    const productImage = resolvedImgs.front ?? Object.values(resolvedImgs)[0] ?? "";
 
     const cartItem = {
       productId: product.id, productName: product.name, productImage,
@@ -191,7 +197,7 @@ export default function ProductDetailPage() {
           {/* ── Left: Image gallery ─────────────────────────────────────── */}
           <div className="flex flex-col gap-3">
             {/* Main image */}
-            <div className="relative aspect-square bg-[#f5f5f5] rounded-2xl overflow-hidden group">
+            <div className="relative aspect-square bg-muted rounded-2xl overflow-hidden group">
               <AnimatePresence mode="wait">
                 <motion.img
                   key={activeImageKey + selectedVariantId}
@@ -207,12 +213,12 @@ export default function ProductDetailPage() {
 
               {imageKeys.length > 1 && (
                 <>
-                  <button onClick={prevImage}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-white">
+                  <button onClick={prevImage} aria-label="Попереднє фото"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:opacity-100">
                     <ChevronLeft className="w-4 h-4" />
                   </button>
-                  <button onClick={nextImage}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-white">
+                  <button onClick={nextImage} aria-label="Наступне фото"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:opacity-100">
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </>
@@ -224,8 +230,10 @@ export default function ProductDetailPage() {
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {imageKeys.map((key) => (
                   <button key={key} onClick={() => setActiveImageKey(key)}
-                    className={`shrink-0 w-16 h-16 rounded-xl overflow-hidden bg-[#f5f5f5] border-2 transition-colors ${
-                      activeImageKey === key ? "border-primary" : "border-transparent hover:border-gray-200"
+                    aria-label={`Фото ${key}`}
+                    aria-pressed={activeImageKey === key}
+                    className={`shrink-0 w-16 h-16 rounded-xl overflow-hidden bg-muted border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                      activeImageKey === key ? "border-primary" : "border-transparent hover:border-border"
                     }`}>
                     <img src={currentImages[key]} alt={key} className="w-full h-full object-contain p-1" />
                   </button>
@@ -244,7 +252,7 @@ export default function ProductDetailPage() {
                 {discountPct > 0 && (
                   <>
                     <span className="text-sm text-muted-foreground line-through">{fmtPrice(unitCents)}</span>
-                    <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">-{discountPct}%</span>
+                    <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded-full">-{discountPct}%</span>
                   </>
                 )}
               </div>
@@ -265,17 +273,18 @@ export default function ProductDetailPage() {
                   {colorDots.map((c) => (
                     <button key={c.id} onClick={() => {
                       setSelectedVariantId(c.id);
-                      const v = variants.find((v) => v.id === c.id);
-                      const imgs = v?.images && Object.keys(v.images).length > 0
-                        ? v.images as Record<string, string>
-                        : (product.images ?? {}) as Record<string, string>;
-                      const keys = Object.keys(imgs);
+                      const v = variants.find((vv) => vv.id === c.id);
+                      const vImgs = resolveProductImages((v as any)?.variant_images, v?.images as Record<string, string>);
+                      const pImgs = resolveProductImages((product as any).product_images, product.images as Record<string, string>);
+                      const allImgs = getAllImages(vImgs.length ? vImgs : pImgs);
+                      const keys = Object.keys(allImgs);
                       setImageKeys(keys);
                       setActiveImageKey(keys[0] ?? "front");
                     }}
-                      title={c.name}
-                      className={`w-8 h-8 rounded-full border-2 transition-all ${
-                        selectedVariantId === c.id ? "border-primary scale-110 shadow-md" : "border-transparent hover:border-gray-300"
+                      aria-label={c.name}
+                      aria-pressed={selectedVariantId === c.id}
+                      className={`w-8 h-8 rounded-full border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                        selectedVariantId === c.id ? "border-primary scale-110 shadow-md" : "border-transparent hover:border-border"
                       }`}
                       style={{ backgroundColor: c.hex }}
                     />
@@ -291,7 +300,8 @@ export default function ProductDetailPage() {
                 <div className="flex gap-2 flex-wrap">
                   {sizes.map((s) => (
                     <button key={s} onClick={() => setSelectedSize(s === selectedSize ? null : s)}
-                      className={`min-w-[44px] h-10 px-3 rounded-lg border text-sm font-medium transition-all ${
+                      aria-pressed={selectedSize === s}
+                      className={`min-w-[44px] h-10 px-3 rounded-lg border text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                         selectedSize === s
                           ? "border-primary bg-primary text-white"
                           : "border-border hover:border-primary/50 text-foreground"
@@ -308,12 +318,14 @@ export default function ProductDetailPage() {
               <p className="text-sm font-medium">Кількість</p>
               <div className="flex items-center gap-3">
                 <button onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="w-10 h-10 rounded-lg border border-border flex items-center justify-center hover:bg-muted transition-colors">
+                  aria-label="Зменшити кількість"
+                  className="w-10 h-10 rounded-lg border border-border flex items-center justify-center hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   <Minus className="w-4 h-4" />
                 </button>
-                <span className="w-10 text-center font-semibold text-lg">{quantity}</span>
+                <span className="w-10 text-center font-semibold text-lg" aria-live="polite">{quantity}</span>
                 <button onClick={() => setQuantity((q) => q + 1)}
-                  className="w-10 h-10 rounded-lg border border-border flex items-center justify-center hover:bg-muted transition-colors">
+                  aria-label="Збільшити кількість"
+                  className="w-10 h-10 rounded-lg border border-border flex items-center justify-center hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   <Plus className="w-4 h-4" />
                 </button>
                 {quantity >= 10 && (
@@ -325,13 +337,13 @@ export default function ProductDetailPage() {
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-3 pt-1">
               <button onClick={handleCustomize}
-                className="flex-1 inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold text-sm px-6 py-3.5 rounded-full active:scale-95 transition-all duration-200">
+                className="flex-1 inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold text-sm px-6 py-3.5 rounded-full active:scale-95 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <Paintbrush className="w-4 h-4" />
                 Кастомізувати
                 <ArrowRight className="w-4 h-4" />
               </button>
               <button onClick={handleAddToCart}
-                className="flex-1 inline-flex items-center justify-center gap-2 border-2 border-primary text-primary hover:bg-primary/5 font-bold text-sm px-6 py-3.5 rounded-full active:scale-95 transition-all duration-200">
+                className="flex-1 inline-flex items-center justify-center gap-2 border-2 border-primary text-primary hover:bg-primary/5 font-bold text-sm px-6 py-3.5 rounded-full active:scale-95 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <AnimatePresence mode="wait" initial={false}>
                   {added ? (
                     <motion.span key="added" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
@@ -363,8 +375,7 @@ export default function ProductDetailPage() {
                 {product.discount_grid.map((tier) => (
                   <div key={tier.qty} className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">від {tier.qty} шт</span>
-                    <span className="font-semibold text-emerald-600">-{tier.discount_pct}%</span>
-                  </div>
+                    <span className="font-semibold text-emerald-600">-{tier.discount_pct}%</span>                  </div>
                 ))}
               </div>
             )}

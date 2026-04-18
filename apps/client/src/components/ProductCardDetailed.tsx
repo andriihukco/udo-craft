@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Product, ProductColorVariant, Material } from "@udo-craft/shared";
+import { Product, ProductColorVariant, Material, resolveProductImages, getCustomizableImages } from "@udo-craft/shared";
 
 interface ProductCardDetailedProps {
   product: Product;
@@ -45,10 +45,10 @@ export function ProductCardDetailed({
     ? colorVariants.find((v) => v.id === displayVariantId) ?? null
     : null;
 
-  const currentImages =
-    activeVariant && Object.keys(activeVariant.images).length > 0
-      ? activeVariant.images
-      : product.images || {};
+  // Resolve images using new model with legacy fallback
+  const productImgs = resolveProductImages((product as any).product_images, product.images);
+  const variantImgs = activeVariant ? resolveProductImages((activeVariant as any).variant_images, activeVariant.images) : null;
+  const currentImages = getCustomizableImages(variantImgs?.length ? variantImgs : productImgs);
   const imageUrl = currentImages.front ?? Object.values(currentImages)[0] ?? "";
 
   const colorDots =
@@ -73,18 +73,8 @@ export function ProductCardDetailed({
 
   const handleCardClick = () => {
     if (isOutOfStock) return;
-    const size = resolveSize();
-    if (size && !selectedSize) setSelectedSize(size);
-    if (onCustomize) {
-      onCustomize(product, size, getActiveColor(), activeVariant);
-      return;
-    }
-    const params = new URLSearchParams({ product: product.slug || product.id });
-    if (size) params.set("size", size);
-    const color = getActiveColor();
-    if (color) params.set("color", color);
-    if (activeVariant?.id) params.set("variant", activeVariant.id);
-    router.push(`/order?${params.toString()}`);
+    // Navigate to product detail page
+    router.push(`/products/${product.slug || product.id}`);
   };
 
   const handleAddPrint = (e: React.MouseEvent) => {

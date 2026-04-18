@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Pencil, X, Check, RefreshCw, Palette, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Material, ProductColorVariant } from "@udo-craft/shared";
+import type { ProductImage } from "@udo-craft/shared";
+import { ProductImageManager } from "@udo-craft/ui";
 
 // ── Color Variant Editor ─────────────────────────────────────────────────────
 
@@ -29,50 +31,27 @@ function ProductColorVariantEditor({
     sort_order: variant.sort_order || 0,
     is_active: variant.is_active ?? true,
   });
-  const [imageSlots, setImageSlots] = useState<{ tag: string; url: string }[]>(() => {
+  const [variantImages, setVariantImages] = useState<ProductImage[]>(() => {
+    // Load variant_images; fall back to legacy images Record
+    const vi = (variant as any).variant_images as ProductImage[] | undefined;
+    if (vi && vi.length > 0) return vi;
     const imgs = variant.images || {};
-    return Object.entries(imgs).map(([tag, url]) => ({ tag, url }));
+    return Object.entries(imgs).map(([key, url], i) => ({
+      key, url, label: key, is_customizable: true, sort_order: i,
+    }));
   });
-  const [uploading, setUploading] = useState<Record<number, boolean>>({});
   const [saving, setSaving] = useState(false);
-  const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
-
-  const handleFileUpload = async (index: number, file: File) => {
-    setUploading((prev) => ({ ...prev, [index]: true }));
-    try {
-      const fd = new FormData();
-      fd.append("files", file);
-      fd.append("tags", imageSlots[index].tag || "front");
-      const res = await fetch("/api/upload", { method: "POST", body: fd });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-      const url = data.results?.[0]?.url ?? data.urls?.[0];
-      if (url) {
-        setImageSlots((prev) => prev.map((s, i) => (i === index ? { ...s, url } : s)));
-        toast.success("Зображення завантажено");
-      } else {
-        throw new Error("URL не отримано від сервера");
-      }
-    } catch (err) {
-      console.error("Upload error:", err);
-      toast.error(`Помилка завантаження: ${err instanceof Error ? err.message : String(err)}`);
-    } finally {
-      setUploading((prev) => ({ ...prev, [index]: false }));
-    }
-  };
 
   const handleSave = async () => {
     if (!form.material_id) { toast.error("Оберіть колір (матеріал)"); return; }
-    
     setSaving(true);
+    // Build legacy images map from customizable entries (backward compat for canvas)
     const images: Record<string, string> = {};
-    for (const slot of imageSlots) {
-      if (slot.tag && slot.url) images[slot.tag] = slot.url;
-    }
+    for (const img of variantImages) if (img.is_customizable && img.key && img.url) images[img.key] = img.url;
 
     try {
       const url = variant.id ? `/api/product-color-variants/${variant.id}` : "/api/product-color-variants";
-      const payload = { ...form, images, product_id: productId };
+      const payload = { ...form, images, variant_images: variantImages, product_id: productId };
       const res = await fetch(url, {
         method: variant.id ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -127,65 +106,16 @@ function ProductColorVariantEditor({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label className="text-xs text-muted-foreground">Фото для цього кольору</Label>
-          <Button type="button" variant="outline" size="sm" className="h-6 text-xs"
-            onClick={() => setImageSlots((prev) => [...prev, { tag: "", url: "" }])}>
-            <Plus className="w-3 h-3 mr-1" /> Ракурс
-          </Button>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {imageSlots.map((slot, index) => (
-            <div key={index} className="border border-border rounded-md p-2 space-y-1.5 bg-background">
-              <div className="flex items-center gap-1">
-                <Input
-                  value={slot.tag}
-                  onChange={(e) =>
-                    setImageSlots((prev) => prev.map((s, i) => (i === index ? { ...s, tag: e.target.value } : s)))
-                  }
-                  placeholder="груди / спина..."
-                  className="h-6 text-[10px] flex-1"
-                />
-                <button
-                  onClick={() => setImageSlots((prev) => prev.filter((_, i) => i !== index))}
-                  className="text-muted-foreground hover:text-destructive"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-              <div
-                className="relative border-2 border-dashed border-border rounded overflow-hidden cursor-pointer hover:border-primary transition-colors"
-                style={{ aspectRatio: "1 / 1", maxHeight: 80 }}
-                onClick={() => fileInputRefs.current[index]?.click()}
-              >
-                {slot.url ? (
-                  <img src={slot.url} alt={slot.tag} className="w-full h-full object-contain p-0.5" />
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-0.5">
-                    <ImageIcon className="w-4 h-4 opacity-40" />
-                    <span className="text-[9px]">Клікніть</span>
-                  </div>
-                )}
-                {uploading[index] && (
-                  <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
-                    <RefreshCw className="w-4 h-4 animate-spin text-primary" />
-                  </div>
-                )}
-              </div>
-              <input
-                ref={(el) => { fileInputRefs.current[index] = el; }}
-                type="file" accept="image/*" className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileUpload(index, f); }}
-              />
-              <Input
-                value={slot.url}
-                onChange={(e) =>
-                  setImageSlots((prev) => prev.map((s, i) => (i === index ? { ...s, url: e.target.value } : s)))
-                }
-                placeholder="URL..."
-                className="h-5 text-[9px]"
-              />
-            </div>
-          ))}
-        </div>
+        <p className="text-xs text-muted-foreground">
+          Позначте «Канвас» для фото, які використовуються як сторони в редакторі принтів.
+        </p>
+        <ProductImageManager
+          images={variantImages}
+          onChange={setVariantImages}
+          uploadUrl="/api/upload"
+          uploadTagPrefix="variant"
+        />
       </div>
 
       <div className="flex gap-2 pt-1">
@@ -251,7 +181,11 @@ export function ProductColorVariantsList({ productId }: { productId: string }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
           {variants.map((v) => {
             const material = materials.find((m) => m.id === v.material_id);
-            const previewUrl = v.images?.front || Object.values(v.images || {})[0];
+            const vi = (v as any).variant_images as ProductImage[] | undefined;
+            const previewUrl = vi?.find(i => i.key === "front")?.url
+              ?? vi?.[0]?.url
+              ?? (v.images as Record<string, string>)?.front
+              ?? Object.values(v.images || {})[0];
             
             return (
               <div key={v.id} className="flex items-center gap-3 p-2 rounded-lg border border-border bg-background hover:border-primary/30 transition-colors">
@@ -273,7 +207,7 @@ export function ProductColorVariantsList({ productId }: { productId: string }) {
                     <span className="text-sm font-medium truncate">{material?.name || "Невідомий колір"}</span>
                   </div>
                   <p className="text-[10px] text-muted-foreground mt-0.5">
-                    {Object.keys(v.images || {}).length} фотографій
+                    {(((v as any).variant_images as ProductImage[] | undefined)?.length ?? Object.keys(v.images || {}).length)} фотографій
                     {!v.is_active && " · Неактивний"}
                   </p>
                 </div>
