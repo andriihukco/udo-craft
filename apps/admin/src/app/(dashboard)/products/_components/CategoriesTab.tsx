@@ -14,9 +14,10 @@ import type { Category } from "@udo-craft/shared";
 export interface CategoriesTabProps {
   categories: Category[];
   onRefresh: () => void;
+  loading?: boolean;
 }
 
-export function CategoriesTab({ categories: propCategories, onRefresh }: CategoriesTabProps) {
+export function CategoriesTab({ categories: propCategories, onRefresh, loading = false }: CategoriesTabProps) {
   const [categories, setCategories] = useState<Category[]>(propCategories);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | undefined>(undefined);
@@ -85,7 +86,25 @@ export function CategoriesTab({ categories: propCategories, onRefresh }: Categor
         </Button>
       </div>
 
-      {categories.length === 0 ? (
+      {loading ? (
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-6" /><TableHead className="w-10" /><TableHead className="w-10" />
+              <TableHead>Назва</TableHead><TableHead>Slug</TableHead><TableHead className="w-20" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <TableRow key={i}>
+                {[4, 8, 8, 40, 24, 8].map((w, j) => (
+                  <TableCell key={j}><div className={`h-4 w-${w} bg-muted rounded animate-pulse`} /></TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      ) : categories.length === 0 ? (
         <EmptyState
           icon={Plus}
           title="Категорій ще немає"
