@@ -151,16 +151,17 @@ export default function ColorsTab() {
               onDragStart={() => { dragItem.current = m.id; }}
               onDragOver={e => { e.preventDefault(); setDragOverId(m.id); }}
               onDragLeave={() => { if (dragOverId === m.id) setDragOverId(null); }}
-              onDragEnd={() => { dragItem.current = null; setDragOverId(null); }}
+              onDragEnd={() => { setDragOverId(null); }}
               onDrop={e => {
                 e.preventDefault();
-                if (dragItem.current && dragItem.current !== m.id) {
-                  const next = reorder(materials, dragItem.current, m.id);
+                const fromId = dragItem.current;
+                dragItem.current = null;
+                setDragOverId(null);
+                if (fromId && fromId !== m.id) {
+                  const next = reorder(materials, fromId, m.id);
                   setMaterials(next);
                   persistOrder(next.map(x => x.id));
                 }
-                dragItem.current = null;
-                setDragOverId(null);
               }}
               className={`group hover:bg-muted/40 cursor-move ${dragOverId === m.id ? "bg-primary/5 border-t-2 border-t-primary" : ""}`}
             >
