@@ -771,7 +771,7 @@ export default function HomePage() {
       {/* COLLECTIONS */}
       <section id="collections" className="py-16 sm:py-20">
         {/* Section header — becomes sticky when scrolled into view */}
-        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border/50">
+        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             {/* Title row */}
             <div className="flex items-center justify-between pt-5 pb-3">
@@ -824,12 +824,12 @@ export default function HomePage() {
                 <p className="text-muted-foreground text-sm font-medium">У цій категорії поки немає товарів</p>
               </div>
             ) : (() => {
-              const PER_PAGE = 3;
+              const PER_PAGE = 2;
               const totalPages = Math.ceil(activeCategoryItems.length / PER_PAGE);
               const pageItems = activeCategoryItems.slice(collPage * PER_PAGE, (collPage + 1) * PER_PAGE);
               return (
                 <>
-                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
                     {pageItems.map((item) => (
                       <ProductCardDetailed
                         key={item.id}
@@ -886,12 +886,12 @@ export default function HomePage() {
               );
             })()
           ) : clothingList.length === 0 ? (
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              {[...Array(3)].map((_, i) => <div key={i} className="aspect-square bg-muted rounded-2xl animate-pulse" />)}
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              {[...Array(2)].map((_, i) => <div key={i} className="aspect-square bg-muted rounded-2xl animate-pulse" />)}
             </div>
           ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              {clothingList.slice(0, 3).map((p) => (
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              {clothingList.slice(0, 2).map((p) => (
                 <ProductCardDetailed
                   key={p.id}
                   product={p}
