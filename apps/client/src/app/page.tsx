@@ -825,12 +825,12 @@ export default function HomePage() {
                 <p className="text-muted-foreground text-sm font-medium">У цій категорії поки немає товарів</p>
               </div>
             ) : (() => {
-              const PER_PAGE = 2;
+              const PER_PAGE = 4;
               const totalPages = Math.ceil(activeCategoryItems.length / PER_PAGE);
               const pageItems = activeCategoryItems.slice(collPage * PER_PAGE, (collPage + 1) * PER_PAGE);
               return (
                 <>
-                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                     {pageItems.map((item) => (
                       <ProductCardDetailed
                         key={item.id}
@@ -887,12 +887,12 @@ export default function HomePage() {
               );
             })()
           ) : clothingList.length === 0 ? (
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
-              {[...Array(2)].map((_, i) => <div key={i} className="aspect-square bg-muted rounded-2xl animate-pulse" />)}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              {[...Array(4)].map((_, i) => <div key={i} className="aspect-square bg-muted rounded-2xl animate-pulse" />)}
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
-              {clothingList.slice(0, 2).map((p) => (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              {clothingList.slice(0, 4).map((p) => (
                 <ProductCardDetailed
                   key={p.id}
                   product={p}
