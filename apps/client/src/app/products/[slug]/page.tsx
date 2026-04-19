@@ -8,6 +8,7 @@ import type { Product, Material, ProductColorVariant } from "@udo-craft/shared";
 import { resolveProductImages, getCustomizableImages, getAllImages } from "@udo-craft/shared";
 import { createClient } from "@/lib/supabase/client";
 import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Minus, Plus, Loader2, Paintbrush, ShoppingBag, Check, Truck, Shield, RotateCcw, Ruler } from "lucide-react";
+import { LogoLoader } from "@udo-craft/ui";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ProductCardDetailed } from "@/components/ProductCardDetailed";
@@ -173,11 +174,7 @@ export default function ProductDetailPage() {
   // ── Loading / not found ───────────────────────────────────────────────────
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="size-8 animate-spin text-primary" />
-      </div>
-    );
+    return <LogoLoader />;
   }
 
   if (notFound || !product) {

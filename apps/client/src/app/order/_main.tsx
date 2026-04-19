@@ -15,6 +15,7 @@ import { DesktopCartPanel } from "./_components/DesktopCartPanel";
 import { ProductGrid } from "./_components/ProductGrid";
 import { StepHeader } from "./_components/StepHeader";
 import { useCipherText } from "./_components/useCipherText";
+import { LogoLoader } from "@udo-craft/ui";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -182,11 +183,7 @@ export function OrderPageInner({
   const stepIdx = (["select", "contact", "review"] as const).indexOf(step);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="size-8 animate-spin text-primary" />
-      </div>
-    );
+    return <LogoLoader />;
   }
 
   return (

@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Product, PrintZone, Material, ProductColorVariant } from "@udo-craft/shared";
 import { resolveProductImages, getCustomizableImages } from "@udo-craft/shared";
-import { Loader2 } from "lucide-react";
+import { LogoLoader } from "@udo-craft/ui";
 import { OrderPageInner } from "./_main";
 
 interface ProductWithConfig extends Product {
@@ -83,13 +83,7 @@ function OrderPageLoader() {
 
 export default function OrderPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="size-8 animate-spin text-primary" />
-        </div>
-      }
-    >
+    <Suspense fallback={<LogoLoader />}>
       <OrderPageLoader />
     </Suspense>
   );

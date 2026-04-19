@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { BrandLogoFull } from "@/components/brand-logo";
 import { ArrowLeft, Loader2, Eye, EyeOff, LogOut } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
+import { LogoLoader } from "@udo-craft/ui";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -155,11 +156,7 @@ export default function SettingsPage() {
   };
 
   if (loading || !user) {
-    return (
-      <main className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
-      </main>
-    );
+    return <LogoLoader />;
   }
 
   return (
