@@ -272,73 +272,56 @@ function AnimBtnWhite({ href, children, className = "" }: { href: string; childr
 
 
 function PopupSection() {
-  const STATS = [
-    { value: "500+", label: "заходів" },
-    { value: "50k+", label: "гостей" },
-    { value: "5 хв",  label: "на виріб" },
-    { value: "100%",  label: "задоволення" },
-  ];
-
-  const STEPS = [
-    { n: "01", title: "Виїзд на захід", desc: "Привозимо обладнання та матеріали. Конференції, фестивалі, корпоративи — будь-який формат." },
-    { n: "02", title: "Гості обирають", desc: "Товар, колір, принт — кожен створює унікальний виріб за 5 хвилин прямо на місці." },
-    { n: "03", title: "Забирають одразу", desc: "Готовий мерч у руки без очікування. Незабутній досвід і фізичний спогад про захід." },
-  ];
-
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-[#0a0a0a]">
-      {/* Subtle grid texture */}
-      <div className="absolute inset-0 opacity-[0.03]" style={{
-        backgroundImage: "linear-gradient(rgba(255,255,255,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.8) 1px, transparent 1px)",
-        backgroundSize: "40px 40px"
-      }} />
+    <div className="relative overflow-hidden rounded-3xl bg-[#0c0c0c] min-h-[480px] flex flex-col justify-between">
+      {/* Top content */}
+      <div className="px-8 pt-12 md:px-14 md:pt-14 lg:px-16 lg:pt-16">
+        <p className="text-white/25 text-[11px] font-bold uppercase tracking-[0.25em] mb-8">Popup-стенд</p>
 
-      <div className="relative z-10 px-8 py-14 md:px-14 md:py-16 lg:px-20 lg:py-20">
-        {/* Top row */}
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mb-16">
-          <div className="max-w-xl">
-            <p className="text-white/30 text-xs font-bold uppercase tracking-[0.2em] mb-5">Popup-стенд</p>
-            <h2 className="text-white text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.0] mb-6">
-              U:DO Craft<br />Popup
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-10">
+          <div>
+            <h2 className="text-white text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[0.95] mb-6">
+              U:DO<br />Popup
             </h2>
-            <p className="text-white/50 text-base sm:text-lg leading-relaxed">
-              Виїзний стенд з живою кастомізацією мерчу. Гості створюють унікальний одяг і забирають його одразу.
+            <p className="text-white/40 text-base max-w-sm leading-relaxed">
+              Виїзний стенд з живою кастомізацією. Гості створюють унікальний мерч і забирають одразу.
             </p>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-px bg-white/5 rounded-2xl overflow-hidden shrink-0">
-            {STATS.map((s) => (
-              <div key={s.label} className="bg-[#0a0a0a] px-6 py-5 text-center">
-                <p className="text-white text-2xl font-black tracking-tight">{s.value}</p>
-                <p className="text-white/30 text-xs mt-1">{s.label}</p>
+          {/* Three steps — horizontal on desktop */}
+          <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-px bg-white/5 rounded-2xl overflow-hidden shrink-0 lg:max-w-xs xl:max-w-none">
+            {[
+              { n: "01", label: "Виїзд" },
+              { n: "02", label: "Кастомізація" },
+              { n: "03", label: "Готово" },
+            ].map((s) => (
+              <div key={s.n} className="bg-[#0c0c0c] px-6 py-4 flex items-center gap-3 flex-1">
+                <span className="text-white/15 text-2xl font-black leading-none select-none w-8 shrink-0">{s.n}</span>
+                <span className="text-white/60 text-sm font-medium">{s.label}</span>
               </div>
             ))}
           </div>
         </div>
+      </div>
 
-        {/* Steps */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-white/5 rounded-2xl overflow-hidden mb-12">
-          {STEPS.map((s) => (
-            <div key={s.n} className="bg-[#0a0a0a] p-8">
-              <p className="text-white/15 text-5xl font-black leading-none mb-6 select-none">{s.n}</p>
-              <p className="text-white font-bold text-lg mb-2">{s.title}</p>
-              <p className="text-white/40 text-sm leading-relaxed">{s.desc}</p>
+      {/* Bottom bar */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-8 py-8 md:px-14 lg:px-16 mt-8 border-t border-white/5">
+        <div className="flex gap-8">
+          {[["500+", "заходів"], ["50k+", "гостей"], ["5 хв", "на виріб"]].map(([v, l]) => (
+            <div key={l}>
+              <p className="text-white text-xl font-black">{v}</p>
+              <p className="text-white/25 text-xs mt-0.5">{l}</p>
             </div>
           ))}
         </div>
-
-        {/* CTA row */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div className="flex items-center gap-5">
           <Link href="/popup"
-            className="inline-flex items-center gap-2 bg-white text-[#0a0a0a] font-bold text-sm px-7 py-3.5 rounded-full hover:bg-white/90 active:scale-95 transition-all duration-200">
-            Дізнатись більше
-            <ArrowRight className="w-4 h-4" />
+            className="inline-flex items-center gap-2 bg-white text-[#0c0c0c] font-bold text-sm px-6 py-3 rounded-full hover:bg-white/90 active:scale-95 transition-all duration-200">
+            Дізнатись більше <ArrowRight className="w-3.5 h-3.5" />
           </Link>
           <Link href="#contact?ref=popup"
-            className="inline-flex items-center gap-2 text-white/50 hover:text-white font-medium text-sm transition-colors duration-200">
-            Обговорити захід
-            <ArrowRight className="w-3.5 h-3.5" />
+            className="text-white/35 hover:text-white/70 font-medium text-sm transition-colors duration-200 whitespace-nowrap">
+            Обговорити →
           </Link>
         </div>
       </div>
@@ -405,17 +388,7 @@ export default function HomePage() {
       setMaterials(mats);
       setColorVariants(vars);
       
-      // Find the first category that has products
-      const categoryWithProducts = cats.find(cat => 
-        prods.some(prod => prod.category_id === cat.id && prod.is_active)
-      );
-      
-      if (categoryWithProducts) {
-        setActiveCategory(categoryWithProducts.id);
-      } else if (cats.length > 0) {
-        setActiveCategory(cats[0].id);
-      }
-      
+      // Default to "Всі" — no auto-select first category
       setLoading(false);
     }).catch(error => {
       console.error("Database error:", error);
@@ -796,29 +769,28 @@ export default function HomePage() {
       </FadeUp>
 
       {/* COLLECTIONS */}
-      <section id="collections" className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
-        <FadeUp>
-          <div className="flex items-end justify-between mb-6">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest mb-2 text-primary">Каталог</p>
-              <h2 className="text-3xl font-black tracking-tight">Колекції</h2>
+      <section id="collections" className="py-16 sm:py-20">
+        {/* Section header — becomes sticky when scrolled into view */}
+        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border/50">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+            {/* Title row */}
+            <div className="flex items-center justify-between pt-5 pb-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-primary mb-0.5">Каталог</p>
+                <h2 className="text-2xl font-black tracking-tight">Колекції</h2>
+              </div>
+              <Link href="/order" className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline transition-all duration-200">
+                Всі товари <ArrowRight className="w-4 h-4" />
+              </Link>
             </div>
-            <Link href="/order" className="hidden sm:flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline transition-all duration-200">
-              Всі товари <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </FadeUp>
-
-        {/* Sticky filter bar — sticks when scrolled into collections */}
-        {hasCatalog && (
-          <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 mb-6 border-b border-border/50">
-            <div className="flex items-center justify-between gap-3 max-w-6xl mx-auto">
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1">
+            {/* Chips row */}
+            {hasCatalog && (
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-3">
                 <button
                   onClick={() => { setActiveCategory(null); setCollPage(0); }}
-                  className={`flex items-center gap-2 whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold transition-all border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                  className={`flex items-center whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold transition-all border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                     activeCategory === null
-                      ? "bg-primary text-primary-foreground border-primary shadow-md"
+                      ? "bg-primary text-primary-foreground border-primary"
                       : "bg-background text-muted-foreground border-border hover:border-foreground/40"
                   }`}
                 >
@@ -828,9 +800,9 @@ export default function HomePage() {
                   <button
                     key={cat.id}
                     onClick={() => { setActiveCategory(cat.id); setCollPage(0); }}
-                    className={`flex items-center gap-2 whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold transition-all border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                    className={`flex items-center gap-1.5 whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold transition-all border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                       activeCategory === cat.id
-                        ? "bg-primary text-primary-foreground border-primary shadow-md"
+                        ? "bg-primary text-primary-foreground border-primary"
                         : "bg-background text-muted-foreground border-border hover:border-foreground/40"
                     }`}
                   >
@@ -839,103 +811,99 @@ export default function HomePage() {
                   </button>
                 ))}
               </div>
-              <Link href="/order" className="sm:hidden flex items-center gap-1 text-xs font-semibold text-primary shrink-0">
-                Всі <ArrowRight className="w-3 h-3" />
-              </Link>
-            </div>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Products grid with pagination */}
-        {hasCatalog ? (
-          activeCategoryItems.length === 0 ? (
-            <div className="text-center py-16">
-              <p className="text-3xl mb-3">🧺</p>
-              <p className="text-muted-foreground text-sm font-medium">У цій категорії поки немає товарів</p>
-            </div>
-          ) : (() => {
-            const PER_PAGE = 9;
-            const totalPages = Math.ceil(activeCategoryItems.length / PER_PAGE);
-            const pageItems = activeCategoryItems.slice(collPage * PER_PAGE, (collPage + 1) * PER_PAGE);
-            return (
-              <>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                  {pageItems.map((item) => (
-                    <ProductCardDetailed
-                      key={item.id}
-                      product={item}
-                      colorVariants={colorVariants.filter((v) => v.product_id === item.id)}
-                      materials={materials}
-                      onAddWithoutPrint={(product, size, color, variant) => {
-                        const params = new URLSearchParams({ product: product.slug || product.id, add: "1" });
-                        if (size) params.set("size", size);
-                        if (color) params.set("color", color);
-                        if (variant?.id) params.set("variant", variant.id);
-                        router.push(`/order?${params.toString()}`);
-                      }}
-                    />
-                  ))}
-                </div>
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-4 mt-10">
-                    <button
-                      onClick={() => setCollPage(p => Math.max(0, p - 1))}
-                      disabled={collPage === 0}
-                      className="w-9 h-9 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/40 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                      aria-label="Попередня сторінка"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 11L5 7l4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                    </button>
-
-                    <div className="flex items-center gap-2">
-                      {Array.from({ length: totalPages }).map((_, i) => (
-                        <button
-                          key={i}
-                          onClick={() => setCollPage(i)}
-                          aria-label={`Сторінка ${i + 1}`}
-                          className="transition-all duration-300 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                          style={{
-                            width: i === collPage ? 24 : 8,
-                            height: 8,
-                            backgroundColor: i === collPage ? "var(--color-primary)" : "var(--color-border)",
-                          }}
-                        />
-                      ))}
-                    </div>
-
-                    <button
-                      onClick={() => setCollPage(p => Math.min(totalPages - 1, p + 1))}
-                      disabled={collPage === totalPages - 1}
-                      className="w-9 h-9 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/40 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                      aria-label="Наступна сторінка"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                    </button>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-6">
+          {hasCatalog ? (
+            activeCategoryItems.length === 0 ? (
+              <div className="text-center py-16">
+                <p className="text-3xl mb-3">🧺</p>
+                <p className="text-muted-foreground text-sm font-medium">У цій категорії поки немає товарів</p>
+              </div>
+            ) : (() => {
+              const PER_PAGE = 3;
+              const totalPages = Math.ceil(activeCategoryItems.length / PER_PAGE);
+              const pageItems = activeCategoryItems.slice(collPage * PER_PAGE, (collPage + 1) * PER_PAGE);
+              return (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {pageItems.map((item) => (
+                      <ProductCardDetailed
+                        key={item.id}
+                        product={item}
+                        colorVariants={colorVariants.filter((v) => v.product_id === item.id)}
+                        materials={materials}
+                        onAddWithoutPrint={(product, size, color, variant) => {
+                          const params = new URLSearchParams({ product: product.slug || product.id, add: "1" });
+                          if (size) params.set("size", size);
+                          if (color) params.set("color", color);
+                          if (variant?.id) params.set("variant", variant.id);
+                          router.push(`/order?${params.toString()}`);
+                        }}
+                      />
+                    ))}
                   </div>
-                )}
-              </>
-            );
-          })()
-        ) : clothingList.length === 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => <div key={i} className="aspect-square bg-muted rounded-2xl animate-pulse" />)}
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            {clothingList.map((p) => (
-              <ProductCardDetailed
-                key={p.id}
-                product={p}
-                onAddWithoutPrint={(product) => {
-                  const params = new URLSearchParams({ product: product.slug || product.id, add: "1" });
-                  router.push(`/order?${params.toString()}`);
-                }}
-              />
-            ))}
-          </div>
-        )}
+
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-4 mt-10">
+                      <button
+                        onClick={() => setCollPage(p => Math.max(0, p - 1))}
+                        disabled={collPage === 0}
+                        className="w-9 h-9 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/40 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                        aria-label="Попередня сторінка"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 11L5 7l4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </button>
+                      <div className="flex items-center gap-2">
+                        {Array.from({ length: totalPages }).map((_, i) => (
+                          <button
+                            key={i}
+                            onClick={() => setCollPage(i)}
+                            aria-label={`Сторінка ${i + 1}`}
+                            className="transition-all duration-300 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            style={{
+                              width: i === collPage ? 24 : 8,
+                              height: 8,
+                              backgroundColor: i === collPage ? "var(--color-primary)" : "var(--color-border)",
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => setCollPage(p => Math.min(totalPages - 1, p + 1))}
+                        disabled={collPage === totalPages - 1}
+                        className="w-9 h-9 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/40 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                        aria-label="Наступна сторінка"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </button>
+                    </div>
+                  )}
+                </>
+              );
+            })()
+          ) : clothingList.length === 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(3)].map((_, i) => <div key={i} className="aspect-square bg-muted rounded-2xl animate-pulse" />)}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {clothingList.slice(0, 3).map((p) => (
+                <ProductCardDetailed
+                  key={p.id}
+                  product={p}
+                  onAddWithoutPrint={(product) => {
+                    const params = new URLSearchParams({ product: product.slug || product.id, add: "1" });
+                    router.push(`/order?${params.toString()}`);
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </section>
 
       {/* SERVICES + POPUP — one section, consistent gap */}
@@ -1169,15 +1137,20 @@ export default function HomePage() {
                       </a>
                     ))}
                   </div>
-                  <div className="flex gap-3">
-                    <a href={get("home_contact", "instagram", "https://www.instagram.com/u.do.craft/")} target="_blank" rel="noopener noreferrer"
-                      className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40">
-                      <Instagram className="w-4 h-4" aria-hidden="true" />
-                    </a>
-                    <a href={get("home_contact", "telegram", "https://t.me/udostore")} target="_blank" rel="noopener noreferrer"
-                      className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40">
-                      <Send className="w-4 h-4" aria-hidden="true" />
-                    </a>
+                  <div className="space-y-3">
+                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground/50">Або напишіть у соц мережі</p>
+                    <div className="flex gap-3">
+                      <a href={get("home_contact", "instagram", "https://www.instagram.com/u.do.craft/")} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-200 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40">
+                        <Instagram className="w-4 h-4" aria-hidden="true" />
+                        Instagram
+                      </a>
+                      <a href={get("home_contact", "telegram", "https://t.me/udostore")} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-200 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40">
+                        <Send className="w-4 h-4" aria-hidden="true" />
+                        Telegram
+                      </a>
+                    </div>
                   </div>
                 </div>
               </FadeUp>
