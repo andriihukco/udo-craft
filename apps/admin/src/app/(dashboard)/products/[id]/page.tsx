@@ -166,51 +166,58 @@ export default function ProductDetailPage() {
   if (!product) return null;
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      {/* Unsaved changes banner */}
-      {isDirty && (
-        <div className="sticky top-0 z-10 bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm px-4 py-2 rounded-lg flex items-center gap-2">
-          <span>⚠</span>
-          <span>Є незбережені зміни — не забудьте зберегти</span>
+    <div className="flex flex-col flex-1 h-0 overflow-hidden">
+      {/* Header bar */}
+      <div className="shrink-0 px-4 md:px-6 py-3 border-b border-border bg-background flex items-center gap-3">
+        <button
+          onClick={() => router.push("/catalog?tab=products")}
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          ← Назад
+        </button>
+        <span className="text-muted-foreground/40 text-xs">/</span>
+        <span className="text-xs text-muted-foreground">Каталог</span>
+        <span className="text-muted-foreground/40 text-xs">/</span>
+        <span className="text-xs font-medium truncate max-w-[200px]">{product.name}</span>
+
+        <div className="ml-auto flex items-center gap-2">
+          {isDirty && (
+            <span className="text-xs text-amber-600 font-medium hidden sm:block">Незбережені зміни</span>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10 text-xs"
+            onClick={() => setShowDeleteDialog(true)}
+            disabled={deleting}
+          >
+            {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Видалити"}
+          </Button>
+          <Button size="sm" className="h-8 text-xs" onClick={triggerSave} disabled={saving}>
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : null}
+            Зберегти
+          </Button>
         </div>
-      )}
+      </div>
 
-      <PageHeader
-        eyebrow="Каталог"
-        title={product.name}
-        actions={
-          <>
-            <Button
-              variant="outline"
-              onClick={() => router.push("/products")}
-            >
-              ← Назад
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setShowDeleteDialog(true)}
-              disabled={deleting}
-            >
-              {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Видалити"}
-            </Button>
-            <Button onClick={triggerSave} disabled={saving}>
-              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-              Зберегти
-            </Button>
-          </>
-        }
-      />
+      {/* Title */}
+      <div className="shrink-0 px-4 md:px-6 pt-5 pb-3">
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">Товар</p>
+        <h1 className="text-2xl font-bold tracking-tight">{product.name}</h1>
+      </div>
 
-      <ProductForm
-        product={product}
-        categories={categories}
-        sizeCharts={sizeCharts}
-        printAreas={printAreas}
-        onSave={handleSave}
-        onChange={() => setIsDirty(true)}
-        saving={saving}
-      />
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto px-4 md:px-6 pb-8">
+        <ProductForm
+          product={product}
+          categories={categories}
+          sizeCharts={sizeCharts}
+          printAreas={printAreas}
+          onSave={handleSave}
+          onChange={() => setIsDirty(true)}
+          saving={saving}
+        />
+      </div>
 
       {/* Delete confirmation */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
