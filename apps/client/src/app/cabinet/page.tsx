@@ -19,6 +19,7 @@ import {
   Info, Phone, Mail, Building2, Calendar, ExternalLink, Settings,
 } from "lucide-react";
 import { FileViewer, isImage, isVideo } from "@/components/file-viewer";
+import { LogoLoader } from "@udo-craft/ui";
 
 interface OrderItem {
   id: string;
@@ -419,11 +420,7 @@ export default function CabinetPage() {
   };
 
   if (loading || !user) {
-    return (
-      <main className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
-      </main>
-    );
+    return <LogoLoader />;
   }
 
   const statusCfg = selectedLead ? STATUS_CONFIG[selectedLead.status] ?? STATUS_CONFIG.new : null;

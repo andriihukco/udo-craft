@@ -628,7 +628,9 @@ export default function HomePage() {
         {/* Video — rendered immediately, no delay, bg-primary shows while buffering */}
         <video
           ref={(el) => { if (el && cinemaMode) el.play(); }}
-          className="absolute inset-0 w-full h-full object-cover opacity-75"
+          className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-1000"
+          style={{ animationFillMode: "forwards" }}
+          onCanPlay={e => { (e.target as HTMLVideoElement).classList.remove("opacity-0"); (e.target as HTMLVideoElement).classList.add("opacity-75"); }}
           src="/hero-video.mp4"
           autoPlay
           loop
