@@ -81,7 +81,7 @@ export default function CatalogPage() {
           />
         )}
         {tab === "categories" && (
-          <CategoriesTab categories={categories} onRefresh={refresh} />
+          <CategoriesTab categories={categories} onRefresh={refresh} loading={loading} />
         )}
         {tab === "colors" && <ColorsTab />}
         {tab === "sizes" && <SizesTab />}
