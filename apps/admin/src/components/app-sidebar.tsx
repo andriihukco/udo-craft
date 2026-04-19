@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   BarChart2, Users, MessagesSquare, ShoppingBag, Box,
   Settings, ChevronRight, UserCog,
-  LayoutDashboard, FileEdit,
+  LayoutDashboard, FileEdit, Palette,
 } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { NavUser } from "@/components/nav-user";
@@ -62,7 +62,6 @@ interface NavItem {
 }
 
 const MAIN_NAV: NavItem[] = [
-  { title: "Дашборд",      url: "/",          icon: LayoutDashboard },
   { title: "Продажі",      url: "/orders",    icon: ShoppingBag,    badgeKey: "orders" },
   { title: "Клієнти",      url: "/clients",   icon: Users },
   { title: "Повідомлення", url: "/messages",  icon: MessagesSquare, badgeKey: "messages" },
@@ -72,21 +71,23 @@ const MAIN_NAV: NavItem[] = [
 const CATALOG_NAV: NavItem[] = [
   {
     title: "Каталог",
-    url: "/products",
-    icon: Box,
+    url: "/catalog",
+    icon: Palette,
     children: [
-      { title: "Товари",      url: "/products" },
-      { title: "Категорії",   url: "/products?tab=categories" },
+      { title: "Товари",     url: "/catalog?tab=products" },
+      { title: "Категорії",  url: "/catalog?tab=categories" },
+      { title: "Кольори",    url: "/catalog?tab=colors" },
+      { title: "Розміри",    url: "/catalog?tab=sizes" },
     ],
   },
   {
-    title: "Налаштування каталогу",
-    url: "/settings/catalog",
-    icon: Settings,
+    title: "Принти",
+    url: "/prints",
+    icon: Box,
     children: [
-      { title: "Кольори",     url: "/settings/catalog" },
-      { title: "Ціни друку",  url: "/settings/catalog?tab=print_pricing" },
-      { title: "Принти",      url: "/settings/catalog?tab=prints" },
+      { title: "Принти",        url: "/prints?tab=prints" },
+      { title: "Типи друку",    url: "/prints?tab=types" },
+      { title: "Розміри друку", url: "/prints?tab=sizes" },
     ],
   },
 ];
@@ -133,7 +134,8 @@ export function AppSidebar({ user }: AppSidebarProps) {
   // Track which collapsibles are open
   const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>({
     "/products": pathname.startsWith("/products"),
-    "/settings/catalog": pathname.startsWith("/settings/catalog"),
+    "/catalog": pathname.startsWith("/catalog"),
+    "/prints": pathname.startsWith("/prints"),
     "/cms": pathname.startsWith("/cms"),
   });
 
