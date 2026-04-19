@@ -18,6 +18,8 @@
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.99.3",
     "@tailwindcss/postcss": "^4.2.2",
+    "@tiptap/core": "^2.11.5",
+    "@tiptap/pm": "^2.11.5",
     "@types/fabric": "^5.3.11",
     "@udo-craft/shared": "^1.0.0",
     "@udo-craft/ui": "^1.0.0",
