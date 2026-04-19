@@ -272,77 +272,76 @@ function AnimBtnWhite({ href, children, className = "" }: { href: string; childr
 
 
 function PopupSection() {
-  const FEATURES = [
-    { step: "Крок 1", label: "Виїзд на будь-який захід", desc: "Конференції, фестивалі, корпоративи" },
-    { step: "Крок 2", label: "Кастомізація на місці",    desc: "Живий дизайн за 5 хвилин" },
-    { step: "Крок 3", label: "Миттєвий результат",       desc: "Готовий мерч у руки гостей" },
-    { step: "Крок 4", label: "Від 50 учасників",         desc: "Масштабуємо під ваш захід" },
+  const STATS = [
+    { value: "500+", label: "заходів" },
+    { value: "50k+", label: "гостей" },
+    { value: "5 хв",  label: "на виріб" },
+    { value: "100%",  label: "задоволення" },
+  ];
+
+  const STEPS = [
+    { n: "01", title: "Виїзд на захід", desc: "Привозимо обладнання та матеріали. Конференції, фестивалі, корпоративи — будь-який формат." },
+    { n: "02", title: "Гості обирають", desc: "Товар, колір, принт — кожен створює унікальний виріб за 5 хвилин прямо на місці." },
+    { n: "03", title: "Забирають одразу", desc: "Готовий мерч у руки без очікування. Незабутній досвід і фізичний спогад про захід." },
   ];
 
   return (
-    <div className="rounded-3xl overflow-hidden border border-primary/20 ring-1 ring-primary/10">
+    <div className="relative overflow-hidden rounded-3xl bg-[#0a0a0a]">
+      {/* Subtle grid texture */}
+      <div className="absolute inset-0 opacity-[0.03]" style={{
+        backgroundImage: "linear-gradient(rgba(255,255,255,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.8) 1px, transparent 1px)",
+        backgroundSize: "40px 40px"
+      }} />
 
-      {/* Main popup card — bottom corners flat */}
-      <div className="bg-primary">
-        <div className="flex flex-col lg:flex-row items-stretch">
-          {/* Left — copy */}
-          <div className="flex-1 flex flex-col justify-center px-8 py-12 md:px-12 lg:pr-8">
-            <motion.h2
-              initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }}
-              transition={{ duration:0.6 }}
-              className="text-white text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.1] mb-5"
-            >
-              U:DO Craft Popup
-            </motion.h2>
-            <motion.p
-              initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }}
-              transition={{ duration:0.6, delay:0.1 }}
-              className="text-white/75 text-base sm:text-lg leading-relaxed max-w-lg mb-8"
-            >
-              Перетворіть ваш захід на незабутній досвід. Виїзний попап-стенд з живою кастомізацією мерчу — гості створюють унікальний одяг і забирають його одразу.
-            </motion.p>
-            <motion.div
-              initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }}
-              transition={{ duration:0.6, delay:0.2 }}
-              className="flex flex-wrap gap-3"
-            >
-              <AnimBtnWhite href="/popup">Дізнатись більше</AnimBtnWhite>
-              <Link href="#contact?ref=popup"
-                className="group inline-flex items-center gap-2 border-2 border-white/30 text-white font-bold text-sm px-7 py-3.5 rounded-full hover:border-white hover:bg-white/10 active:scale-95 transition-all duration-200">
-                <span>Обговорити захід</span>
-                <motion.span className="flex items-center" initial={{ x:0 }} whileHover={{ x:4 }} transition={{ duration:0.2 }}>
-                  <ArrowRight className="w-4 h-4" />
-                </motion.span>
-              </Link>
-            </motion.div>
+      <div className="relative z-10 px-8 py-14 md:px-14 md:py-16 lg:px-20 lg:py-20">
+        {/* Top row */}
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mb-16">
+          <div className="max-w-xl">
+            <p className="text-white/30 text-xs font-bold uppercase tracking-[0.2em] mb-5">Popup-стенд</p>
+            <h2 className="text-white text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.0] mb-6">
+              U:DO Craft<br />Popup
+            </h2>
+            <p className="text-white/50 text-base sm:text-lg leading-relaxed">
+              Виїзний стенд з живою кастомізацією мерчу. Гості створюють унікальний одяг і забирають його одразу.
+            </p>
           </div>
 
-          {/* Right — swipeable step carousel */}
-          <div className="px-8 py-10 lg:px-10 lg:w-[420px]">
-            <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-4">Як це працює</p>
-            <PopupStepCarousel />
+          {/* Stats */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-px bg-white/5 rounded-2xl overflow-hidden shrink-0">
+            {STATS.map((s) => (
+              <div key={s.label} className="bg-[#0a0a0a] px-6 py-5 text-center">
+                <p className="text-white text-2xl font-black tracking-tight">{s.value}</p>
+                <p className="text-white/30 text-xs mt-1">{s.label}</p>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
 
-      {/* Feature bar — flush against popup, top corners flat via overflow-hidden on parent */}
-      <div className="bg-white border-t border-gray-100">
-        <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-gray-100">
-          {FEATURES.map((f, i) => (
-            <motion.div
-              key={f.label}
-              initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: i * 0.06 }}
-              className="flex flex-col gap-1 px-6 py-5"
-            >
-              <span className="text-[10px] font-bold uppercase tracking-widest text-primary/60 mb-1">{f.step}</span>
-              <p className="text-[13px] font-semibold text-gray-900 leading-snug">{f.label}</p>
-              <p className="text-[12px] text-gray-400 leading-snug">{f.desc}</p>
-            </motion.div>
+        {/* Steps */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-white/5 rounded-2xl overflow-hidden mb-12">
+          {STEPS.map((s) => (
+            <div key={s.n} className="bg-[#0a0a0a] p-8">
+              <p className="text-white/15 text-5xl font-black leading-none mb-6 select-none">{s.n}</p>
+              <p className="text-white font-bold text-lg mb-2">{s.title}</p>
+              <p className="text-white/40 text-sm leading-relaxed">{s.desc}</p>
+            </div>
           ))}
         </div>
-      </div>
 
+        {/* CTA row */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <Link href="/popup"
+            className="inline-flex items-center gap-2 bg-white text-[#0a0a0a] font-bold text-sm px-7 py-3.5 rounded-full hover:bg-white/90 active:scale-95 transition-all duration-200">
+            Дізнатись більше
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+          <Link href="#contact?ref=popup"
+            className="inline-flex items-center gap-2 text-white/50 hover:text-white font-medium text-sm transition-colors duration-200">
+            Обговорити захід
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
@@ -383,6 +382,7 @@ export default function HomePage() {
   const [materials, setMaterials]         = useState<Material[]>([]);
   const [colorVariants, setColorVariants] = useState<ProductColorVariant[]>([]);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [collPage, setCollPage] = useState(0);
 
   useEffect(() => {
     void supabase.auth.getSession().then((r: { data: { session: unknown } }) => setIsLoggedIn(!!r.data.session));
@@ -426,6 +426,9 @@ export default function HomePage() {
   const activeCategoryItems = activeCategory === null
     ? products.filter((p) => p.is_active)
     : products.filter((p) => p.category_id === activeCategory && p.is_active);
+
+  // Reset pagination when category changes
+  useEffect(() => { setCollPage(0); }, [activeCategory]);
   const hasCatalog = categories.length > 0;
 
   // Read cart count from session storage
@@ -795,7 +798,7 @@ export default function HomePage() {
       {/* COLLECTIONS */}
       <section id="collections" className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
         <FadeUp>
-          <div className="flex items-end justify-between mb-10">
+          <div className="flex items-end justify-between mb-6">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest mb-2 text-primary">Каталог</p>
               <h2 className="text-3xl font-black tracking-tight">Колекції</h2>
@@ -806,61 +809,115 @@ export default function HomePage() {
           </div>
         </FadeUp>
 
+        {/* Sticky filter bar — sticks when scrolled into collections */}
         {hasCatalog && (
-          <div className="flex gap-2 overflow-x-auto pb-6 -mx-1 px-1 scrollbar-hide">
-            {/* "Всі" chip */}
-            <button
-              onClick={() => setActiveCategory(null)}
-              className={`flex items-center gap-2 whitespace-nowrap px-5 py-2.5 rounded-full text-sm font-semibold transition-all border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                activeCategory === null
-                  ? "bg-primary text-primary-foreground border-primary shadow-md"
-                  : "bg-background text-muted-foreground border-border hover:border-foreground/40 hover:shadow-sm"
-              }`}
-            >
-              Всі
-            </button>
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setActiveCategory(cat.id)}
-                className={`flex items-center gap-2 whitespace-nowrap px-5 py-2.5 rounded-full text-sm font-semibold transition-all border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                  activeCategory === cat.id
-                    ? "bg-primary text-primary-foreground border-primary shadow-md"
-                    : "bg-background text-muted-foreground border-border hover:border-foreground/40 hover:shadow-sm"
-                }`}
-              >
-                {cat.image_url && <img src={cat.image_url} alt="" className="w-5 h-5 rounded-full object-cover" />}
-                {cat.name}
-              </button>
-            ))}
+          <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 mb-6 border-b border-border/50">
+            <div className="flex items-center justify-between gap-3 max-w-6xl mx-auto">
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1">
+                <button
+                  onClick={() => { setActiveCategory(null); setCollPage(0); }}
+                  className={`flex items-center gap-2 whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold transition-all border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                    activeCategory === null
+                      ? "bg-primary text-primary-foreground border-primary shadow-md"
+                      : "bg-background text-muted-foreground border-border hover:border-foreground/40"
+                  }`}
+                >
+                  Всі
+                </button>
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => { setActiveCategory(cat.id); setCollPage(0); }}
+                    className={`flex items-center gap-2 whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold transition-all border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                      activeCategory === cat.id
+                        ? "bg-primary text-primary-foreground border-primary shadow-md"
+                        : "bg-background text-muted-foreground border-border hover:border-foreground/40"
+                    }`}
+                  >
+                    {cat.image_url && <img src={cat.image_url} alt="" className="w-4 h-4 rounded-full object-cover" />}
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
+              <Link href="/order" className="sm:hidden flex items-center gap-1 text-xs font-semibold text-primary shrink-0">
+                Всі <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
           </div>
         )}
 
+        {/* Products grid with pagination */}
         {hasCatalog ? (
           activeCategoryItems.length === 0 ? (
             <div className="text-center py-16">
               <p className="text-3xl mb-3">🧺</p>
               <p className="text-muted-foreground text-sm font-medium">У цій категорії поки немає товарів</p>
             </div>
-          ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              {activeCategoryItems.map((item) => (
-                <ProductCardDetailed
-                  key={item.id}
-                  product={item}
-                  colorVariants={colorVariants.filter((v) => v.product_id === item.id)}
-                  materials={materials}
-                  onAddWithoutPrint={(product, size, color, variant) => {
-                    const params = new URLSearchParams({ product: product.slug || product.id, add: "1" });
-                    if (size) params.set("size", size);
-                    if (color) params.set("color", color);
-                    if (variant?.id) params.set("variant", variant.id);
-                    router.push(`/order?${params.toString()}`);
-                  }}
-                />
-              ))}
-            </div>
-          )
+          ) : (() => {
+            const PER_PAGE = 9;
+            const totalPages = Math.ceil(activeCategoryItems.length / PER_PAGE);
+            const pageItems = activeCategoryItems.slice(collPage * PER_PAGE, (collPage + 1) * PER_PAGE);
+            return (
+              <>
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                  {pageItems.map((item) => (
+                    <ProductCardDetailed
+                      key={item.id}
+                      product={item}
+                      colorVariants={colorVariants.filter((v) => v.product_id === item.id)}
+                      materials={materials}
+                      onAddWithoutPrint={(product, size, color, variant) => {
+                        const params = new URLSearchParams({ product: product.slug || product.id, add: "1" });
+                        if (size) params.set("size", size);
+                        if (color) params.set("color", color);
+                        if (variant?.id) params.set("variant", variant.id);
+                        router.push(`/order?${params.toString()}`);
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-4 mt-10">
+                    <button
+                      onClick={() => setCollPage(p => Math.max(0, p - 1))}
+                      disabled={collPage === 0}
+                      className="w-9 h-9 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/40 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                      aria-label="Попередня сторінка"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 11L5 7l4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                      {Array.from({ length: totalPages }).map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setCollPage(i)}
+                          aria-label={`Сторінка ${i + 1}`}
+                          className="transition-all duration-300 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          style={{
+                            width: i === collPage ? 24 : 8,
+                            height: 8,
+                            backgroundColor: i === collPage ? "var(--color-primary)" : "var(--color-border)",
+                          }}
+                        />
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => setCollPage(p => Math.min(totalPages - 1, p + 1))}
+                      disabled={collPage === totalPages - 1}
+                      className="w-9 h-9 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/40 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                      aria-label="Наступна сторінка"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </button>
+                  </div>
+                )}
+              </>
+            );
+          })()
         ) : clothingList.length === 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => <div key={i} className="aspect-square bg-muted rounded-2xl animate-pulse" />)}
