@@ -423,7 +423,9 @@ export default function HomePage() {
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const activeCategoryItems = products.filter((p) => p.category_id === activeCategory && p.is_active);
+  const activeCategoryItems = activeCategory === null
+    ? products.filter((p) => p.is_active)
+    : products.filter((p) => p.category_id === activeCategory && p.is_active);
   const hasCatalog = categories.length > 0;
 
   // Read cart count from session storage
@@ -472,14 +474,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden scroll-smooth">
-      {/* Page load fade-in overlay — white covers everything, fades out fast */}
-      <motion.div
-        initial={{ opacity: 1 }}
-        animate={{ opacity: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="fixed inset-0 bg-white z-[100] pointer-events-none"
-      />
-
       {/* Cart sidebar */}
       {cartOpen && (
         <div className="fixed inset-0 z-[60] flex justify-end">
@@ -654,7 +648,7 @@ export default function HomePage() {
 
       {/* HERO */}
       <section className="relative overflow-hidden bg-primary">
-        {/* Video loads immediately — no delay */}
+        {/* Video — rendered immediately, no delay, bg-primary shows while buffering */}
         <video
           ref={(el) => { if (el && cinemaMode) el.play(); }}
           className="absolute inset-0 w-full h-full object-cover opacity-75"
@@ -663,6 +657,7 @@ export default function HomePage() {
           loop
           muted
           playsInline
+          preload="auto"
         />
 
         {/* Cinema fullscreen overlay — covers entire viewport */}
@@ -813,6 +808,17 @@ export default function HomePage() {
 
         {hasCatalog && (
           <div className="flex gap-2 overflow-x-auto pb-6 -mx-1 px-1 scrollbar-hide">
+            {/* "Всі" chip */}
+            <button
+              onClick={() => setActiveCategory(null)}
+              className={`flex items-center gap-2 whitespace-nowrap px-5 py-2.5 rounded-full text-sm font-semibold transition-all border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                activeCategory === null
+                  ? "bg-primary text-primary-foreground border-primary shadow-md"
+                  : "bg-background text-muted-foreground border-border hover:border-foreground/40 hover:shadow-sm"
+              }`}
+            >
+              Всі
+            </button>
             {categories.map((cat) => (
               <button
                 key={cat.id}

@@ -1,10 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { MockupViewer } from "@/components/MockupViewer";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { Button } from "@/components/ui/button";
-import { Trash2, ShoppingCart } from "lucide-react";
+import { Trash2, ShoppingCart, ChevronLeft } from "lucide-react";
 import type { CartItem } from "./Customizer";
 
 interface DesktopCartPanelProps {
@@ -13,14 +13,47 @@ interface DesktopCartPanelProps {
   onCheckout: () => void;
   onEdit: (i: number) => void;
   onRemove: (i: number) => void;
+  /** When true, panel starts collapsed and shows only a toggle icon */
+  collapsible?: boolean;
+  /** Hide the panel entirely (e.g. on contact/review steps when collapsible) */
+  hidden?: boolean;
 }
 
-export function DesktopCartPanel({ cart, totalCents, onCheckout, onEdit, onRemove }: DesktopCartPanelProps) {
+export function DesktopCartPanel({ cart, totalCents, onCheckout, onEdit, onRemove, collapsible = false, hidden = false }: DesktopCartPanelProps) {
+  const [collapsed, setCollapsed] = useState(collapsible);
+
+  if (hidden) return null;
+
+  // Collapsed: just a floating cart icon button on the right edge
+  if (collapsed) {
+    return (
+      <button
+        onClick={() => setCollapsed(false)}
+        className="hidden lg:flex fixed top-1/2 -translate-y-1/2 right-0 z-40 flex-col items-center gap-1.5 bg-card border border-border border-r-0 rounded-l-2xl px-2 py-4 shadow-xl hover:bg-muted transition-colors"
+        aria-label="Відкрити кошик"
+      >
+        <ShoppingCart className="size-5 text-primary" />
+        {cart.length > 0 && (
+          <span className="bg-primary text-white text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center leading-none">
+            {cart.length}
+          </span>
+        )}
+      </button>
+    );
+  }
+
   return (
     <div className="hidden lg:flex fixed top-0 right-0 bottom-0 z-40 w-80 border-l border-border bg-card flex-col shadow-xl">
       <div className="h-12 px-4 border-b border-border flex items-center justify-between shrink-0">
         <span className="font-semibold text-sm">Кошик ({cart.length})</span>
-        <span className="text-xs text-muted-foreground">{(totalCents / 100).toFixed(0)} ₴</span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">{(totalCents / 100).toFixed(0)} ₴</span>
+          {collapsible && (
+            <button onClick={() => setCollapsed(true)} className="p-1 rounded-lg hover:bg-muted transition-colors" aria-label="Згорнути кошик">
+              <ChevronLeft className="size-4 text-muted-foreground" />
+            </button>
+          )}
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {cart.length === 0 && (

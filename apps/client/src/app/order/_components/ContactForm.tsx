@@ -155,7 +155,7 @@ export function ContactForm({
             </div>
           </div>
         )}
-        <div className="flex gap-2 pt-2">
+        <div className="sticky bottom-0 bg-background border-t border-border px-0 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] flex gap-2">
           <Button variant="outline" className="flex-1" onClick={onBack}>Назад</Button>
           <Button className="flex-1" onClick={onNext}
             disabled={!contact.name.trim() || !contact.phone.trim() || (contact.delivery === "nova_poshta" && !contact.novaPoshtaDetails.trim())}>
