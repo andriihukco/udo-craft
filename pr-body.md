@@ -1,11 +1,7 @@
-Staging verified (both admin and client Ready on Vercel preview).
+Staging verified. Promoting to production.
 
 Changes:
-- Tailwind v4 migration (admin + client)
-- Catalog restructure: /catalog (Товари, Категорії, Кольори, Розміри) + /prints (Принти, Типи друку, Розміри друку)
-- Size chart grid: full CRUD in admin catalog, modal viewer on client product page
-- Product form improvements: working selects, size chip picker, print zones
-- Sidebar nav synced with catalog tabs
-- Fix: @tiptap/core + @tiptap/pm added as root deps (novel peer deps)
-- Fix: product creation null constraint (images, px_to_mm_ratio, collar_y_px)
-- Various UI consistency fixes
+- Hero video shows immediately (removed white fade-in overlay, added preload=auto)
+- Collections: "Всі" chip added first, shows all active products
+- Order page: cart panel collapsible on select step (products take full width), hidden on contact/review steps
+- Sticky bottom buttons on contact and review steps (safe-area aware)
