@@ -442,6 +442,7 @@ export default function HomePage() {
   const navLinks = [
     { href: "#collections", label: "Колекції" },
     { href: "/popup",       label: "Popup" },
+    { href: "#about",       label: "Про нас" },
     { href: "#how",         label: "Як це працює" },
     { href: "#contact",     label: "Контакти" },
   ];
@@ -1026,15 +1027,41 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* WHY US */}
-      <section className="bg-background py-24 sm:py-32">
+      {/* ABOUT */}
+      <section id="about" className="bg-background py-24 sm:py-32">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <FadeUp>
-            <div className="mb-16 text-center">
-              <p className="text-xs font-bold uppercase tracking-widest mb-4 text-primary">Чому ми</p>
-              <h2 className="text-4xl sm:text-5xl font-black tracking-tight">Якість, яку відчуваєш</h2>
-            </div>
-          </FadeUp>
+          <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-start mb-20">
+            <FadeUp>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest mb-4 text-primary">Про нас</p>
+                <h2 className="text-4xl sm:text-5xl font-black tracking-tight leading-[1.05] mb-6">
+                  Ми робимо мерч, який носять
+                </h2>
+                <p className="text-muted-foreground text-base leading-relaxed mb-4">
+                  U:DO Craft — українська платформа корпоративного мерчу. Ми поєднуємо онлайн-редактор, власне виробництво та особистий сервіс, щоб ваш бренд виглядав бездоганно.
+                </p>
+                <p className="text-muted-foreground text-base leading-relaxed">
+                  Від стартапів до великих корпорацій — ми допомагаємо командам створювати мерч, яким пишаються. Від 10 одиниць, без прихованих доплат, з доставкою по Україні.
+                </p>
+              </div>
+            </FadeUp>
+            <FadeUp delay={0.1}>
+              <div className="grid grid-cols-2 gap-px bg-border rounded-2xl overflow-hidden">
+                {[
+                  { value: "500+", label: "задоволених клієнтів" },
+                  { value: "10k+", label: "виробів щороку" },
+                  { value: "7–14", label: "днів виробництво" },
+                  { value: "100%", label: "контроль якості" },
+                ].map((s) => (
+                  <div key={s.label} className="bg-background px-6 py-8 text-center">
+                    <p className="text-3xl font-black text-primary mb-1">{s.value}</p>
+                    <p className="text-xs text-muted-foreground">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+            </FadeUp>
+          </div>
+
           <StaggerGrid className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[
               { icon: "🎨", title: "Онлайн-редактор",   desc: "Завантажуй логотип, розміщуй на виробі та одразу бачиш результат. Без зайвих листів і погоджень." },
@@ -1066,7 +1093,7 @@ export default function HomePage() {
       </div>
 
       {/* TESTIMONIALS */}
-      <section className="bg-background py-24 sm:py-32">
+      <section id="testimonials" className="bg-background py-24 sm:py-32">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <FadeUp>
             <div className="mb-16">
