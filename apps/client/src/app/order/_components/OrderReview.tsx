@@ -126,7 +126,7 @@ export function OrderReview({
         </div>
       </div>
 
-      <div className="flex gap-2 pt-2">
+      <div className="sticky bottom-0 bg-background border-t border-border pt-3 pb-[max(12px,env(safe-area-inset-bottom))] flex gap-2">
         <Button variant="outline" className="flex-1" onClick={onBack}>Редагувати</Button>
         <Button className="flex-1 gap-1.5" onClick={onSubmit} disabled={submitting}>
           {submitting ? <><Loader2 className="size-3.5 animate-spin" /> Відправляємо...</> : "Відправити замовлення"}

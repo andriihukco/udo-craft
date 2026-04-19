@@ -222,7 +222,7 @@ export function OrderPageInner({
 
         {/* Body */}
         <div className="flex-1 min-h-0 flex overflow-hidden">
-          <div className="flex-1 overflow-y-auto lg:pr-80">
+          <div className={`flex-1 overflow-y-auto ${step === "select" ? "" : "lg:pr-80"}`}>
             <div className="mx-auto px-4 py-6 space-y-6 max-w-full">
               {step === "select" && (
                 <ProductGrid
@@ -269,13 +269,15 @@ export function OrderPageInner({
             </div>
           </div>
 
-          {/* Desktop cart side panel */}
+          {/* Desktop cart — collapsible on select step, hidden on contact/review */}
           <DesktopCartPanel
             cart={cart}
             totalCents={totalCents}
             onCheckout={() => setStep("contact")}
             onEdit={(i) => { const prod = products.find((p) => p.id === cart[i]?.productId); if (!prod) return; setCustomizerInitialSize(null); setCustomizerInitialColor(null); setEditingCartIndex(i); setCustomizing(prod); }}
             onRemove={(i) => setCart((prev) => prev.filter((_, idx) => idx !== i))}
+            collapsible={step === "select"}
+            hidden={step === "contact" || step === "review"}
           />
 
           <MobileCartBar
