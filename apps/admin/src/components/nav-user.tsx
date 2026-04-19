@@ -7,10 +7,9 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useSidebar } from "@/components/ui/sidebar";
 
 interface NavUserProps {
@@ -59,11 +58,6 @@ export function NavUser({ user }: NavUserProps) {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent className="min-w-56" side="top" align="end" sideOffset={8}>
-        <DropdownMenuItem className="cursor-pointer focus:bg-muted focus:text-foreground" onClick={() => navigate("/settings")}>
-          <Settings className="size-4" />
-          Налаштування
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
         <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer" onClick={async () => { if (isMobile) setOpenMobile(false); await handleLogout(); }}>
           <LogOut className="size-4" />
           Вийти

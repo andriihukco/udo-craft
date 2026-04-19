@@ -7,10 +7,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { Product, Material, ProductColorVariant } from "@udo-craft/shared";
 import { resolveProductImages, getCustomizableImages, getAllImages } from "@udo-craft/shared";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Minus, Plus, Loader2, Paintbrush, ShoppingBag, Check, Truck, Shield, RotateCcw } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Minus, Plus, Loader2, Paintbrush, ShoppingBag, Check, Truck, Shield, RotateCcw, Ruler } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ProductCardDetailed } from "@/components/ProductCardDetailed";
+import { SizeChartModal } from "@/components/SizeChartModal";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -300,7 +301,7 @@ export default function ProductDetailPage() {
                       {materials.find((m) => m.id === selectedVariant?.material_id)?.name ?? "—"}
                     </span>
                   </p>
-                  <div className="flex gap-2.5 flex-wrap">
+                  <div className="flex gap-2 flex-wrap">
                     {colorDots.map((c) => (
                       <button key={c.id}
                         onClick={() => {
@@ -315,10 +316,10 @@ export default function ProductDetailPage() {
                         }}
                         aria-label={c.name} aria-pressed={selectedVariantId === c.id}
                         title={c.name}
-                        className={`w-9 h-9 rounded-full border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                        className={`w-7 h-7 rounded-full shrink-0 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                           selectedVariantId === c.id
-                            ? "border-primary scale-110 shadow-lg"
-                            : "border-transparent hover:border-border hover:scale-105"
+                            ? "ring-2 ring-offset-1 ring-foreground scale-110"
+                            : "ring-1 ring-border hover:ring-foreground/40 hover:scale-105"
                         }`}
                         style={{ backgroundColor: c.hex }}
                       />
@@ -330,16 +331,21 @@ export default function ProductDetailPage() {
               {/* Size */}
               {sizes.length > 0 && (
                 <div className="space-y-2.5">
-                  <p className="text-sm font-semibold">Розмір</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold">Розмір</p>
+                    {product.size_chart_id && (
+                      <SizeChartModal chartId={product.size_chart_id} />
+                    )}
+                  </div>
                   <div className="flex gap-2 flex-wrap">
                     {sizes.map((s) => (
                       <button key={s}
                         onClick={() => setSelectedSize(s === selectedSize ? null : s)}
                         aria-pressed={selectedSize === s}
-                        className={`min-w-[48px] h-11 px-4 rounded-full border text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                        className={`min-w-[48px] h-10 px-4 rounded-lg border text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                           selectedSize === s
-                            ? "border-primary bg-primary text-white shadow-md"
-                            : "border-border hover:border-primary/50 text-foreground hover:bg-muted"
+                            ? "bg-foreground text-background border-foreground"
+                            : "border-border hover:border-foreground/40 text-foreground hover:bg-muted"
                         }`}>
                         {s}
                       </button>
@@ -351,20 +357,20 @@ export default function ProductDetailPage() {
               {/* Quantity */}
               <div className="space-y-2.5">
                 <p className="text-sm font-semibold">Кількість</p>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <button onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                     aria-label="Зменшити кількість"
-                    className="w-11 h-11 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    className="w-10 h-10 rounded-lg border border-border flex items-center justify-center hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                     <Minus className="w-4 h-4" />
                   </button>
-                  <span className="w-10 text-center font-bold text-xl" aria-live="polite">{quantity}</span>
+                  <span className="w-12 text-center font-bold text-lg" aria-live="polite">{quantity}</span>
                   <button onClick={() => setQuantity((q) => q + 1)}
                     aria-label="Збільшити кількість"
-                    className="w-11 h-11 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    className="w-10 h-10 rounded-lg border border-border flex items-center justify-center hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                     <Plus className="w-4 h-4" />
                   </button>
                   {quantity >= 10 && (
-                    <span className="text-xs text-emerald-600 font-semibold bg-emerald-50 px-2.5 py-1 rounded-full">
+                    <span className="text-xs text-emerald-600 font-semibold bg-emerald-50 px-2.5 py-1 rounded-lg">
                       Знижка {discountPct > 0 ? `-${discountPct}%` : "доступна"}
                     </span>
                   )}
@@ -372,15 +378,14 @@ export default function ProductDetailPage() {
               </div>
 
               {/* CTAs */}
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 <button onClick={handleCustomize}
-                  className="flex-1 inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold text-sm px-6 py-4 rounded-full active:scale-95 transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-primary/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  className="flex-1 inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold text-sm px-6 py-3.5 rounded-lg active:scale-95 transition-all duration-200 shadow-md hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   <Paintbrush className="w-4 h-4" />
                   Додати принт
-                  <ArrowRight className="w-4 h-4" />
                 </button>
                 <button onClick={handleAddToCart}
-                  className="flex-1 inline-flex items-center justify-center gap-2 border-2 border-primary text-primary hover:bg-primary/5 font-bold text-sm px-6 py-4 rounded-full active:scale-95 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  className="flex-1 inline-flex items-center justify-center gap-2 border-2 border-primary text-primary hover:bg-primary/5 font-bold text-sm px-6 py-3.5 rounded-lg active:scale-95 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   <AnimatePresence mode="wait" initial={false}>
                     {added ? (
                       <motion.span key="added" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
@@ -400,7 +405,7 @@ export default function ProductDetailPage() {
               {/* Trust badges */}
               <div className="grid grid-cols-3 gap-3 pt-1">
                 {TRUST_BADGES.map(({ icon: Icon, label }) => (
-                  <div key={label} className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-muted/50 text-center">
+                  <div key={label} className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-muted/50 text-center">
                     <Icon className="w-4 h-4 text-primary" strokeWidth={1.5} />
                     <span className="text-[10px] font-medium text-muted-foreground leading-tight">{label}</span>
                   </div>
@@ -416,13 +421,13 @@ export default function ProductDetailPage() {
 
               {/* Discount tiers */}
               {product.discount_grid && product.discount_grid.length > 0 && (
-                <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 p-4 space-y-2">
+                <div className="rounded-lg bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 p-4 space-y-2">
                   <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Оптові знижки</p>
                   <div className="space-y-1.5">
                     {product.discount_grid.map((tier) => (
                       <div key={tier.qty} className="flex items-center justify-between text-sm">
                         <span className="text-emerald-800/70">від {tier.qty} шт</span>
-                        <span className="font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full text-xs">-{tier.discount_pct}%</span>
+                        <span className="font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-lg text-xs">-{tier.discount_pct}%</span>
                       </div>
                     ))}
                   </div>
