@@ -779,7 +779,7 @@ export default function HomePage() {
                 <p className="text-xs font-bold uppercase tracking-widest text-primary mb-0.5">Каталог</p>
                 <h2 className="text-2xl font-black tracking-tight">Колекції</h2>
               </div>
-              <Link href="/order" className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline transition-all duration-200">
+              <Link href="/order" className="flex items-center gap-1.5 text-sm font-semibold text-primary transition-all duration-200">
                 Всі товари <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -829,7 +829,7 @@ export default function HomePage() {
               const pageItems = activeCategoryItems.slice(collPage * PER_PAGE, (collPage + 1) * PER_PAGE);
               return (
                 <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                     {pageItems.map((item) => (
                       <ProductCardDetailed
                         key={item.id}
@@ -886,11 +886,11 @@ export default function HomePage() {
               );
             })()
           ) : clothingList.length === 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {[...Array(3)].map((_, i) => <div key={i} className="aspect-square bg-muted rounded-2xl animate-pulse" />)}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {clothingList.slice(0, 3).map((p) => (
                 <ProductCardDetailed
                   key={p.id}
