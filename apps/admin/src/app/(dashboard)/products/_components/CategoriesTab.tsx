@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Plus, Pencil, Trash2, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -16,16 +16,16 @@ export interface CategoriesTabProps {
   onRefresh: () => void;
 }
 
-export function CategoriesTab({ categories: initialCategories, onRefresh }: CategoriesTabProps) {
-  const [categories, setCategories] = useState<Category[]>(initialCategories);
+export function CategoriesTab({ categories: propCategories, onRefresh }: CategoriesTabProps) {
+  const [categories, setCategories] = useState<Category[]>(propCategories);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | undefined>(undefined);
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
   const dragItem = useRef<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
 
-  // Sync when parent refreshes
-  useState(() => { setCategories(initialCategories); });
+  // Sync local state whenever parent passes new categories
+  useEffect(() => { setCategories(propCategories); }, [propCategories]);
 
   const openCreate = () => { setEditingCategory(undefined); setDialogOpen(true); };
   const openEdit = (cat: Category) => { setEditingCategory(cat); setDialogOpen(true); };
