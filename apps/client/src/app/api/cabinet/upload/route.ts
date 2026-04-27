@@ -1,6 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { validateFile } from "@/lib/validate-file";
 import { NextRequest, NextResponse } from "next/server";
+
+// SERVICE ROLE JUSTIFICATION:
+// Authentication is verified via the session-based createClient() above — only
+// authenticated users can reach the upload logic. However, the "attachments"
+// storage bucket requires the service role key for write operations because
+// Supabase Storage RLS policies for this bucket are not configured to allow
+// per-user writes via the anon/session key. The service role is used only for
+// the storage.upload() call; all auth checks use the session-based client.
 
 const BUCKET = "attachments";
 
@@ -18,6 +27,11 @@ export async function POST(request: NextRequest) {
 
     const results: { url: string }[] = [];
     for (const file of files) {
+      const validation = validateFile(file);
+      if (!validation.valid) {
+        return NextResponse.json({ error: validation.error }, { status: 400 });
+      }
+
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
       const path = `messages/${crypto.randomUUID()}/${safeName}`;
       const buffer = Buffer.from(await file.arrayBuffer());

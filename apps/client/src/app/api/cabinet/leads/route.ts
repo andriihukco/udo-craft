@@ -1,13 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
-import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
-function serviceClient() {
-  return createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+// This route reads leads that belong to the currently authenticated user.
+// We use the session-based createClient() so that Supabase RLS policies
+// (which filter leads by customer_data->>'email' = auth.email()) scope the
+// query automatically. No service role is required here.
 
 export async function GET() {
   const supabase = await createClient();
@@ -16,7 +13,8 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data, error } = await serviceClient()
+  // Session-based client: RLS ensures only leads belonging to this user are returned.
+  const { data, error } = await supabase
     .from("leads")
     .select("*, order_items!order_items_lead_id_fkey(*)")
     .eq("customer_data->>email", user.email)
