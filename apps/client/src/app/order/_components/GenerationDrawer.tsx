@@ -332,13 +332,13 @@ export function GenerationDrawer({
         <>
           <motion.div
             key="backdrop"
-            className="fixed inset-0 z-40 bg-black/40"
+            className="fixed inset-0 z-[10000] bg-black/40"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose}
           />
           <motion.div
             key="drawer"
-            className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pointer-events-none"
+            className="fixed bottom-0 left-0 right-0 z-[10001] flex justify-center pointer-events-none"
             initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
           >

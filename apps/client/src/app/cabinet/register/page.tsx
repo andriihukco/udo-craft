@@ -136,6 +136,20 @@ function RegisterForm() {
     setError(null);
     if (password.length < 8) { setError("Пароль має містити щонайменше 8 символів."); setLoading(false); return; }
     try {
+      // Check if email already exists before sending OTP
+      const checkRes = await fetch("/api/auth/check-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (checkRes.ok) {
+        const { exists } = await checkRes.json();
+        if (exists) {
+          setError("Цей email вже зареєстровано. Увійдіть або скористайтесь відновленням паролю.");
+          setLoading(false);
+          return;
+        }
+      }
       const code = await sendOtp(email, name);
       setSentOtp(code);
       setOtpInput("");

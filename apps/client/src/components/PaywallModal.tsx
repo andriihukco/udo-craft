@@ -189,6 +189,20 @@ export function PaywallModal({ open, onClose, onAuthSuccess, initialScreen }: Pa
     if (regPassword.length < 8) { setRegError("Пароль має містити щонайменше 8 символів."); return; }
     setRegLoading(true);
     try {
+      // Check if email already exists before sending OTP
+      const checkRes = await fetch("/api/auth/check-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: regEmail }),
+      });
+      if (checkRes.ok) {
+        const { exists } = await checkRes.json();
+        if (exists) {
+          setRegError("Цей email вже зареєстровано. Увійдіть або скористайтесь відновленням паролю.");
+          setRegLoading(false);
+          return;
+        }
+      }
       const code = await sendOtp();
       setSentOtp(code);
       setOtpInput("");
