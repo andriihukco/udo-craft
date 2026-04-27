@@ -1,9 +1,23 @@
+import { rateLimit } from "@/lib/rate-limit";
 import { createServiceClient } from "@/lib/supabase/service";
+import { validateFile } from "@/lib/validate-file";
 import { NextRequest, NextResponse } from "next/server";
+
+// SERVICE ROLE JUSTIFICATION:
+// This is a public upload endpoint used by unauthenticated customers to attach
+// files (e.g. design references) before submitting an order. There is no user
+// session available, so the session-based createClient() cannot be used.
+// The service role key is required to write to the "attachments" storage bucket.
+// Rate limiting (10 req/IP/60s) and MIME type + size validation mitigate abuse.
 
 const BUCKET = "attachments";
 
 export async function POST(request: NextRequest) {
+  const { success } = await rateLimit(request, { limit: 10, window: 60 });
+  if (!success) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   try {
     const supabase = createServiceClient();
     const formData = await request.formData();
@@ -14,6 +28,13 @@ export async function POST(request: NextRequest) {
     }
 
     const urls: string[] = [];
+
+    for (const file of files) {
+      const validation = validateFile(file);
+      if (!validation.valid) {
+        return NextResponse.json({ error: validation.error }, { status: 400 });
+      }
+    }
 
     for (const file of files) {
       const ext = file.name.split(".").pop();

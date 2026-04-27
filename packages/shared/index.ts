@@ -114,6 +114,8 @@ export const OrderItemSchema = z.object({
     offset_top_mm: z.number(),
     print_size_mm: z.tuple([z.number(), z.number()]), // [width, height]
   }).optional(),
+  unit_price_cents: z.number().int().nonnegative().optional(),
+  print_cost_cents: z.number().int().nonnegative().optional(),
 });
 
 // TypeScript Interfaces inferred from Zod schemas
@@ -446,6 +448,10 @@ export const CreateLeadSchema = z.object({
     email: z.string().email().optional(),
     social_channel: z.string().optional(),
     phone: z.string().optional(),
+    website: z.string().optional(), // honeypot — should always be empty for real users
+    company: z.string().optional(),
+    topic: z.string().optional(),
+    source: z.string().optional(),
   }),
   total_amount_cents: z.number().int().optional(),
 });

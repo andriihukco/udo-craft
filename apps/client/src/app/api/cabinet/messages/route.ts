@@ -1,13 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
-import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 
-function serviceClient() {
-  return createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+// This route reads and writes messages for the currently authenticated user's leads.
+// We use the session-based createClient() throughout so that Supabase RLS policies
+// scope all queries to the authenticated user automatically:
+//   - Lead ownership is verified via RLS (customer_data->>'email' = auth.email())
+//   - Messages are scoped to leads the user owns via the lead_id foreign key
+// No service role is required here — all operations are on data belonging to the
+// currently authenticated user.
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
@@ -17,8 +17,8 @@ export async function GET(request: NextRequest) {
   const leadId = new URL(request.url).searchParams.get("lead_id");
   if (!leadId) return NextResponse.json({ error: "lead_id required" }, { status: 400 });
 
-  // Verify this lead belongs to the user
-  const { data: lead } = await serviceClient()
+  // Verify this lead belongs to the user using the session-based client (RLS enforced).
+  const { data: lead } = await supabase
     .from("leads")
     .select("id, customer_data")
     .eq("id", leadId)
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
   if (!lead) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const { data, error } = await serviceClient()
+  const { data, error } = await supabase
     .from("messages")
     .select("*")
     .eq("lead_id", leadId)
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
   // Mark unread manager messages as read
   const unread = (data || []).filter((m) => m.sender === "manager" && !m.read_at);
   if (unread.length) {
-    await serviceClient()
+    await supabase
       .from("messages")
       .update({ read_at: new Date().toISOString() })
       .in("id", unread.map((m) => m.id));
@@ -58,8 +58,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "lead_id and body or attachments required" }, { status: 400 });
   }
 
-  // Verify ownership
-  const { data: lead } = await serviceClient()
+  // Verify ownership using the session-based client (RLS enforced).
+  const { data: lead } = await supabase
     .from("leads")
     .select("id")
     .eq("id", lead_id)

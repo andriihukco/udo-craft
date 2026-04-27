@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Product, Material, ProductColorVariant } from "@udo-craft/shared";
@@ -11,6 +12,7 @@ import { BrandLogoFull } from "@/components/brand-logo";
 import { LogoLoader } from "@udo-craft/ui";
 import { createClient } from "@/lib/supabase/client";
 import { useCms } from "@/hooks/useCms";
+import { useCart } from "@/hooks/useCart";
 import { User, ShoppingBag, ArrowRight, ChevronDown, Instagram, Send, X, Fullscreen, Shrink, Menu } from "lucide-react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 
@@ -169,10 +171,11 @@ function PopupStepCarousel() {
             style={{ x: dragX }}
             className="absolute inset-0"
           >
-            <img
+            <Image
               src={POPUP_STEPS[active].img}
               alt={POPUP_STEPS[active].title}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
               draggable={false}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
@@ -366,6 +369,14 @@ export default function HomePage() {
   const [colorVariants, setColorVariants] = useState<ProductColorVariant[]>([]);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [collPage, setCollPage] = useState(0);
+  const [collPerPage, setCollPerPage] = useState(2);
+
+  useEffect(() => {
+    const update = () => setCollPerPage(window.innerWidth >= 1024 ? 4 : 2);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
 
   useEffect(() => {
     void supabase.auth.getSession().then((r: { data: { session: unknown } }) => setIsLoggedIn(!!r.data.session));
@@ -400,39 +411,12 @@ export default function HomePage() {
     ? products.filter((p) => p.is_active)
     : products.filter((p) => p.category_id === activeCategory && p.is_active);
 
-  // Reset pagination when category changes
-  useEffect(() => { setCollPage(0); }, [activeCategory]);
+  // Reset pagination when category or perPage changes
+  useEffect(() => { setCollPage(0); }, [activeCategory, collPerPage]);
   const hasCatalog = categories.length > 0;
 
-  // Read cart count from session storage
-  const [cartCount, setCartCount] = useState(0);
-  const [cart, setCart] = useState<any[]>([]);
-  const [totalCents, setTotalCents] = useState(0);
-  
-  useEffect(() => {
-    const readCart = () => {
-      try {
-        const raw = sessionStorage.getItem("client-order-draft");
-        if (!raw) { setCartCount(0); setCart([]); setTotalCents(0); return; }
-        const draft = JSON.parse(raw);
-        const cartItems = Array.isArray(draft.cart) ? draft.cart : [];
-        setCart(cartItems);
-        setCartCount(cartItems.length);
-        
-        // Calculate total
-        const total = cartItems.reduce((sum: number, item: any) => {
-          const lineTotal = (item.unitPriceCents + item.printCostCents) * item.quantity;
-          return sum + lineTotal;
-        }, 0);
-        setTotalCents(total);
-      } catch { setCartCount(0); setCart([]); setTotalCents(0); }
-    };
-    readCart();
-    window.addEventListener("storage", readCart);
-    // Poll every 2s to catch same-tab updates
-    const interval = setInterval(readCart, 2000);
-    return () => { window.removeEventListener("storage", readCart); clearInterval(interval); };
-  }, []);
+  // Cart state — synced via BroadcastChannel and storage events (no polling)
+  const { cart, cartCount, totalCents } = useCart();
 
   const kw = ["футболк","худі","лонгслів","shirt","hoodie","longsleeve","tee","polo"];
   const clothing    = products.filter((p) => kw.some((k) => p.name.toLowerCase().includes(k)));
@@ -624,7 +608,7 @@ export default function HomePage() {
       </motion.nav>
 
       {/* HERO */}
-      <section className="relative overflow-hidden bg-primary">
+      <section className="relative overflow-hidden bg-primary" style={{ backgroundImage: "url('/hero-poster.jpg')" }}>
         {/* Video — rendered immediately, no delay, bg-primary shows while buffering */}
         <video
           ref={(el) => { if (el && cinemaMode) el.play(); }}
@@ -632,6 +616,7 @@ export default function HomePage() {
           style={{ animationFillMode: "forwards" }}
           onCanPlay={e => { (e.target as HTMLVideoElement).classList.remove("opacity-0"); (e.target as HTMLVideoElement).classList.add("opacity-75"); }}
           src="/hero-video.mp4"
+          poster="/hero-poster.jpg"
           autoPlay
           loop
           muted
@@ -827,7 +812,7 @@ export default function HomePage() {
                 <p className="text-muted-foreground text-sm font-medium">У цій категорії поки немає товарів</p>
               </div>
             ) : (() => {
-              const PER_PAGE = 4;
+              const PER_PAGE = collPerPage;
               const totalPages = Math.ceil(activeCategoryItems.length / PER_PAGE);
               const pageItems = activeCategoryItems.slice(collPage * PER_PAGE, (collPage + 1) * PER_PAGE);
               return (
@@ -890,11 +875,11 @@ export default function HomePage() {
             })()
           ) : clothingList.length === 0 ? (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              {[...Array(4)].map((_, i) => <div key={i} className="aspect-square bg-muted rounded-2xl animate-pulse" />)}
+              {[...Array(collPerPage)].map((_, i) => <div key={i} className="aspect-square bg-muted rounded-2xl animate-pulse" />)}
             </div>
           ) : (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              {clothingList.slice(0, 4).map((p) => (
+              {clothingList.slice(0, collPerPage).map((p) => (
                 <ProductCardDetailed
                   key={p.id}
                   product={p}
