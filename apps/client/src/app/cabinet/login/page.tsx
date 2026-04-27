@@ -26,6 +26,7 @@ function LoginForm() {
 
   const urlError = searchParams.get("error");
   const justRegistered = searchParams.get("registered") === "1";
+  const returnTo = searchParams.get("returnTo") || "/cabinet";
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +37,7 @@ function LoginForm() {
       setError("Невірний email або пароль.");
       setLoading(false);
     } else {
-      router.push("/cabinet");
+      router.push(returnTo);
       router.refresh();
     }
   };
@@ -88,7 +89,7 @@ function LoginForm() {
                 <h1 className="font-bold text-xl">Вхід</h1>
                 <p className="text-sm text-muted-foreground mt-1">
                   Немає акаунту?{" "}
-                  <Link href="/cabinet/register" className="text-primary font-medium hover:underline">
+                  <Link href={`/cabinet/register${returnTo !== "/cabinet" ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`} className="text-primary font-medium hover:underline">
                     Зареєструватись
                   </Link>
                 </p>

@@ -64,14 +64,14 @@ export function PaywallModal({ open, onClose }: PaywallModalProps) {
         <div className="flex flex-col gap-3 pt-1">
           <Button
             className="w-full"
-            onClick={() => router.push("/cabinet/login?mode=register")}
+            onClick={() => router.push("/cabinet/register?returnTo=/order")}
           >
             Зареєструватись
           </Button>
           <Button
             variant="outline"
             className="w-full"
-            onClick={() => router.push("/cabinet/login")}
+            onClick={() => router.push("/cabinet/login?returnTo=/order")}
           >
             Увійти
           </Button>

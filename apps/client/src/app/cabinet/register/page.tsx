@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { BrandLogoFull } from "@/components/brand-logo";
@@ -72,7 +72,10 @@ function OTPInput({ value, onChange }: { value: string; onChange: (v: string) =>
 
 function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
+
+  const returnTo = searchParams.get("returnTo") || "/cabinet";
 
   const [view, setView] = useState<View>("register");
   const [name, setName] = useState("");
@@ -169,7 +172,7 @@ function RegisterForm() {
     // Sign in immediately after registration
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
     if (!signInError) {
-      router.push("/cabinet");
+      router.push(returnTo);
       router.refresh();
     } else {
       router.push("/cabinet/login?registered=1");
@@ -203,7 +206,7 @@ function RegisterForm() {
                 <h1 className="font-bold text-xl">Створити акаунт</h1>
                 <p className="text-sm text-muted-foreground mt-1">
                   Вже є акаунт?{" "}
-                  <Link href="/cabinet/login" className="text-primary font-medium hover:underline">
+                  <Link href={`/cabinet/login${returnTo !== "/cabinet" ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`} className="text-primary font-medium hover:underline">
                     Увійти
                   </Link>
                 </p>
