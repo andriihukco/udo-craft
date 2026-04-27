@@ -1,9 +1,22 @@
 import { CreateLeadSchema } from "@udo-craft/shared";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendOrderConfirmation, sendContactNotification } from "@/lib/email";
+import { rateLimit } from "@/lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
 
+// SERVICE ROLE JUSTIFICATION:
+// This is a public endpoint — customers submit orders without being authenticated.
+// There is no user session to derive a Supabase client from, so the session-based
+// createClient() cannot be used here. The service role key is required to insert
+// leads, order_items, and messages on behalf of unauthenticated visitors.
+// The honeypot check and rate limiting above mitigate abuse of this open endpoint.
+
 export async function POST(request: NextRequest) {
+  const { success } = await rateLimit(request, { limit: 5, window: 60 });
+  if (!success) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   try {
     const supabase = createServiceClient();
 
@@ -13,6 +26,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
     }
     const { status, customer_data, total_amount_cents } = parsed.data;
+
+    // Honeypot check — bots fill this field, real users don't
+    if (customer_data.website) {
+      return NextResponse.json({ id: "bot-rejected" }, { status: 200 });
+    }
+
     const { order_items, initial_message } = body;
     // attachments is an extra field not covered by CreateLeadSchema — read from raw body
     const attachments: string[] = body.customer_data?.attachments ?? [];
@@ -35,7 +54,14 @@ export async function POST(request: NextRequest) {
         size: string;
         color: string;
         custom_print_url?: string | null;
-      }) => ({ ...item, lead_id: lead.id }));
+        unit_price_cents?: number | null;
+        print_cost_cents?: number | null;
+      }) => ({
+        ...item,
+        lead_id: lead.id,
+        unit_price_cents: item.unit_price_cents ?? null,
+        print_cost_cents: item.print_cost_cents ?? null,
+      }));
 
       const { error: itemsError } = await supabase.from("order_items").insert(items);
 

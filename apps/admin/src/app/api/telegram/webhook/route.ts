@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "crypto";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -39,11 +40,26 @@ async function sendMenu(chatId: string) {
 }
 
 export async function POST(request: NextRequest) {
-  // Skip secret check in dev if env not set, but enforce in prod
   const secret = request.headers.get("x-telegram-bot-api-secret-token");
   const expectedSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
-  if (expectedSecret && secret !== expectedSecret) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  if (expectedSecret) {
+    if (!secret) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    const secretBuf = Buffer.from(secret, "utf8");
+    const expectedBuf = Buffer.from(expectedSecret, "utf8");
+    // Pad to equal length before comparison to avoid length-based timing leak
+    const maxLen = Math.max(secretBuf.length, expectedBuf.length);
+    const a = Buffer.alloc(maxLen);
+    secretBuf.copy(a);
+    const b = Buffer.alloc(maxLen);
+    expectedBuf.copy(b);
+    if (!timingSafeEqual(a, b)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  } else {
+    console.warn("[telegram/webhook] TELEGRAM_WEBHOOK_SECRET is not set — skipping signature check");
   }
 
   let update: Record<string, unknown>;

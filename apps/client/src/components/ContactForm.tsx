@@ -56,6 +56,7 @@ export function ContactForm({ defaultTopic }: { defaultTopic?: TopicValue }) {
   const [message, setMessage]       = useState("");
   const [files, setFiles]           = useState<File[]>([]);
   const [source, setSource]         = useState("contact_form");
+  const [honeypot, setHoneypot]     = useState("");
 
   useEffect(() => {
     const apply = () => {
@@ -88,7 +89,7 @@ export function ContactForm({ defaultTopic }: { defaultTopic?: TopicValue }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           status: "new",
-          customer_data: { name, email, phone, company, topic, source, attachments: attachmentUrls },
+          customer_data: { name, email, phone, company, topic, source, website: honeypot, attachments: attachmentUrls },
           total_amount_cents: 0,
           initial_message: message || null,
         }),
@@ -114,6 +115,17 @@ export function ContactForm({ defaultTopic }: { defaultTopic?: TopicValue }) {
 
   return (
     <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-4 max-w-2xl">
+      {/* Honeypot field — hidden from real users, catches bots */}
+      <input
+        name="website"
+        type="text"
+        tabIndex={-1}
+        aria-hidden="true"
+        autoComplete="off"
+        style={{ position: "absolute", left: "-9999px", opacity: 0 }}
+        value={honeypot}
+        onChange={(e) => setHoneypot(e.target.value)}
+      />
 
       <div className="space-y-1.5">
         <Label htmlFor="cf-name" className="text-white/60 text-xs font-semibold uppercase tracking-wide">Ваше iм&apos;я *</Label>

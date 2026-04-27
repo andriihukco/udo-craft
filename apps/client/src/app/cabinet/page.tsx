@@ -30,6 +30,8 @@ interface OrderItem {
   custom_print_url?: string;
   mockup_url?: string;
   technical_metadata?: { offset_top_mm?: number; print_size_mm?: [number, number] };
+  unit_price_cents?: number | null;
+  print_cost_cents?: number | null;
 }
 
 interface Lead {
@@ -392,13 +394,17 @@ export default function CabinetPage() {
     if (!selectedLead || !user) return;
     setGeneratingPdf(true);
     try {
+      const totalQty = selectedLead.order_items?.reduce((s, i) => s + i.quantity, 0) || 1;
       await generateInvoicePDF({
         items: (selectedLead.order_items || []).map((item) => ({
           productName: `Товар (${item.color})`,
           size: item.size,
           color: item.color,
           quantity: item.quantity,
-          unitPriceCents: Math.round(selectedLead.total_amount_cents / Math.max(1, selectedLead.order_items?.reduce((s, i) => s + i.quantity, 0) || 1)),
+          // Use stored unit_price_cents when available; fall back to estimation for legacy items
+          unitPriceCents: item.unit_price_cents != null
+            ? item.unit_price_cents
+            : Math.round(selectedLead.total_amount_cents / Math.max(1, totalQty)),
           printUrl: item.custom_print_url,
         })),
         contact: {
