@@ -68,7 +68,8 @@ function LoginForm() {
           <p className="text-muted-foreground text-sm mt-2">Особистий кабінет</p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-border shadow-sm p-6 space-y-5">
+        {/* Card */}
+        <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-5">
           {/* Alerts */}
           {urlError === "invalid-token" && (
             <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
@@ -89,7 +90,10 @@ function LoginForm() {
                 <h1 className="font-bold text-xl">Вхід</h1>
                 <p className="text-sm text-muted-foreground mt-1">
                   Немає акаунту?{" "}
-                  <Link href={`/cabinet/register${returnTo !== "/cabinet" ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`} className="text-primary font-medium hover:underline">
+                  <Link
+                    href={`/cabinet/register${returnTo !== "/cabinet" ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`}
+                    className="text-primary font-medium hover:underline"
+                  >
                     Зареєструватись
                   </Link>
                 </p>
@@ -100,59 +104,35 @@ function LoginForm() {
                   <Label htmlFor="email">Email</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="hr@company.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      autoComplete="email"
-                      className="pl-9"
-                    />
+                    <Input id="email" type="email" placeholder="hr@company.com" value={email}
+                      onChange={(e) => setEmail(e.target.value)} required autoComplete="email" className="pl-9" />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="password">Пароль</Label>
-                    <button
-                      type="button"
-                      onClick={() => { setView("forgot"); setError(null); }}
-                      className="text-xs text-muted-foreground hover:text-primary transition-colors"
-                    >
+                    <button type="button" onClick={() => { setView("forgot"); setError(null); }}
+                      className="text-xs text-muted-foreground hover:text-primary transition-colors">
                       Забули пароль?
                     </button>
                   </div>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      autoComplete="current-password"
-                      className="pl-9 pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      tabIndex={-1}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    >
+                    <Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••"
+                      value={password} onChange={(e) => setPassword(e.target.value)}
+                      required autoComplete="current-password" className="pl-9 pr-10" />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} tabIndex={-1}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                       {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                     </button>
                   </div>
                 </div>
 
-                {error && (
-                  <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>
-                )}
+                {error && <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>}
 
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? <Loader2 className="size-4 animate-spin mr-2" /> : null}
+                  {loading && <Loader2 className="size-4 animate-spin mr-2" />}
                   {loading ? "Входимо..." : "Увійти"}
                 </Button>
               </form>
@@ -162,39 +142,24 @@ function LoginForm() {
           {/* FORGOT PASSWORD */}
           {view === "forgot" && (
             <>
-              <button
-                onClick={() => { setView("login"); setError(null); }}
-                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
+              <button onClick={() => { setView("login"); setError(null); }}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
                 <ArrowLeft className="size-3.5" /> Назад
               </button>
-
               <div>
                 <h1 className="font-bold text-xl">Відновлення паролю</h1>
                 <p className="text-sm text-muted-foreground mt-1">Надішлемо посилання для скидання на ваш email</p>
               </div>
-
               <form onSubmit={handleForgot} className="space-y-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="reset-email">Email</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                    <Input
-                      id="reset-email"
-                      type="email"
-                      placeholder="hr@company.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="pl-9"
-                    />
+                    <Input id="reset-email" type="email" placeholder="hr@company.com" value={email}
+                      onChange={(e) => setEmail(e.target.value)} required className="pl-9" />
                   </div>
                 </div>
-
-                {error && (
-                  <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>
-                )}
-
+                {error && <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>}
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? <Loader2 className="size-4 animate-spin mr-2" /> : <Mail className="size-4 mr-2" />}
                   {loading ? "Надсилаємо..." : "Надіслати посилання"}
@@ -212,7 +177,7 @@ function LoginForm() {
               <div>
                 <h2 className="font-bold text-lg">Лист надіслано</h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Перевірте <span className="font-medium text-foreground">{email}</span> та перейдіть за посиланням для скидання паролю.
+                  Перевірте <span className="font-medium text-foreground">{email}</span> та перейдіть за посиланням.
                 </p>
               </div>
               <p className="text-xs text-muted-foreground">Не бачите листа? Перевірте папку «Спам».</p>

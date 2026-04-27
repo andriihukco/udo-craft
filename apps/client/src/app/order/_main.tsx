@@ -219,7 +219,7 @@ export function OrderPageInner({
           existingMockupUploadedUrl={editingCartIndex !== null ? cart[editingCartIndex]?.mockupUploadedUrl : undefined}
           isAuthenticated={isAuthenticated}
           aiQuota={aiQuota}
-          onAuthSuccess={checkAuth}
+          onAuthSuccess={() => setIsAuthenticated(true)}
         />
       )}
 

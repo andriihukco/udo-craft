@@ -20,6 +20,14 @@ export function SuccessModal({ email: initialEmail, onClose }: { email: string; 
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [alreadyExists, setAlreadyExists] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null); // null = checking
+
+  // Check if user is already logged in
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
+      setIsAuthenticated(!!data.user);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     import("canvas-confetti").then((mod) => {
@@ -61,6 +69,23 @@ export function SuccessModal({ email: initialEmail, onClose }: { email: string; 
     </div>
   );
 
+  // Already authenticated — just show success + go to cabinet
+  if (isAuthenticated === true) return (
+    <div className="fixed inset-0 z-[9998] bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
+      <div className="bg-card rounded-2xl w-full max-w-md p-6 space-y-5 shadow-xl">
+        {header}
+        <div className="border-t border-border pt-4 space-y-3">
+          <Button className="w-full" onClick={() => router.push("/cabinet")}>
+            Перейти до кабінету
+          </Button>
+        </div>
+        <button onClick={onClose} className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors text-center">
+          Пропустити, повернутись на головну
+        </button>
+      </div>
+    </div>
+  );
+
   if (alreadyExists) return (
     <div className="fixed inset-0 z-[9998] bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
       <div className="bg-card rounded-2xl w-full max-w-md p-6 space-y-5 shadow-xl">
@@ -87,48 +112,56 @@ export function SuccessModal({ email: initialEmail, onClose }: { email: string; 
     </div>
   );
 
+  // Not authenticated (or still checking) — show registration form
   return (
     <div className="fixed inset-0 z-[9998] bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
       <div className="bg-card rounded-2xl w-full max-w-md p-6 space-y-5 shadow-xl">
         {header}
-        <div className="border-t border-border pt-4">
-          <h3 className="font-semibold text-sm mb-1">Створіть особистий кабінет</h3>
-          <p className="text-xs text-muted-foreground mb-3">Відстежуйте статус, спілкуйтесь з менеджером, завантажуйте рахунки.</p>
-          <form
-            onSubmit={emailInput
-              ? (e) => { e.preventDefault(); if (!email || !/\S+@\S+\.\S+/.test(email)) { setError("Введіть коректний email"); return; } setError(null); setEmailInput(false); }
-              : handleCreate}
-            className="space-y-3"
-          >
-            <div className="space-y-1.5">
-              <Label>Email</Label>
-              <Input type="email" value={email} onChange={(e) => { setEmail(e.target.value); setError(null); }}
-                placeholder="your@email.com" autoFocus={emailInput}
-                readOnly={!emailInput && !!initialEmail}
-                className={!emailInput && !!initialEmail ? "bg-muted text-muted-foreground" : ""} />
-              {!emailInput && !!initialEmail && (
-                <button type="button" onClick={() => setEmailInput(true)} className="text-xs text-primary hover:underline">Змінити email</button>
-              )}
-            </div>
-            {!emailInput && (
+        {isAuthenticated === null ? (
+          // Still checking auth — show nothing extra yet
+          <div className="border-t border-border pt-4 flex justify-center">
+            <Loader2 className="size-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <div className="border-t border-border pt-4">
+            <h3 className="font-semibold text-sm mb-1">Створіть особистий кабінет</h3>
+            <p className="text-xs text-muted-foreground mb-3">Відстежуйте статус, спілкуйтесь з менеджером, завантажуйте рахунки.</p>
+            <form
+              onSubmit={emailInput
+                ? (e) => { e.preventDefault(); if (!email || !/\S+@\S+\.\S+/.test(email)) { setError("Введіть коректний email"); return; } setError(null); setEmailInput(false); }
+                : handleCreate}
+              className="space-y-3"
+            >
               <div className="space-y-1.5">
-                <Label htmlFor="pw">Пароль</Label>
-                <div className="relative">
-                  <Input id="pw" type={showPw ? "text" : "password"} placeholder="Мінімум 6 символів"
-                    value={password} onChange={(e) => setPassword(e.target.value)} className="pr-10" required autoFocus />
-                  <button type="button" tabIndex={-1} onClick={() => setShowPw(!showPw)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                    {showPw ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                  </button>
-                </div>
+                <Label>Email</Label>
+                <Input type="email" value={email} onChange={(e) => { setEmail(e.target.value); setError(null); }}
+                  placeholder="your@email.com" autoFocus={emailInput}
+                  readOnly={!emailInput && !!initialEmail}
+                  className={!emailInput && !!initialEmail ? "bg-muted text-muted-foreground" : ""} />
+                {!emailInput && !!initialEmail && (
+                  <button type="button" onClick={() => setEmailInput(true)} className="text-xs text-primary hover:underline">Змінити email</button>
+                )}
               </div>
-            )}
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? <><Loader2 className="size-4 animate-spin" /> Створюємо...</> : emailInput ? "Далі →" : "Створити кабінет"}
-            </Button>
-          </form>
-        </div>
+              {!emailInput && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="pw">Пароль</Label>
+                  <div className="relative">
+                    <Input id="pw" type={showPw ? "text" : "password"} placeholder="Мінімум 6 символів"
+                      value={password} onChange={(e) => setPassword(e.target.value)} className="pr-10" required autoFocus />
+                    <button type="button" tabIndex={-1} onClick={() => setShowPw(!showPw)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                      {showPw ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
+                  </div>
+                </div>
+              )}
+              {error && <p className="text-sm text-destructive">{error}</p>}
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? <><Loader2 className="size-4 animate-spin" /> Створюємо...</> : emailInput ? "Далі →" : "Створити кабінет"}
+              </Button>
+            </form>
+          </div>
+        )}
         <button onClick={onClose} className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors text-center">
           Пропустити, повернутись на головну
         </button>
