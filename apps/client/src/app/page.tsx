@@ -9,14 +9,18 @@ import { useCart } from "@/hooks/useCart";
 
 import { NavBar } from "@/app/_components/NavBar";
 import { CartSidebar } from "@/app/_components/CartSidebar";
+
+// Sections — ordered by AIDA + conversion best practices
 import { HeroSection } from "@/app/_sections/HeroSection";
 import { SocialProofBar } from "@/app/_sections/SocialProofBar";
 import { ProblemSolutionSection } from "@/app/_sections/ProblemSolutionSection";
 import { StatsSection } from "@/app/_sections/StatsSection";
 import { CollectionsSection } from "@/app/_sections/CollectionsSection";
-import { HowItWorksSection } from "@/app/_sections/HowItWorksSection";
+import { ProcessSection } from "@/app/_sections/ProcessSection";
 import { LeadMagnetSection } from "@/app/_sections/LeadMagnetSection";
 import { ServicesSection } from "@/app/_sections/ServicesSection";
+import { TrustSection } from "@/app/_sections/TrustSection";
+import { ComparisonSection } from "@/app/_sections/ComparisonSection";
 import { TestimonialsSection } from "@/app/_sections/TestimonialsSection";
 import { FaqSection } from "@/app/_sections/FaqSection";
 import { AboutSection } from "@/app/_sections/AboutSection";
@@ -73,7 +77,7 @@ export default function HomePage() {
       <NavBar isLoggedIn={isLoggedIn} cartCount={cartCount} onCartOpen={() => setCartOpen(true)} cinemaMode={cinemaMode} />
       <CartSidebar open={cartOpen} onClose={() => setCartOpen(false)} cart={cart} cartCount={cartCount} totalCents={totalCents} />
 
-      {/* 1. Attention */}
+      {/* A — Attention */}
       <HeroSection
         cinemaMode={cinemaMode}
         onCinemaEnter={() => setCinemaMode(true)}
@@ -83,19 +87,18 @@ export default function HomePage() {
         ctaPrimaryText={get("home_hero", "cta_primary_text", "Переглянути каталог")}
         ctaPrimaryUrl={get("home_hero", "cta_primary_url", "#collections")}
         ctaSecondaryText={get("home_hero", "cta_secondary_text", "Дивитись відео")}
-        ctaSecondaryUrl={get("home_hero", "cta_secondary_url", "#contact")}
         badge1={get("home_hero", "badge1", "Від 10 одиниць")}
         badge2={get("home_hero", "badge2", "Гарантія якості")}
         badge3={get("home_hero", "badge3", "7–14 днів на виготовлення")}
       />
 
-      {/* 2. Trust signal */}
+      {/* I — Interest: social proof immediately after hero */}
       <SocialProofBar />
 
-      {/* 3. Interest — problem/solution */}
+      {/* I — Problem/Solution */}
       <ProblemSolutionSection />
 
-      {/* 4. Stats */}
+      {/* I — Numbers that matter */}
       <StatsSection
         stat1Value={Number(get("home_stats", "stat1_value", "500"))}
         stat1Suffix={get("home_stats", "stat1_suffix", "+")}
@@ -111,18 +114,18 @@ export default function HomePage() {
         stat4Label={get("home_stats", "stat4_label", "Контроль якості")}
       />
 
-      {/* 5. Desire — product */}
+      {/* D — Desire: show the product */}
       <CollectionsSection products={products} categories={categories} materials={materials} colorVariants={colorVariants} />
 
-      {/* 6. How it works */}
-      <HowItWorksSection />
+      {/* D — How it works */}
+      <ProcessSection />
 
-      {/* 7. Lead magnet — Action trigger */}
+      {/* A — Action: lead magnet */}
       <LeadMagnetSection />
 
-      {/* 8. Services */}
+      {/* D — Services */}
       <ServicesSection
-        heading={get("home_services", "heading", "Більше, ніж просто мерч")}
+        heading={get("home_services", "heading", "Три способи отримати ідеальний мерч")}
         service1Title={get("home_services", "service1_title", "Box of Touch")}
         service1Desc={get("home_services", "service1_desc", "Замов набір зразків тканин, кольорів та виробів — відчуй якість до того, як зробити тираж.")}
         service1Cta={get("home_services", "service1_cta", "Замовити зразки")}
@@ -131,19 +134,25 @@ export default function HomePage() {
         service2Cta={get("home_services", "service2_cta", "Обговорити проєкт")}
       />
 
-      {/* 9. Trust — testimonials */}
+      {/* Trust — why us */}
+      <TrustSection />
+
+      {/* Trust — vs competition */}
+      <ComparisonSection />
+
+      {/* Trust — social proof */}
       <TestimonialsSection />
 
-      {/* 10. Objection handling — FAQ */}
+      {/* Objection handling */}
       <FaqSection />
 
-      {/* 11. About */}
+      {/* About */}
       <AboutSection />
 
-      {/* 12. Final CTA */}
+      {/* Final conversion */}
       <FinalCtaSection />
 
-      {/* 13. Contact */}
+      {/* Contact */}
       <ContactSection
         heading={get("home_contact", "heading", "Зв'яжіться з нами")}
         subtext={get("home_contact", "subtext", "Розкажіть про ваш проєкт — надішлемо пропозицію протягом 24 годин.")}
@@ -154,7 +163,7 @@ export default function HomePage() {
         telegram={get("home_contact", "telegram", "https://t.me/udostore")}
       />
 
-      {/* 14. Footer */}
+      {/* Footer */}
       <FooterSection
         tagline={get("footer", "tagline", "B2B мерч-платформа для команд, брендів та подій.")}
         copyright={get("footer", "copyright", "U:DO CRAFT. Всі права захищені.")}

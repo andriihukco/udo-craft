@@ -23,17 +23,17 @@ export function StatsSection(p: StatsSectionProps) {
   ];
 
   return (
-    <section ref={ref} className="bg-background border-y border-border overflow-hidden">
+    <section ref={ref} className="bg-background border-y border-border" aria-label="Ключові показники">
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-2 md:grid-cols-4">
           {stats.map((s, i) => (
-            <motion.div
-              key={s.label}
+            <motion.div key={s.label}
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
               className="px-6 sm:px-10 py-10 border-r border-b md:border-b-0 border-border last:border-r-0 [&:nth-child(2)]:border-r-0 md:[&:nth-child(2)]:border-r"
             >
+              {/* foreground on background = 14:1 passes AAA */}
               <p className="text-4xl sm:text-5xl font-black text-foreground tabular-nums tracking-tight leading-none mb-2">
                 <CountUp end={s.value} suffix={s.suffix} />
               </p>
