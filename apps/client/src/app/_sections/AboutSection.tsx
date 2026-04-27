@@ -1,7 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { FadeUp, StaggerGrid, cardVariant } from "@/app/_components/FadeUp";
+import { useRef } from "react";
+import { motion, useInView } from "framer-motion";
+import { StaggerGrid, cardVariant } from "@/app/_components/FadeUp";
 
 const FEATURES = [
   { icon: "🎨", title: "Онлайн-редактор",   desc: "Завантажуй логотип, розміщуй на виробі та одразу бачиш результат. Без зайвих листів і погоджень." },
@@ -12,62 +13,73 @@ const FEATURES = [
   { icon: "💬", title: "Особистий менеджер", desc: "Ваш менеджер на зв'язку від першого запиту до отримання замовлення." },
 ];
 
-const STATS = [
-  { value: "500+", label: "задоволених клієнтів" },
-  { value: "10k+", label: "виробів щороку" },
-  { value: "7–14", label: "днів виробництво" },
-  { value: "100%", label: "контроль якості" },
-];
-
 export function AboutSection() {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-80px" });
+
   return (
     <section id="about" className="bg-background py-24 sm:py-32">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        {/* Editorial intro */}
-        <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-start mb-20">
-          <FadeUp>
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] mb-5 text-primary">
-              Про нас
-            </p>
-            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.02] mb-8">
-              Ми робимо мерч, який носять
-            </h2>
-            <p className="text-muted-foreground text-base leading-relaxed mb-4">
+      <div className="max-w-6xl mx-auto px-5 sm:px-8 lg:px-16">
+
+        {/* Split editorial layout */}
+        <div className="grid lg:grid-cols-[1fr_1fr] gap-16 lg:gap-24 items-start mb-20">
+          {/* Left — pull quote */}
+          <motion.div
+            ref={ref}
+            initial={{ opacity: 0, x: -24 }}
+            animate={isInView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary block mb-6">05</span>
+            {/* Large pull quote */}
+            <blockquote className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.05] mb-8">
+              Ми робимо мерч,{" "}
+              <span className="text-muted-foreground/40">який носять</span>
+            </blockquote>
+            <p className="text-muted-foreground text-base leading-relaxed mb-4 max-w-md">
               U:DO Craft — українська платформа корпоративного мерчу. Ми поєднуємо онлайн-редактор,
               власне виробництво та особистий сервіс, щоб ваш бренд виглядав бездоганно.
             </p>
-            <p className="text-muted-foreground text-base leading-relaxed">
+            <p className="text-muted-foreground text-base leading-relaxed max-w-md">
               Від стартапів до великих корпорацій — ми допомагаємо командам створювати мерч, яким
               пишаються. Від 10 одиниць, без прихованих доплат, з доставкою по Україні.
             </p>
-          </FadeUp>
+          </motion.div>
 
-          <FadeUp delay={0.12}>
-            <div className="grid grid-cols-2 gap-px bg-border rounded-3xl overflow-hidden">
-              {STATS.map((s) => (
-                <div key={s.label} className="bg-background px-6 py-10 text-center">
-                  <p className="text-3xl sm:text-4xl font-black text-primary mb-2">{s.value}</p>
+          {/* Right — stats grid */}
+          <motion.div
+            initial={{ opacity: 0, x: 24 }}
+            animate={isInView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className="grid grid-cols-2 gap-px bg-border rounded-2xl overflow-hidden">
+              {[
+                { value: "500+", label: "задоволених клієнтів" },
+                { value: "10k+", label: "виробів щороку" },
+                { value: "7–14", label: "днів виробництво" },
+                { value: "100%", label: "контроль якості" },
+              ].map((s) => (
+                <div key={s.label} className="bg-background px-6 py-8 sm:py-10">
+                  <p className="text-3xl sm:text-4xl font-black text-foreground mb-1.5 tracking-tight">{s.value}</p>
                   <p className="text-xs text-muted-foreground leading-snug">{s.label}</p>
                 </div>
               ))}
             </div>
-          </FadeUp>
+          </motion.div>
         </div>
 
         {/* Feature grid */}
-        <StaggerGrid className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <StaggerGrid className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {FEATURES.map((f) => (
             <motion.div
               key={f.title}
               variants={cardVariant}
-              whileHover={{ y: -6 }}
+              whileHover={{ y: -4 }}
               transition={{ duration: 0.2 }}
-              className="bg-card rounded-3xl p-8 border border-border hover:shadow-2xl hover:shadow-black/5 hover:border-border/60 transition-all duration-300"
+              className="group p-7 rounded-2xl border border-border hover:border-foreground/15 hover:shadow-lg hover:shadow-black/5 transition-all duration-300 bg-card"
             >
-              <span className="text-3xl mb-6 block" aria-hidden="true">
-                {f.icon}
-              </span>
-              <h3 className="font-bold text-foreground text-lg mb-3">{f.title}</h3>
+              <span className="text-2xl mb-5 block" aria-hidden="true">{f.icon}</span>
+              <h3 className="font-bold text-foreground text-base mb-2">{f.title}</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
             </motion.div>
           ))}
