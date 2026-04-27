@@ -2,10 +2,14 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowRight, Fullscreen, Shrink, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight, ChevronDown, Fullscreen, Shrink } from "lucide-react";
+import { AnimBtnWhite } from "@/app/_components/AnimatedButton";
 
 interface HeroSectionProps {
+  cinemaMode: boolean;
+  onCinemaEnter: () => void;
+  onCinemaExit: () => void;
   heading: string;
   subheading: string;
   ctaPrimaryText: string;
@@ -18,6 +22,9 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({
+  cinemaMode,
+  onCinemaEnter,
+  onCinemaExit,
   heading,
   subheading,
   ctaPrimaryText,
@@ -28,17 +35,18 @@ export function HeroSection({
   badge2,
   badge3,
 }: HeroSectionProps) {
-  const [cinemaMode, setCinemaMode] = useState(false);
-
   return (
-    <section className="relative overflow-hidden bg-primary" style={{ backgroundImage: "url('/hero-poster.jpg')" }}>
-      {/* Video — rendered immediately, no delay, bg-primary shows while buffering */}
+    <section
+      className="relative overflow-hidden bg-primary min-h-screen flex flex-col"
+      style={{ backgroundImage: "url('/hero-poster.jpg')" }}
+    >
+      {/* Background video */}
       <video
         className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-1000"
-        style={{ animationFillMode: "forwards" }}
         onCanPlay={(e) => {
-          (e.target as HTMLVideoElement).classList.remove("opacity-0");
-          (e.target as HTMLVideoElement).classList.add("opacity-75");
+          const v = e.target as HTMLVideoElement;
+          v.classList.remove("opacity-0");
+          v.classList.add("opacity-60");
         }}
         src="/hero-video.mp4"
         poster="/hero-poster.jpg"
@@ -49,7 +57,10 @@ export function HeroSection({
         preload="auto"
       />
 
-      {/* Cinema fullscreen overlay — covers entire viewport */}
+      {/* Dark gradient overlay for text legibility */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/60 pointer-events-none" />
+
+      {/* Cinema fullscreen */}
       <AnimatePresence>
         {cinemaMode && (
           <motion.div
@@ -68,11 +79,10 @@ export function HeroSection({
               muted
               playsInline
             />
-            {/* Exit button */}
             <button
-              onClick={() => setCinemaMode(false)}
+              onClick={onCinemaExit}
               aria-label="Вийти з режиму перегляду"
-              className="absolute bottom-6 right-6 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm border border-white/15 text-white/70 hover:text-white transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+              className="absolute bottom-6 right-6 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm border border-white/15 text-white/70 hover:text-white transition-all duration-200"
             >
               <Shrink className="w-4 h-4" />
             </button>
@@ -80,104 +90,100 @@ export function HeroSection({
         )}
       </AnimatePresence>
 
+      {/* Hero content */}
       <motion.div
         animate={{ opacity: cinemaMode ? 0 : 1 }}
-        transition={{ duration: 0.5, ease: "easeInOut" }}
-        className="relative max-w-3xl mx-auto px-4 sm:px-6 pt-32 sm:pt-48 pb-16 text-center"
-        aria-hidden={cinemaMode}
+        transition={{ duration: 0.5 }}
         style={{ pointerEvents: cinemaMode ? "none" : "auto" }}
+        className="relative flex-1 flex flex-col items-center justify-center px-4 sm:px-6 pt-28 pb-20 text-center"
+        aria-hidden={cinemaMode}
       >
-        <motion.h1
-          initial={{ opacity: 0, y: 28 }}
+        {/* Eyebrow label */}
+        <motion.p
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.75, delay: 1.65, ease: [0.22, 1, 0.36, 1] }}
-          className="text-white text-4xl sm:text-5xl lg:text-[3.5rem] font-black leading-[1.05] tracking-tight"
+          transition={{ duration: 0.6, delay: 1.3, ease: [0.22, 1, 0.36, 1] }}
+          className="text-white/50 text-xs font-semibold uppercase tracking-[0.2em] mb-6"
+        >
+          B2B мерч-платформа
+        </motion.p>
+
+        {/* Main headline — word-by-word stagger */}
+        <motion.h1
+          initial={{ opacity: 0, y: 32 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.85, delay: 1.5, ease: [0.22, 1, 0.36, 1] }}
+          className="text-white text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-[1.02] tracking-tight max-w-4xl text-balance"
         >
           {heading}
         </motion.h1>
+
+        {/* Subheading */}
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 1.85 }}
-          className="text-white/80 mt-5 text-base sm:text-lg leading-relaxed max-w-xl mx-auto"
+          transition={{ duration: 0.65, delay: 1.75, ease: [0.22, 1, 0.36, 1] }}
+          className="text-white/70 mt-6 text-base sm:text-lg leading-relaxed max-w-xl"
         >
           {subheading}
         </motion.p>
+
+        {/* CTAs */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 2.05 }}
-          className="mt-8 flex flex-wrap justify-center gap-3"
+          transition={{ duration: 0.55, delay: 1.95, ease: [0.22, 1, 0.36, 1] }}
+          className="mt-10 flex flex-wrap justify-center gap-3"
         >
-          {/* Primary CTA — white button */}
-          <Link
-            href={ctaPrimaryUrl}
-            className="group inline-flex items-center gap-2 bg-white text-primary font-bold text-sm px-7 py-3.5 rounded-full hover:bg-white/90 active:scale-95 transition-all duration-200 shadow-lg hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <span>{ctaPrimaryText}</span>
-            <motion.span
-              className="flex items-center"
-              initial={{ x: 0 }}
-              whileHover={{ x: 4 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-            >
-              <ArrowRight className="w-4 h-4" />
-            </motion.span>
-          </Link>
-          {/* Secondary CTA — ghost button */}
+          <AnimBtnWhite href={ctaPrimaryUrl}>{ctaPrimaryText}</AnimBtnWhite>
           <Link
             href={ctaSecondaryUrl}
-            className="group inline-flex items-center gap-2 border-2 border-white/30 text-white font-bold text-sm px-7 py-3.5 rounded-full hover:bg-white/10 hover:border-white active:scale-95 transition-all duration-200"
+            className="inline-flex items-center gap-2 border border-white/30 text-white font-semibold text-sm px-7 py-3.5 rounded-full hover:bg-white/10 hover:border-white/60 active:scale-95 transition-all duration-200"
           >
             <span>{ctaSecondaryText}</span>
-            <motion.span
-              className="flex items-center"
-              initial={{ x: 0 }}
-              whileHover={{ x: 4 }}
-              transition={{ duration: 0.2 }}
-            >
-              <ArrowRight className="w-4 h-4" />
-            </motion.span>
+            <ArrowRight className="w-4 h-4" />
           </Link>
         </motion.div>
+
+        {/* Trust badges */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 2.25 }}
-          className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-1 text-white/70 text-xs font-medium"
+          transition={{ duration: 0.5, delay: 2.2 }}
+          className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-1.5 text-white/50 text-xs font-medium"
         >
           <span>{badge1}</span>
-          <span className="text-white/40">•</span>
+          <span className="text-white/20">·</span>
           <span>{badge2}</span>
-          <span className="text-white/40">•</span>
+          <span className="text-white/20">·</span>
           <span>{badge3}</span>
+        </motion.div>
+
+        {/* Scroll cue */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 2.5 }}
+          className="absolute bottom-8 left-1/2 -translate-x-1/2"
+        >
+          <a
+            href="#collections"
+            className="text-white/40 hover:text-white/70 transition-colors duration-200 focus-visible:outline-none rounded-full"
+            aria-label="Прокрутити вниз"
+          >
+            <ChevronDown className="w-5 h-5 animate-bounce" />
+          </a>
         </motion.div>
       </motion.div>
 
-      <motion.div
-        animate={{ opacity: cinemaMode ? 0 : 1 }}
-        transition={{ duration: 0.5, ease: "easeInOut" }}
-        className="flex justify-center pb-8"
-        style={{ pointerEvents: cinemaMode ? "none" : "auto" }}
-        aria-hidden={cinemaMode}
-      >
-        <a
-          href="#collections"
-          className="text-white/50 hover:text-white/80 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-full"
-          aria-label="Прокрутити вниз"
-        >
-          <ChevronDown className="w-5 h-5 animate-bounce" />
-        </a>
-      </motion.div>
-
-      {/* Cinema mode toggle — bottom-right corner */}
+      {/* Cinema toggle */}
       <motion.button
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.4, delay: 2.5 }}
-        onClick={() => setCinemaMode(true)}
+        transition={{ duration: 0.4, delay: 2.6 }}
+        onClick={onCinemaEnter}
         aria-label="Режим перегляду відео"
-        className="absolute bottom-4 right-4 z-10 flex items-center justify-center w-9 h-9 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-sm border border-white/10 text-white/60 hover:text-white transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+        className="absolute bottom-6 right-6 z-10 flex items-center justify-center w-9 h-9 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-sm border border-white/10 text-white/50 hover:text-white transition-all duration-200"
       >
         <Fullscreen className="w-4 h-4" />
       </motion.button>
