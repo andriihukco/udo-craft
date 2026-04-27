@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAIIllustration } from "./useAIIllustration";
+import type { AiQuotaState } from "@/hooks/useAiQuota";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -27,6 +28,9 @@ export interface DrawingModalProps {
   open: boolean;
   onClose: () => void;
   onPaste: (file: File) => void;
+  isAuthenticated: boolean;
+  aiQuota: AiQuotaState;
+  onPaywall: () => void;
 }
 
 type Tool = "pen" | "eraser" | "line";
@@ -82,7 +86,7 @@ async function isCanvasBlank(canvas: import("fabric").fabric.Canvas): Promise<bo
 
 // ── Component ─────────────────────────────────────────────────────────────
 
-export default function DrawingModal({ open, onClose, onPaste }: DrawingModalProps) {
+export default function DrawingModal({ open, onClose, onPaste, isAuthenticated, aiQuota, onPaywall }: DrawingModalProps) {
   const canvasElRef = useRef<HTMLCanvasElement>(null);
   const fabricRef = useRef<import("fabric").fabric.Canvas | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -278,12 +282,20 @@ export default function DrawingModal({ open, onClose, onPaste }: DrawingModalPro
   const handleEnhanceAndPaste = useCallback(async () => {
     const canvas = fabricRef.current;
     if (!canvas) return;
+    if (!isAuthenticated) {
+      onPaywall();
+      return;
+    }
+    if (aiQuota.isExhausted) {
+      // Inline message is shown in the footer — just return
+      return;
+    }
     if (await isCanvasBlank(canvas)) {
       toast.warning("Полотно порожнє — намалюйте щось спочатку.");
       return;
     }
     setEnhanceStep(true);
-  }, []);
+  }, [isAuthenticated, aiQuota.isExhausted, onPaywall]);
 
   const handleEnhanceConfirm = useCallback(async () => {
     setEnhanceStep(false);
@@ -297,11 +309,12 @@ export default function DrawingModal({ open, onClose, onPaste }: DrawingModalPro
       const res = await fetch(enhanced);
       const blob = await res.blob();
       onPaste(new File([blob], `ai-enhanced-${Date.now()}.png`, { type: "image/png" }));
+      await aiQuota.increment();
       onClose();
     } finally {
       setEnhancing(false);
     }
-  }, [exportPng, enhancePrompt, ai, onPaste, onClose]);
+  }, [exportPng, enhancePrompt, ai, onPaste, aiQuota, onClose]);
 
   if (!open) return null;
 
@@ -410,30 +423,37 @@ export default function DrawingModal({ open, onClose, onPaste }: DrawingModalPro
       </div>
 
       {/* ── Footer ── */}
-      <div className="shrink-0 flex items-center justify-end gap-2 px-4 py-3 border-t border-border bg-card">
-        {ai.error && (
-          <div className="flex items-center gap-1.5 mr-auto text-destructive text-xs">
-            <AlertCircle className="size-3.5 shrink-0" />
-            <span>{ai.error}</span>
-            <button type="button" onClick={ai.clearError} className="underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded">Закрити</button>
-          </div>
+      <div className="shrink-0 flex flex-col gap-1.5 px-4 py-3 border-t border-border bg-card">
+        <div className="flex items-center justify-end gap-2">
+          {ai.error && (
+            <div className="flex items-center gap-1.5 mr-auto text-destructive text-xs">
+              <AlertCircle className="size-3.5 shrink-0" />
+              <span>{ai.error}</span>
+              <button type="button" onClick={ai.clearError} className="underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded">Закрити</button>
+            </div>
+          )}
+          <Button type="button" variant="outline" onClick={handleEnhanceAndPaste}
+            disabled={enhancing || pasting || ai.loading || aiQuota.isExhausted}
+            className="rounded-full gap-2">
+            {enhancing || ai.loading
+              ? <RefreshCw className="size-4 animate-spin" />
+              : <Wand2 className="size-4 text-primary" />}
+            Покращити з AI
+          </Button>
+          <Button type="button" onClick={handlePaste}
+            disabled={pasting || enhancing || ai.loading}
+            className="rounded-full gap-2">
+            {pasting
+              ? <RefreshCw className="size-4 animate-spin" />
+              : <Check className="size-4" />}
+            Вставити
+          </Button>
+        </div>
+        {aiQuota.isExhausted && (
+          <p className="text-xs text-muted-foreground text-right">
+            Ви використали {aiQuota.limit} безкоштовні генерації AI
+          </p>
         )}
-        <Button type="button" variant="outline" onClick={handleEnhanceAndPaste}
-          disabled={enhancing || pasting || ai.loading}
-          className="rounded-full gap-2">
-          {enhancing || ai.loading
-            ? <RefreshCw className="size-4 animate-spin" />
-            : <Wand2 className="size-4 text-primary" />}
-          Покращити з AI
-        </Button>
-        <Button type="button" onClick={handlePaste}
-          disabled={pasting || enhancing || ai.loading}
-          className="rounded-full gap-2">
-          {pasting
-            ? <RefreshCw className="size-4 animate-spin" />
-            : <Check className="size-4" />}
-          Вставити
-        </Button>
       </div>
     </div>
   );

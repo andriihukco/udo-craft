@@ -3,6 +3,7 @@
 import React, { useCallback, useState } from "react";
 import { Palette } from "lucide-react";
 import type { PrintLayer } from "@udo-craft/shared";
+import type { AiQuotaState } from "@/hooks/useAiQuota";
 import DrawingModal from "./DrawingModal";
 
 export interface DrawPanelProps {
@@ -14,9 +15,12 @@ export interface DrawPanelProps {
   onReplaceDrawLayer: (id: string, file: File) => void;
   setLayersWithRef: (updater: PrintLayer[] | ((prev: PrintLayer[]) => PrintLayer[])) => void;
   printZoneBounds: { left: number; top: number; width: number; height: number };
+  isAuthenticated: boolean;
+  aiQuota: AiQuotaState;
+  onPaywall: () => void;
 }
 
-export default function DrawPanel({ onAddLayer }: DrawPanelProps) {
+export default function DrawPanel({ onAddLayer, isAuthenticated, aiQuota, onPaywall }: DrawPanelProps) {
   const [modalOpen, setModalOpen] = useState(false);
 
   const handlePaste = useCallback((file: File) => {
@@ -44,6 +48,9 @@ export default function DrawPanel({ onAddLayer }: DrawPanelProps) {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onPaste={handlePaste}
+        isAuthenticated={isAuthenticated}
+        aiQuota={aiQuota}
+        onPaywall={onPaywall}
       />
     </>
   );
