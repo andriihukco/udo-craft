@@ -17,8 +17,9 @@ import { ProblemSolutionSection } from "@/app/_sections/ProblemSolutionSection";
 import { StatsSection } from "@/app/_sections/StatsSection";
 import { CollectionsSection } from "@/app/_sections/CollectionsSection";
 import { ProcessSection } from "@/app/_sections/ProcessSection";
-import { LeadMagnetSection } from "@/app/_sections/LeadMagnetSection";
-import { ServicesSection } from "@/app/_sections/ServicesSection";
+import { BoxOfTouchSection } from "@/app/_sections/BoxOfTouchSection";
+import { PopupStandSection } from "@/app/_sections/PopupStandSection";
+import { DesignerSection } from "@/app/_sections/DesignerSection";
 import { TrustSection } from "@/app/_sections/TrustSection";
 import { ComparisonSection } from "@/app/_sections/ComparisonSection";
 import { TestimonialsSection } from "@/app/_sections/TestimonialsSection";
@@ -120,19 +121,14 @@ export default function HomePage() {
       {/* D — How it works */}
       <ProcessSection />
 
-      {/* A — Action: lead magnet */}
-      <LeadMagnetSection />
+      {/* A — Action: Box of Touch lead magnet */}
+      <BoxOfTouchSection />
 
-      {/* D — Services */}
-      <ServicesSection
-        heading={get("home_services", "heading", "Три способи отримати ідеальний мерч")}
-        service1Title={get("home_services", "service1_title", "Box of Touch")}
-        service1Desc={get("home_services", "service1_desc", "Замов набір зразків тканин, кольорів та виробів — відчуй якість до того, як зробити тираж.")}
-        service1Cta={get("home_services", "service1_cta", "Замовити зразки")}
-        service2Title={get("home_services", "service2_title", "Найми дизайнера")}
-        service2Desc={get("home_services", "service2_desc", "Немає готового логотипу? Наш дизайнер допоможе створити фірмовий стиль або адаптує логотип для нанесення.")}
-        service2Cta={get("home_services", "service2_cta", "Обговорити проєкт")}
-      />
+      {/* D — Services: Popup */}
+      <PopupStandSection />
+
+      {/* D — Services: Designer */}
+      <DesignerSection />
 
       {/* Trust — why us */}
       <TrustSection />
