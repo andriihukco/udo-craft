@@ -33,18 +33,18 @@ export async function rateLimit(
   const ip = extractIp(request);
   const key = `${ip}:${options.limit}:${options.window}`;
 
-  // Try Upstash if env vars are set
+  // Try Upstash if env vars are set.
+  // Use Function constructor to hide the import specifier from webpack's static
+  // analysis — these are optional peer dependencies that may not be installed.
   if (
     process.env.UPSTASH_REDIS_REST_URL &&
     process.env.UPSTASH_REDIS_REST_TOKEN
   ) {
     try {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore — optional peer dependency, only used when UPSTASH env vars are set
-      const { Ratelimit } = await import("@upstash/ratelimit");
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore — optional peer dependency
-      const { Redis } = await import("@upstash/redis");
+      // eslint-disable-next-line @typescript-eslint/no-implied-eval
+      const dynamicImport = new Function("pkg", "return import(pkg)");
+      const { Ratelimit } = await dynamicImport("@upstash/ratelimit");
+      const { Redis } = await dynamicImport("@upstash/redis");
       const redis = new Redis({
         url: process.env.UPSTASH_REDIS_REST_URL,
         token: process.env.UPSTASH_REDIS_REST_TOKEN,
