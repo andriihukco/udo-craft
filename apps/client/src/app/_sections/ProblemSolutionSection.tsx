@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { ArrowRight, X, Check } from "lucide-react";
+import { HighlightText } from "@/app/_components/HighlightText";
 
 const PROBLEMS = [
   "Мінімальний тираж 500+ одиниць",
@@ -36,7 +37,8 @@ export function ProblemSolutionSection() {
           >
             <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground mb-5">Проблема</p>
             <h2 id="problem-heading" className="text-3xl sm:text-4xl font-black tracking-tight leading-[1.05] mb-8">
-              Ринок перенасичений дешевим мерчем, який ніхто не носить
+              Ринок перенасичений дешевим мерчем,{" "}
+              <HighlightText delay={0.4} color="rgba(239,68,68,0.12)">який ніхто не носить</HighlightText>
             </h2>
             <ul className="space-y-3" aria-label="Типові проблеми">
               {PROBLEMS.map((p, i) => (
