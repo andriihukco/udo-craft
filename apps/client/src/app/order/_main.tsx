@@ -55,12 +55,16 @@ export function OrderPageInner({
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const aiQuota = useAiQuota(isAuthenticated);
 
-  useEffect(() => {
+  const checkAuth = useCallback(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
       setIsAuthenticated(!!data.user);
     });
   }, []);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [step, setStep] = useState<"select" | "contact" | "review">("select");
@@ -215,6 +219,7 @@ export function OrderPageInner({
           existingMockupUploadedUrl={editingCartIndex !== null ? cart[editingCartIndex]?.mockupUploadedUrl : undefined}
           isAuthenticated={isAuthenticated}
           aiQuota={aiQuota}
+          onAuthSuccess={checkAuth}
         />
       )}
 

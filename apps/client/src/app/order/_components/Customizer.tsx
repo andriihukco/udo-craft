@@ -72,6 +72,7 @@ export interface CustomizerProps {
   existingMockupUploadedUrl?: string;
   isAuthenticated: boolean;
   aiQuota: AiQuotaState;
+  onAuthSuccess?: () => void;
 }
 
 // ── Mobile tab config ─────────────────────────────────────────────────────
@@ -100,6 +101,7 @@ export function Customizer({
   existingMockupUploadedUrl,
   isAuthenticated,
   aiQuota,
+  onAuthSuccess,
 }: CustomizerProps) {
   const s = useCustomizerState({
     product, printZones, materials, variants, onAdd,
@@ -479,7 +481,7 @@ export function Customizer({
       />
 
       {/* PaywallModal — shown when unauthenticated user clicks an AI feature */}
-      <PaywallModal open={paywallOpen} onClose={() => setPaywallOpen(false)} />
+      <PaywallModal open={paywallOpen} onClose={() => setPaywallOpen(false)} onAuthSuccess={onAuthSuccess} />
     </>,
     document.body
   );
