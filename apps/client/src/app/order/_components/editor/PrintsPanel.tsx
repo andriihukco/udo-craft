@@ -9,11 +9,15 @@ import {
 } from "@udo-craft/shared";
 import { createClient } from "@/lib/supabase/client";
 import { useAIIllustration } from "./useAIIllustration";
+import type { AiQuotaState } from "@/hooks/useAiQuota";
 
 export interface PrintsPanelProps {
   activeSide: string;
   printPricing: PrintTypePricingRow[];
   onAddLayer: (file: File) => void;
+  isAuthenticated: boolean;
+  aiQuota: AiQuotaState;
+  onPaywall: () => void;
 }
 
 function SkeletonCard() {
@@ -45,7 +49,14 @@ function useRotatingIndex(active: boolean, interval = 7000) {
 
 // ── AI Illustration section ───────────────────────────────────────────────
 
-function AIIllustrationSection({ onAddLayer }: { onAddLayer: (file: File) => void }) {
+interface AIIllustrationSectionProps {
+  onAddLayer: (file: File) => void;
+  isAuthenticated: boolean;
+  aiQuota: AiQuotaState;
+  onPaywall: () => void;
+}
+
+function AIIllustrationSection({ onAddLayer, isAuthenticated, aiQuota, onPaywall }: AIIllustrationSectionProps) {
   const [aiPrompt, setAiPrompt] = useState("");
   const [focused, setFocused] = useState(false);
   const ai = useAIIllustration();
@@ -53,13 +64,19 @@ function AIIllustrationSection({ onAddLayer }: { onAddLayer: (file: File) => voi
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleGenerate = useCallback(async () => {
+    if (!isAuthenticated) {
+      onPaywall();
+      return;
+    }
+    if (aiQuota.isExhausted) return;
     if (!aiPrompt.trim()) return;
     const dataUrl = await ai.generate(aiPrompt.trim());
     if (!dataUrl) return;
+    await aiQuota.increment();
     const res = await fetch(dataUrl);
     const blob = await res.blob();
     onAddLayer(new File([blob], `ai-illustration-${Date.now()}.png`, { type: "image/png" }));
-  }, [ai, aiPrompt, onAddLayer]);
+  }, [ai, aiPrompt, onAddLayer, isAuthenticated, aiQuota, onPaywall]);
 
   const showPlaceholder = !aiPrompt && !focused;
 
@@ -107,13 +124,21 @@ function AIIllustrationSection({ onAddLayer }: { onAddLayer: (file: File) => voi
 
       <button
         type="button"
-        disabled={!aiPrompt.trim() || ai.loading}
+        disabled={!aiPrompt.trim() || ai.loading || aiQuota.isExhausted}
         onClick={handleGenerate}
         className="w-full flex items-center justify-center gap-2 py-2 rounded-full bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
         {ai.loading && <RefreshCw className="size-3.5 animate-spin" />}
         {ai.loading ? "Генерація…" : "Згенерувати"}
       </button>
+
+      {/* Quota-exhausted message */}
+      {aiQuota.isExhausted && (
+        <p className="text-[10px] text-muted-foreground mt-2 text-center">
+          Ви використали 3 безкоштовні генерації
+        </p>
+      )}
+
       {ai.error && (
         <div className="flex items-start gap-2 p-2 rounded-xl bg-destructive/10 text-destructive mt-2">
           <AlertCircle className="size-3.5 mt-0.5 shrink-0" />
@@ -129,7 +154,7 @@ function AIIllustrationSection({ onAddLayer }: { onAddLayer: (file: File) => voi
 
 // ── Main component ────────────────────────────────────────────────────────
 
-export default function PrintsPanel({ onAddLayer }: PrintsPanelProps) {
+export default function PrintsPanel({ onAddLayer, isAuthenticated, aiQuota, onPaywall }: PrintsPanelProps) {
   const [presets, setPresets] = useState<PrintPreset[]>([]);
   const [loading, setLoading] = useState(true);
   // null = not yet tried, string = error, false = table doesn't exist (silent)
@@ -189,7 +214,7 @@ export default function PrintsPanel({ onAddLayer }: PrintsPanelProps) {
   return (
     <div className="flex flex-col h-full overflow-y-auto">
       {/* ── AI Illustration — always at top ── */}
-      <AIIllustrationSection onAddLayer={onAddLayer} />
+      <AIIllustrationSection onAddLayer={onAddLayer} isAuthenticated={isAuthenticated} aiQuota={aiQuota} onPaywall={onPaywall} />
 
       {/* ── Print presets — only when table exists ── */}
       {tableExists && (

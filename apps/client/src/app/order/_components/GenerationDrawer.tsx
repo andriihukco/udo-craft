@@ -15,6 +15,7 @@ import { dataUrlToFile } from "../_lib/dataUrlToFile";
 
 import type { PrintLayer } from "@udo-craft/shared";
 import type { PrintTypePricingRow } from "@udo-craft/shared";
+import type { AiQuotaState } from "@/hooks/useAiQuota";
 
 const MAX_GENERATIONS = 1;
 
@@ -258,11 +259,13 @@ export interface GenerationDrawerProps {
   selectedColor: string;
   productImages: Record<string, string>;
   productName: string;
+  aiQuota: AiQuotaState;
 }
 
 export function GenerationDrawer({
   open, onClose, addLayer, activeSide, printPricing,
   captureRef, layers, mockups, selectedColor, productImages, productName,
+  aiQuota,
 }: GenerationDrawerProps) {
   const [prompt, setPrompt] = useState("");
   // generated + previewImage persist across open/close so user can't re-generate
@@ -276,7 +279,8 @@ export function GenerationDrawer({
   const handleSuccess = useCallback((dataUrl: string) => {
     setPreviewImage(dataUrl);
     setGenerated(true);
-  }, []);
+    aiQuota.increment();
+  }, [aiQuota]);
 
   const { generate, loading, error, clearError } = useAIGeneration({
     activeSide, captureRef, layers, mockups, selectedColor,
@@ -302,7 +306,7 @@ export function GenerationDrawer({
   const otherSideWithLayers = layers.find((l) => l.side !== activeSide);
   const showHint = activeSideLayers.length === 0 && !!otherSideWithLayers && step === 1;
   const limitReached = generated || loading;
-  const canGenerate = !limitReached && !loading && (activeTab === "selfie" ? !!selfieDataUrl : !!prompt.trim());
+  const canGenerate = !limitReached && !loading && !aiQuota.isExhausted && (activeTab === "selfie" ? !!selfieDataUrl : !!prompt.trim());
 
   const handleGenerateClick = async () => {
     setStep(2);
@@ -328,13 +332,13 @@ export function GenerationDrawer({
         <>
           <motion.div
             key="backdrop"
-            className="fixed inset-0 z-40 bg-black/40"
+            className="fixed inset-0 z-[10000] bg-black/40"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose}
           />
           <motion.div
             key="drawer"
-            className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pointer-events-none"
+            className="fixed bottom-0 left-0 right-0 z-[10001] flex justify-center pointer-events-none"
             initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
           >
@@ -421,6 +425,12 @@ export function GenerationDrawer({
                           {showHint && (
                             <p className="text-xs text-muted-foreground mt-2">
                               Активна сторона порожня. Натхнення буде братись зі сторони «{otherSideWithLayers!.side}».
+                            </p>
+                          )}
+
+                          {aiQuota.isExhausted && (
+                            <p className="text-xs text-destructive mt-2 text-center">
+                              Ви використали {aiQuota.limit} безкоштовні генерації
                             </p>
                           )}
 

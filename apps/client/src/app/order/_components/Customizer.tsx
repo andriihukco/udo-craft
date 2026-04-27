@@ -23,6 +23,8 @@ import LayersList from "@/components/LayersList";
 import ShapesPanel from "./editor/ShapesPanel";
 import type { TextComposition } from "@udo-craft/shared";
 import { useLayersBadge } from "@/hooks/useLayersBadge";
+import type { AiQuotaState } from "@/hooks/useAiQuota";
+import { PaywallModal } from "@/components/PaywallModal";
 
 interface ProductWithConfig extends Product {
   size_chart_id?: string | null;
@@ -68,6 +70,9 @@ export interface CustomizerProps {
   initialLayers?: PrintLayer[];
   autoOpenCanvas?: boolean;
   existingMockupUploadedUrl?: string;
+  isAuthenticated: boolean;
+  aiQuota: AiQuotaState;
+  onAuthSuccess?: () => void;
 }
 
 // ── Mobile tab config ─────────────────────────────────────────────────────
@@ -94,6 +99,9 @@ export function Customizer({
   initialColor,
   initialLayers,
   existingMockupUploadedUrl,
+  isAuthenticated,
+  aiQuota,
+  onAuthSuccess,
 }: CustomizerProps) {
   const s = useCustomizerState({
     product, printZones, materials, variants, onAdd,
@@ -102,6 +110,7 @@ export function Customizer({
 
   const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
   const [mobilePriceOpen, setMobilePriceOpen] = useState(false);
+  const [paywallOpen, setPaywallOpen] = useState(false);
 
   // Tab title badge — shows layer count
   useLayersBadge(s.layers.length, `${product.name} — U:DO CRAFT`);
@@ -171,7 +180,7 @@ export function Customizer({
 
   const panelContent = (tab: SidebarTabId | null) => {
     if (!tab) return null;
-    if (tab === "prints") return <PrintsPanel activeSide={s.activeSide} printPricing={s.printPricing} onAddLayer={addLayer} />;
+    if (tab === "prints") return <PrintsPanel activeSide={s.activeSide} printPricing={s.printPricing} onAddLayer={addLayer} isAuthenticated={isAuthenticated} aiQuota={aiQuota} onPaywall={() => setPaywallOpen(true)} />;
     if (tab === "shapes") return <ShapesPanel onAddLayer={addLayer} />;
     if (tab === "draw") return (
       <DrawPanel
@@ -184,6 +193,9 @@ export function Customizer({
         }))}
         setLayersWithRef={s.setLayersWithRef}
         printZoneBounds={{ left: 0, top: 0, width: 0, height: 0 }}
+        isAuthenticated={isAuthenticated}
+        aiQuota={aiQuota}
+        onPaywall={() => setPaywallOpen(true)}
       />
     );
     if (tab === "text") return (
@@ -335,7 +347,10 @@ export function Customizer({
       <button
         type="button"
         disabled={s.layers.length === 0}
-        onClick={() => setAiDrawerOpen(true)}
+        onClick={() => {
+          if (!isAuthenticated) { setPaywallOpen(true); return; }
+          setAiDrawerOpen(true);
+        }}
         className="w-full flex items-center gap-3 h-12 px-4 rounded-full border border-border bg-muted/40 hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-muted/40"
       >
         <MirrorRound className="size-5 text-primary shrink-0" aria-hidden="true" />
@@ -462,7 +477,11 @@ export function Customizer({
         selectedColor={s.selectedColor}
         productImages={productImages}
         productName={product.name}
+        aiQuota={aiQuota}
       />
+
+      {/* PaywallModal — shown when unauthenticated user clicks an AI feature */}
+      <PaywallModal open={paywallOpen} onClose={() => setPaywallOpen(false)} onAuthSuccess={onAuthSuccess} />
     </>,
     document.body
   );

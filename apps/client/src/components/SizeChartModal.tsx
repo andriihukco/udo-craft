@@ -22,7 +22,7 @@ export function SizeChartModal({ chartId, trigger }: Props) {
     setLoading(true);
     const supabase = createClient();
     supabase.from("size_charts").select("*").eq("id", chartId).single()
-      .then(({ data }) => { if (data) setChart(data as SizeChart); })
+      .then(({ data }: { data: SizeChart | null }) => { if (data) setChart(data as SizeChart); })
       .finally(() => setLoading(false));
   }, [open, chartId, chart]);
 

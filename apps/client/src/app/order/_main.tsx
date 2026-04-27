@@ -16,6 +16,8 @@ import { ProductGrid } from "./_components/ProductGrid";
 import { StepHeader } from "./_components/StepHeader";
 import { useCipherText } from "./_components/useCipherText";
 import { LogoLoader } from "@udo-craft/ui";
+import { createClient } from "@/lib/supabase/client";
+import { useAiQuota } from "@/hooks/useAiQuota";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -49,6 +51,20 @@ export function OrderPageInner({
 }: OrderPageInnerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const aiQuota = useAiQuota(isAuthenticated);
+
+  const checkAuth = useCallback(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
+      setIsAuthenticated(!!data.user);
+    });
+  }, []);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [step, setStep] = useState<"select" | "contact" | "review">("select");
@@ -201,6 +217,9 @@ export function OrderPageInner({
           initialColor={editingCartIndex !== null ? cart[editingCartIndex]?.color : (customizerInitialColor ?? searchParams.get("color") ?? undefined)}
           initialLayers={editingCartIndex !== null ? cart[editingCartIndex]?.layers : undefined}
           existingMockupUploadedUrl={editingCartIndex !== null ? cart[editingCartIndex]?.mockupUploadedUrl : undefined}
+          isAuthenticated={isAuthenticated}
+          aiQuota={aiQuota}
+          onAuthSuccess={() => setIsAuthenticated(true)}
         />
       )}
 

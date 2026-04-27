@@ -13,11 +13,11 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Session-based client: RLS ensures only leads belonging to this user are returned.
+  // Match leads by email (case-insensitive) using ilike
   const { data, error } = await supabase
     .from("leads")
     .select("*, order_items!order_items_lead_id_fkey(*)")
-    .eq("customer_data->>email", user.email)
+    .ilike("customer_data->>email", user.email ?? "")
     .order("created_at", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
