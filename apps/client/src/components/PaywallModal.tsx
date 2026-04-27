@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 import { X, Sparkles, ArrowLeft, Mail, Lock, Eye, EyeOff, Loader2, CheckCircle2, User, Building2, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -102,7 +103,7 @@ function PasswordStrength({ password }: { password: string }) {
 
 export function PaywallModal({ open, onClose, onAuthSuccess, initialScreen }: PaywallModalProps) {
   const supabase = createClient();
-
+  const [mounted, setMounted] = useState(false);
   const [screen, setScreen] = useState<Screen>(initialScreen ?? "choice");
 
   // Login state
@@ -128,6 +129,9 @@ export function PaywallModal({ open, onClose, onAuthSuccess, initialScreen }: Pa
   const [otpError, setOtpError] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+
+  // Mount guard for portal
+  useEffect(() => { setMounted(true); }, []);
 
   // Reset screen when modal opens
   useEffect(() => {
@@ -156,6 +160,7 @@ export function PaywallModal({ open, onClose, onAuthSuccess, initialScreen }: Pa
   }, [resendCooldown]);
 
   if (!open) return null;
+  if (!mounted) return null;
 
   // ── Handlers ────────────────────────────────────────────────────────────
 
@@ -267,7 +272,7 @@ export function PaywallModal({ open, onClose, onAuthSuccess, initialScreen }: Pa
 
   // ── Render ───────────────────────────────────────────────────────────────
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[10010] flex items-center justify-center px-4">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
@@ -474,6 +479,7 @@ export function PaywallModal({ open, onClose, onAuthSuccess, initialScreen }: Pa
 
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
