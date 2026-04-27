@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -16,10 +16,12 @@ import {
   LogOut, Send, Paperclip, Download, Package, Clock,
   CheckCircle2, Loader2, MessageCircle,
   FileText, Image as ImageIcon, ArrowLeft, X,
-  Info, Phone, Mail, Building2, Calendar, ExternalLink, Settings,
+  Phone, Mail, Building2, Calendar, ExternalLink, Settings,
+  FolderOpen,
 } from "lucide-react";
 import { FileViewer, isImage, isVideo } from "@/components/file-viewer";
 import { LogoLoader } from "@udo-craft/ui";
+import { aggregateOrderFiles } from "@/lib/aggregateOrderFiles";
 
 interface OrderItem {
   id: string;
@@ -102,7 +104,15 @@ export default function CabinetPage() {
   const [mobileView, setMobileView] = useState<"list" | "detail">("list");
   const [unreadByLead, setUnreadByLead] = useState<Record<string, number>>({});
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
-  const [showInfo, setShowInfo] = useState(false);
+
+  // Aggregate all files for the selected order (print URLs + client message attachments)
+  const orderFiles = useMemo<string[]>(() => {
+    if (!selectedLead) return [];
+    return aggregateOrderFiles(
+      selectedLead as unknown as Parameters<typeof aggregateOrderFiles>[0],
+      messages as unknown as Parameters<typeof aggregateOrderFiles>[1]
+    );
+  }, [selectedLead, messages]);
 
   // Auth check
   useEffect(() => {
@@ -182,6 +192,13 @@ export default function CabinetPage() {
   const handleSelectLead = (lead: Lead) => {
     setSelectedLead(lead);
     setActiveTab("details");
+    setMobileView("detail");
+    setUnreadByLead((prev) => ({ ...prev, [lead.id]: 0 }));
+  };
+
+  const handleChatShortcut = (lead: Lead) => {
+    setSelectedLead(lead);
+    setActiveTab("chat");
     setMobileView("detail");
     setUnreadByLead((prev) => ({ ...prev, [lead.id]: 0 }));
   };
@@ -495,6 +512,20 @@ export default function CabinetPage() {
                     <div className="flex items-center gap-1.5">
                       {unread > 0 && <span className="text-[10px] bg-red-100 text-red-700 font-semibold px-1.5 py-0.5 rounded-full">+{unread}</span>}
                       {lead.total_amount_cents > 0 && <span className="text-xs font-semibold">{(lead.total_amount_cents / 100).toFixed(0)} грн</span>}
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleChatShortcut(lead); }}
+                        aria-label="Написати менеджеру"
+                        title="Написати менеджеру"
+                        className="relative flex items-center justify-center size-6 rounded-full hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <MessageCircle className="size-3.5" />
+                        {unread > 0 && (
+                          <span className="absolute -top-1 -right-1 text-[9px] bg-red-500 text-white font-bold px-1 py-0.5 rounded-full min-w-[14px] text-center leading-none">
+                            {unread}
+                          </span>
+                        )}
+                      </button>
                     </div>
                   </div>
                 </button>
@@ -524,14 +555,115 @@ export default function CabinetPage() {
                     <StatusIcon className="size-3" />
                     {statusCfg?.label}
                   </span>
-                  <Button variant={showInfo ? "secondary" : "ghost"} size="icon" className="h-8 w-8 ml-1" onClick={() => setShowInfo((v) => !v)}>
-                    <Info className="w-4 h-4" />
-                  </Button>
                 </div>
               </div>
 
-              {/* Messages */}
+              {/* Tab bar */}
+              <div className="flex border-b border-border shrink-0 bg-card">
+                {(["details", "chat", "files"] as const).map((tab) => {
+                  const labels = { details: "Деталі", chat: "Чат", files: "Файли" };
+                  const isActive = activeTab === tab;
+                  return (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={`flex-1 py-2.5 text-sm font-medium transition-colors border-b-2 ${
+                        isActive
+                          ? "border-primary text-primary"
+                          : "border-transparent text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {labels[tab]}
+                      {tab === "chat" && unreadCurrentLead > 0 && (
+                        <span className="ml-1.5 text-[10px] bg-red-100 text-red-700 font-semibold px-1.5 py-0.5 rounded-full">
+                          {unreadCurrentLead}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
 
+              {/* Tab content — Details */}
+              {activeTab === "details" && (
+                <div className="flex-1 overflow-y-auto">
+                  <div className="flex flex-col items-center py-6 px-4 border-b border-border">
+                    <div className="w-16 h-16 rounded-full bg-primary/15 flex items-center justify-center mb-3">
+                      <span className="text-2xl font-bold text-primary">{(selectedLead.customer_data.company || selectedLead.customer_data.name)?.[0]?.toUpperCase() || "?"}</span>
+                    </div>
+                    <p className="font-semibold text-base text-center">{selectedLead.customer_data.company || selectedLead.customer_data.name}</p>
+                    <span className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium mt-1.5 ${statusCfg?.color}`}>
+                      <StatusIcon className="size-3" />{statusCfg?.label}
+                    </span>
+                  </div>
+                  <div className="px-4 py-4 space-y-3 border-b border-border">
+                    {selectedLead.customer_data.phone && (
+                      <div className="flex items-start gap-3"><Phone className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" /><div><p className="text-sm">{selectedLead.customer_data.phone}</p><p className="text-xs text-muted-foreground">Телефон</p></div></div>
+                    )}
+                    <div className="flex items-start gap-3"><Mail className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" /><div><p className="text-sm break-all">{selectedLead.customer_data.email}</p><p className="text-xs text-muted-foreground">Email</p></div></div>
+                    {selectedLead.customer_data.company && (
+                      <div className="flex items-start gap-3"><Building2 className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" /><div><p className="text-sm">{selectedLead.customer_data.company}</p><p className="text-xs text-muted-foreground">Компанія</p></div></div>
+                    )}
+                    <div className="flex items-start gap-3"><Calendar className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" /><div><p className="text-sm">{new Date(selectedLead.created_at).toLocaleDateString("uk-UA", { day: "numeric", month: "long", year: "numeric" })}</p><p className="text-xs text-muted-foreground">Дата замовлення</p></div></div>
+                    {selectedLead.total_amount_cents > 0 && (
+                      <div className="flex items-start gap-3"><FileText className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" /><div><p className="text-sm font-medium">₴{(selectedLead.total_amount_cents / 100).toFixed(0)}</p><p className="text-xs text-muted-foreground">Сума замовлення</p></div></div>
+                    )}
+                    {selectedLead.customer_data.delivery && (
+                      <div className="flex items-start gap-3"><Package className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" /><div><p className="text-sm">{DELIVERY_LABELS[selectedLead.customer_data.delivery] ?? selectedLead.customer_data.delivery}</p><p className="text-xs text-muted-foreground">Доставка</p></div></div>
+                    )}
+                    {selectedLead.customer_data.deadline && (
+                      <div className="flex items-start gap-3"><Clock className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" /><div><p className="text-sm">{new Date(selectedLead.customer_data.deadline).toLocaleDateString("uk-UA")}</p><p className="text-xs text-muted-foreground">Дедлайн</p></div></div>
+                    )}
+                  </div>
+                  {selectedLead.order_items && selectedLead.order_items.length > 0 && (
+                    <div className="px-4 py-4 border-b border-border">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Позиції ({selectedLead.order_items.length})</p>
+                      <div className="space-y-3">
+                        {selectedLead.order_items.map((item) => (
+                          <div key={item.id} className="flex gap-3 items-start">
+                            {item.mockup_url
+                              ? <img src={item.mockup_url} alt="" className="w-12 h-12 rounded-md object-cover border border-border shrink-0" />
+                              : <div className="w-12 h-12 rounded-md bg-muted flex items-center justify-center shrink-0"><Package className="w-5 h-5 text-muted-foreground" /></div>}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium">{item.color} / {item.size}</p>
+                              <p className="text-xs text-muted-foreground">×{item.quantity}</p>
+                              {item.custom_print_url && (
+                                <button onClick={() => setViewerUrl(item.custom_print_url!)} className="text-xs text-primary hover:underline flex items-center gap-1 mt-0.5">
+                                  <ExternalLink className="w-3 h-3" /> Принт
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {selectedLead.customer_data.attachments?.length ? (
+                    <div className="px-4 py-4 border-b border-border">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Вкладення ({selectedLead.customer_data.attachments.length})</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {selectedLead.customer_data.attachments.map((url, i) =>
+                          isImage(url) ? (
+                            <button key={i} onClick={() => setViewerUrl(url)}><img src={url} alt="" className="w-full aspect-square object-cover rounded-md border border-border hover:opacity-80 transition-opacity" /></button>
+                          ) : (
+                            <button key={i} onClick={() => setViewerUrl(url)} className="flex items-center gap-2 p-2 rounded-md border border-border hover:bg-muted transition-colors text-xs text-primary truncate"><FileText className="w-4 h-4 shrink-0" /><span className="truncate">Файл {i + 1}</span></button>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  ) : null}
+                  <div className="px-4 py-4">
+                    <Button variant="outline" className="w-full" onClick={handleDownloadInvoice} disabled={generatingPdf}>
+                      {generatingPdf ? <Loader2 className="size-4 animate-spin mr-2" /> : <Download className="size-4 mr-2" />}
+                      {generatingPdf ? "Генеруємо..." : "Завантажити рахунок (PDF)"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab content — Chat */}
+              {activeTab === "chat" && (
+                <>
               {/* Messages */}
               <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
                 {loadingMessages ? (
@@ -658,92 +790,39 @@ export default function CabinetPage() {
                   </Button>
                 </div>
               </div>
-            </div>
+                </>
+              )}
 
-            {/* ── Info panel ── */}
-            {showInfo && (
-              <div className="w-80 shrink-0 border-l border-border bg-card flex flex-col overflow-hidden">
-                <div className="px-4 py-3 border-b border-border flex items-center justify-between shrink-0">
-                  <span className="font-semibold text-sm">Деталі замовлення</span>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowInfo(false)}><X className="w-4 h-4" /></Button>
-                </div>
-                <div className="flex-1 overflow-y-auto">
-                  <div className="flex flex-col items-center py-6 px-4 border-b border-border">
-                    <div className="w-16 h-16 rounded-full bg-primary/15 flex items-center justify-center mb-3">
-                      <span className="text-2xl font-bold text-primary">{(selectedLead.customer_data.company || selectedLead.customer_data.name)?.[0]?.toUpperCase() || "?"}</span>
+              {/* Tab content — Files */}
+              {activeTab === "files" && (
+                <div className="flex-1 overflow-y-auto px-4 py-4">
+                  {orderFiles.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full py-12 text-center">
+                      <FolderOpen className="size-8 text-muted-foreground/40 mb-2" />
+                      <p className="text-sm text-muted-foreground">Файли відсутні</p>
                     </div>
-                    <p className="font-semibold text-base text-center">{selectedLead.customer_data.company || selectedLead.customer_data.name}</p>
-                    <span className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium mt-1.5 ${statusCfg?.color}`}>
-                      <StatusIcon className="size-3" />{statusCfg?.label}
-                    </span>
-                  </div>
-                  <div className="px-4 py-4 space-y-3 border-b border-border">
-                    {selectedLead.customer_data.phone && (
-                      <div className="flex items-start gap-3"><Phone className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" /><div><p className="text-sm">{selectedLead.customer_data.phone}</p><p className="text-xs text-muted-foreground">Телефон</p></div></div>
-                    )}
-                    <div className="flex items-start gap-3"><Mail className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" /><div><p className="text-sm break-all">{selectedLead.customer_data.email}</p><p className="text-xs text-muted-foreground">Email</p></div></div>
-                    {selectedLead.customer_data.company && (
-                      <div className="flex items-start gap-3"><Building2 className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" /><div><p className="text-sm">{selectedLead.customer_data.company}</p><p className="text-xs text-muted-foreground">Компанія</p></div></div>
-                    )}
-                    <div className="flex items-start gap-3"><Calendar className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" /><div><p className="text-sm">{new Date(selectedLead.created_at).toLocaleDateString("uk-UA", { day: "numeric", month: "long", year: "numeric" })}</p><p className="text-xs text-muted-foreground">Дата замовлення</p></div></div>
-                    {selectedLead.total_amount_cents > 0 && (
-                      <div className="flex items-start gap-3"><FileText className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" /><div><p className="text-sm font-medium">₴{(selectedLead.total_amount_cents / 100).toFixed(0)}</p><p className="text-xs text-muted-foreground">Сума замовлення</p></div></div>
-                    )}
-                    {selectedLead.customer_data.delivery && (
-                      <div className="flex items-start gap-3"><Package className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" /><div><p className="text-sm">{DELIVERY_LABELS[selectedLead.customer_data.delivery] ?? selectedLead.customer_data.delivery}</p><p className="text-xs text-muted-foreground">Доставка</p></div></div>
-                    )}
-                    {selectedLead.customer_data.deadline && (
-                      <div className="flex items-start gap-3"><Clock className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" /><div><p className="text-sm">{new Date(selectedLead.customer_data.deadline).toLocaleDateString("uk-UA")}</p><p className="text-xs text-muted-foreground">Дедлайн</p></div></div>
-                    )}
-                  </div>
-                  {selectedLead.order_items && selectedLead.order_items.length > 0 && (
-                    <div className="px-4 py-4 border-b border-border">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Позиції ({selectedLead.order_items.length})</p>
-                      <div className="space-y-3">
-                        {selectedLead.order_items.map((item) => (
-                          <div key={item.id} className="flex gap-3 items-start">
-                            {item.mockup_url
-                              ? <img src={item.mockup_url} alt="" className="w-12 h-12 rounded-md object-cover border border-border shrink-0" />
-                              : <div className="w-12 h-12 rounded-md bg-muted flex items-center justify-center shrink-0"><Package className="w-5 h-5 text-muted-foreground" /></div>}
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-medium">{item.color} / {item.size}</p>
-                              <p className="text-xs text-muted-foreground">×{item.quantity}</p>
-                              {item.custom_print_url && (
-                                <button onClick={() => setViewerUrl(item.custom_print_url!)} className="text-xs text-primary hover:underline flex items-center gap-1 mt-0.5">
-                                  <ExternalLink className="w-3 h-3" /> Принт
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {selectedLead.customer_data.attachments?.length ? (
-                    <div className="px-4 py-4 border-b border-border">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Вкладення ({selectedLead.customer_data.attachments.length})</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {selectedLead.customer_data.attachments.map((url, i) =>
-                          isImage(url) ? (
-                            <button key={i} onClick={() => setViewerUrl(url)}><img src={url} alt="" className="w-full aspect-square object-cover rounded-md border border-border hover:opacity-80 transition-opacity" /></button>
-                          ) : (
-                            <button key={i} onClick={() => setViewerUrl(url)} className="flex items-center gap-2 p-2 rounded-md border border-border hover:bg-muted transition-colors text-xs text-primary truncate"><FileText className="w-4 h-4 shrink-0" /><span className="truncate">Файл {i + 1}</span></button>
-                          )
-                        )}
-                      </div>
-                    </div>
-                  ) : null}
-                  {selectedLead.order_items && selectedLead.order_items.length > 0 && (
-                    <div className="px-4 py-4">
-                      <Button variant="outline" className="w-full" onClick={handleDownloadInvoice} disabled={generatingPdf}>
-                        {generatingPdf ? <Loader2 className="size-4 animate-spin mr-2" /> : <Download className="size-4 mr-2" />}
-                        {generatingPdf ? "Генеруємо..." : "Завантажити рахунок (PDF)"}
-                      </Button>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-2">
+                      {orderFiles.map((url, i) =>
+                        isImage(url) ? (
+                          <button key={i} onClick={() => setViewerUrl(url)} className="block aspect-square rounded-md overflow-hidden border border-border hover:opacity-80 transition-opacity">
+                            <img src={url} alt="" className="w-full h-full object-cover" />
+                          </button>
+                        ) : (
+                          <button key={i} onClick={() => setViewerUrl(url)}
+                            className="flex flex-col items-center justify-center gap-1.5 aspect-square rounded-md border border-border bg-muted hover:bg-muted/70 transition-colors p-2">
+                            <FileText className="w-6 h-6 text-muted-foreground shrink-0" />
+                            <span className="text-[10px] text-muted-foreground truncate w-full text-center leading-tight">
+                              {decodeURIComponent(url.split("/").pop()?.split("?")[0] || "Файл")}
+                            </span>
+                          </button>
+                        )
+                      )}
                     </div>
                   )}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         ) : (
           <div className={`flex-1 flex items-center justify-center bg-muted/20 ${mobileView === "list" ? "hidden md:flex" : "flex"}`}>

@@ -31,7 +31,7 @@ export function SiteHeader() {
   const lastScrollY = useRef(0);
 
   useEffect(() => {
-    void supabase.auth.getSession().then((r) => setIsLoggedIn(!!r.data.session));
+    void supabase.auth.getSession().then((r: Awaited<ReturnType<typeof supabase.auth.getSession>>) => setIsLoggedIn(!!r.data.session));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
