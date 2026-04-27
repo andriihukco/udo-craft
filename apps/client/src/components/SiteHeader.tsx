@@ -8,6 +8,7 @@ import { User, ShoppingBag, ArrowRight, X, Menu } from "lucide-react";
 import { BrandLogoFull } from "@/components/brand-logo";
 import { createClient } from "@/lib/supabase/client";
 import { MockupViewer } from "@/components/MockupViewer";
+import { PaywallModal } from "@/components/PaywallModal";
 
 const NAV_LINKS = [
   { href: "/#collections", label: "Колекції" },
@@ -28,6 +29,7 @@ export function SiteHeader() {
   const [cartCount, setCartCount]     = useState(0);
   const [cart, setCart]               = useState<any[]>([]);
   const [totalCents, setTotalCents]   = useState(0);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const lastScrollY = useRef(0);
 
   useEffect(() => {
@@ -89,12 +91,21 @@ export function SiteHeader() {
           </div>
           <div className="hidden md:block w-px h-5 bg-border shrink-0" />
           <div className="flex items-center gap-0.5">
-            <Link href={isLoggedIn ? "/cabinet" : "/cabinet/login"} aria-label="Кабінет"
-              className="flex items-center justify-center w-8 h-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              <motion.div whileHover={{ y: -1.5 }} transition={{ duration: 0.2 }}>
-                <User className="w-4 h-4" strokeWidth={2} />
-              </motion.div>
-            </Link>
+            {isLoggedIn ? (
+              <Link href="/cabinet" aria-label="Кабінет"
+                className="flex items-center justify-center w-8 h-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <motion.div whileHover={{ y: -1.5 }} transition={{ duration: 0.2 }}>
+                  <User className="w-4 h-4" strokeWidth={2} />
+                </motion.div>
+              </Link>
+            ) : (
+              <button onClick={() => setAuthModalOpen(true)} aria-label="Увійти"
+                className="flex items-center justify-center w-8 h-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <motion.div whileHover={{ y: -1.5 }} transition={{ duration: 0.2 }}>
+                  <User className="w-4 h-4" strokeWidth={2} />
+                </motion.div>
+              </button>
+            )}
             <button onClick={() => setCartOpen(true)} aria-label="Кошик"
               className="relative flex items-center justify-center w-8 h-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <motion.div whileHover={{ y: 1.5, scale: 1.1 }} transition={{ duration: 0.2 }}>
@@ -147,9 +158,20 @@ export function SiteHeader() {
         </AnimatePresence>
       </motion.nav>
 
+      {/* Auth modal — login/register without leaving the page */}
+      <PaywallModal
+        open={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        initialScreen="login"
+        onAuthSuccess={() => {
+          setIsLoggedIn(true);
+          setAuthModalOpen(false);
+          router.push("/cabinet");
+        }}
+      />
+
       {/* Cart sidebar */}
-      <AnimatePresence>
-        {cartOpen && (
+      <AnimatePresence>        {cartOpen && (
           <div className="fixed inset-0 z-[60] flex justify-end">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="absolute inset-0 bg-black/40" onClick={() => setCartOpen(false)} aria-hidden="true" />

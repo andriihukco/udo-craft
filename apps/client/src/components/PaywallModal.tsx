@@ -17,6 +17,8 @@ interface PaywallModalProps {
   onClose: () => void;
   /** Called after successful login or registration — use to refresh auth state */
   onAuthSuccess?: () => void;
+  /** Open directly on a specific screen instead of the choice screen */
+  initialScreen?: Screen;
 }
 
 // ── OTP input ─────────────────────────────────────────────────────────────
@@ -98,10 +100,10 @@ function PasswordStrength({ password }: { password: string }) {
 
 // ── Main component ────────────────────────────────────────────────────────
 
-export function PaywallModal({ open, onClose, onAuthSuccess }: PaywallModalProps) {
+export function PaywallModal({ open, onClose, onAuthSuccess, initialScreen }: PaywallModalProps) {
   const supabase = createClient();
 
-  const [screen, setScreen] = useState<Screen>("choice");
+  const [screen, setScreen] = useState<Screen>(initialScreen ?? "choice");
 
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
@@ -127,16 +129,16 @@ export function PaywallModal({ open, onClose, onAuthSuccess }: PaywallModalProps
   const [verifying, setVerifying] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
-  // Reset to choice screen when modal opens
+  // Reset screen when modal opens
   useEffect(() => {
     if (open) {
-      setScreen("choice");
+      setScreen(initialScreen ?? "choice");
       setLoginError(null);
       setRegError(null);
       setOtpError(null);
       setOtpInput("");
     }
-  }, [open]);
+  }, [open, initialScreen]);
 
   // Escape key
   useEffect(() => {
@@ -303,8 +305,8 @@ export function PaywallModal({ open, onClose, onAuthSuccess }: PaywallModalProps
           {/* ── LOGIN ── */}
           {screen === "login" && (
             <>
-              <button onClick={() => setScreen("choice")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                <ArrowLeft className="size-3.5" /> Назад
+              <button onClick={() => initialScreen === "login" ? onClose() : setScreen("choice")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <ArrowLeft className="size-3.5" /> {initialScreen === "login" ? "Закрити" : "Назад"}
               </button>
               <div>
                 <h2 className="font-bold text-xl">Вхід</h2>
@@ -349,8 +351,8 @@ export function PaywallModal({ open, onClose, onAuthSuccess }: PaywallModalProps
           {/* ── REGISTER ── */}
           {screen === "register" && (
             <>
-              <button onClick={() => setScreen("choice")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                <ArrowLeft className="size-3.5" /> Назад
+              <button onClick={() => initialScreen === "register" ? onClose() : setScreen("choice")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <ArrowLeft className="size-3.5" /> {initialScreen === "register" ? "Закрити" : "Назад"}
               </button>
               <div>
                 <h2 className="font-bold text-xl">Створити акаунт</h2>
