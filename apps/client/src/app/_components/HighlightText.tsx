@@ -10,7 +10,7 @@ import { motion, useInView } from "framer-motion";
 export function HighlightText({
   children,
   delay = 0,
-  color = "rgba(59,130,246,0.18)", // primary blue wash
+  color = "rgba(59,130,246,0.15)", // default: blue wash on light bg
 }: {
   children: React.ReactNode;
   delay?: number;

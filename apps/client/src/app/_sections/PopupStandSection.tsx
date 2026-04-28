@@ -52,7 +52,7 @@ export function PopupStandSection() {
     <section className="bg-[#06060e] py-24 sm:py-32 overflow-hidden" aria-labelledby="popup-heading">
       <div className="max-w-6xl mx-auto px-5 sm:px-10 lg:px-20">
 
-        {/* Header — asymmetric, text-heavy */}
+        {/* Header */}
         <motion.div ref={ref}
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -60,30 +60,72 @@ export function PopupStandSection() {
           className="mb-16"
         >
           <p className="text-white/40 text-xs font-semibold uppercase tracking-[0.2em] mb-5">U:DO Popup</p>
-          <div className="grid lg:grid-cols-[1fr_1fr] gap-8 lg:gap-16 items-end">
-            <h2 id="popup-heading" className="text-white text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.0]">
-              Виїзний стенд —{" "}
-              <HighlightText delay={0.5} color="rgba(59,130,246,0.25)">
-                мерч прямо на заході
-              </HighlightText>
-            </h2>
-            <p className="text-white/55 text-base leading-relaxed">
-              Привозимо обладнання, гості обирають товар і дизайн, забирають готовий виріб за 5 хвилин. Ідеально для корпоративів, конференцій, фестивалів.
-            </p>
-          </div>
+          <h2 id="popup-heading" className="text-white text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.0] max-w-2xl">
+            Виїзний стенд —{" "}
+            <HighlightText delay={0.5} color="rgba(255,255,255,0.12)">
+              мерч прямо на заході
+            </HighlightText>
+          </h2>
         </motion.div>
 
-        {/* Full-bleed image + content */}
-        <div className="grid lg:grid-cols-[1.2fr_1fr] gap-8 lg:gap-12 items-start">
+        {/* Layout: left = 3 step items, right = image */}
+        <div className="grid lg:grid-cols-[1fr_1.4fr] gap-10 lg:gap-16 items-start">
 
-          {/* Image carousel — large, cinematic */}
+          {/* Left — 3 items, clean, no extra elements */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
+            initial={{ opacity: 0, x: -20 }}
+            animate={isInView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.75, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+            className="flex flex-col gap-0"
+          >
+            {SLIDES.map((slide, i) => (
+              <button
+                key={slide.title}
+                onClick={() => goTo(i, i > active ? 1 : -1)}
+                className="text-left py-7 border-b border-white/8 last:border-0 group"
+                aria-pressed={i === active}
+              >
+                <motion.p
+                  animate={{
+                    color: i === active ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.35)",
+                  }}
+                  transition={{ duration: 0.3 }}
+                  className="font-bold text-lg mb-1.5 leading-tight"
+                >
+                  {slide.title}
+                </motion.p>
+                <motion.p
+                  animate={{
+                    color: i === active ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.2)",
+                  }}
+                  transition={{ duration: 0.3 }}
+                  className="text-sm leading-relaxed"
+                >
+                  {slide.desc}
+                </motion.p>
+              </button>
+            ))}
+
+            {/* CTAs — below the 3 items */}
+            <div className="flex items-center gap-4 pt-8">
+              <Link href="/popup"
+                className="inline-flex items-center gap-2 bg-white text-[#06060e] font-bold text-sm px-6 py-3 rounded-full hover:bg-white/90 active:scale-[0.97] transition-all duration-200">
+                Дізнатись більше <ArrowRight className="w-4 h-4" aria-hidden="true" />
+              </Link>
+              <Link href="#contact?ref=popup" className="text-white/40 hover:text-white/70 font-medium text-sm transition-colors duration-200">
+                Обговорити →
+              </Link>
+            </div>
+          </motion.div>
+
+          {/* Right — image only, no extra elements */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.97 }}
             animate={isInView ? { opacity: 1, scale: 1 } : {}}
-            transition={{ duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.8, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
           >
             <div
-              className="relative overflow-hidden rounded-2xl aspect-[3/2] select-none"
+              className="relative overflow-hidden rounded-2xl aspect-[3/4] select-none"
               onPointerDown={(e) => { dragStartX.current = e.clientX; isDragging.current = true; setDragX(0); }}
               onPointerMove={(e) => { if (!isDragging.current) return; setDragX(e.clientX - dragStartX.current); }}
               onPointerUp={() => { if (Math.abs(dragX) > 40) dragX < 0 ? next() : prev(); setDragX(0); isDragging.current = false; }}
@@ -99,83 +141,29 @@ export function PopupStandSection() {
                   style={{ x: dragX }}
                   className="absolute inset-0"
                 >
-                  <Image src={SLIDES[active].img} alt={SLIDES[active].title} fill className="object-cover" draggable={false} />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                  <Image
+                    src={SLIDES[active].img}
+                    alt={SLIDES[active].title}
+                    fill
+                    className="object-cover"
+                    draggable={false}
+                  />
                 </motion.div>
               </AnimatePresence>
 
-              {/* Minimal controls */}
-              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
-                <div className="flex gap-1.5">
-                  {SLIDES.map((_, i) => (
-                    <button key={i} onClick={() => goTo(i, i > active ? 1 : -1)} aria-label={`Слайд ${i + 1}`}
-                      className="rounded-full transition-all duration-400"
-                      style={{ width: i === active ? 24 : 6, height: 6, backgroundColor: i === active ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.3)" }} />
-                  ))}
-                </div>
-                <div className="flex gap-1.5">
-                  {[{ fn: prev, d: "M9 11L5 7l4-4", label: "Попереднє" }, { fn: next, d: "M5 3l4 4-4 4", label: "Наступне" }].map(({ fn, d, label }) => (
-                    <button key={label} onClick={fn} aria-label={label}
-                      className="w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white transition-colors">
-                      <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d={d} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                    </button>
-                  ))}
-                </div>
+              {/* Minimal dot indicators only */}
+              <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1.5">
+                {SLIDES.map((_, i) => (
+                  <button key={i} onClick={() => goTo(i, i > active ? 1 : -1)} aria-label={`Слайд ${i + 1}`}
+                    className="rounded-full transition-all duration-300"
+                    style={{
+                      width: i === active ? 20 : 6,
+                      height: 6,
+                      backgroundColor: i === active ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.3)",
+                    }}
+                  />
+                ))}
               </div>
-            </div>
-          </motion.div>
-
-          {/* Right — prose + numbers, no icon grid */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={isInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.75, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="flex flex-col gap-8 pt-2"
-          >
-            {/* Slide titles as clickable list */}
-            <div className="space-y-1">
-              {SLIDES.map((slide, i) => (
-                <button key={slide.title} onClick={() => goTo(i, i > active ? 1 : -1)}
-                  className="w-full text-left flex items-start gap-4 py-3 border-b border-white/8 last:border-0 group"
-                  aria-pressed={i === active}
-                >
-                  <motion.span
-                    animate={{ color: i === active ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.2)" }}
-                    className="text-xs font-black tabular-nums mt-0.5 w-4 shrink-0"
-                  >
-                    {String(i + 1).padStart(2, "0")}
-                  </motion.span>
-                  <div>
-                    <motion.p
-                      animate={{ color: i === active ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.45)" }}
-                      className="font-semibold text-sm mb-0.5 transition-colors"
-                    >
-                      {slide.title}
-                    </motion.p>
-                    <p className="text-white/35 text-xs leading-relaxed">{slide.desc}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            {/* Key numbers — large, editorial */}
-            <div className="grid grid-cols-3 gap-4 py-6 border-y border-white/8">
-              {[["5 хв", "на виріб"], ["50k+", "гостей"], ["500+", "заходів"]].map(([v, l]) => (
-                <div key={l}>
-                  <p className="text-white text-2xl font-black leading-none mb-1">{v}</p>
-                  <p className="text-white/40 text-xs">{l}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-4">
-              <Link href="/popup"
-                className="inline-flex items-center gap-2 bg-white text-[#06060e] font-bold text-sm px-6 py-3 rounded-full hover:bg-white/90 active:scale-[0.97] transition-all duration-200">
-                Дізнатись більше <ArrowRight className="w-4 h-4" aria-hidden="true" />
-              </Link>
-              <Link href="#contact?ref=popup" className="text-white/45 hover:text-white/75 font-medium text-sm transition-colors duration-200">
-                Обговорити →
-              </Link>
             </div>
           </motion.div>
         </div>

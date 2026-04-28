@@ -10,7 +10,7 @@ const STEPS = [
   {
     number: "1",
     title: "Обери товар",
-    body: "Переглядай каталог з реальними цінами. Худі, футболки, аксесуари — ціна оновлюється одразу при зміні кількості та типу нанесення. Жодних дзвінків, щоб дізнатись вартість.",
+    body: "Переглядай каталог з реальними цінами. Ціна оновлюється одразу при зміні кількості та типу нанесення. Жодних дзвінків, щоб дізнатись вартість.",
     cta: "Відкрити каталог",
     href: "#collections",
     time: "~5 хв",
@@ -18,7 +18,7 @@ const STEPS = [
   {
     number: "2",
     title: "Кастомуй онлайн",
-    body: "Завантаж логотип, постав на виріб, обери зону нанесення. Редактор показує точну вартість кожної зони в реальному часі. Бачиш результат — без листів і погоджень.",
+    body: "Завантаж логотип, постав на виріб, обери зону нанесення. Редактор показує точну вартість кожної зони в реальному часі.",
     cta: "Спробувати редактор",
     href: "/order",
     time: "~10 хв",
@@ -26,7 +26,7 @@ const STEPS = [
   {
     number: "3",
     title: "Отримай рахунок",
-    body: "Заповни форму — менеджер зв'яжеться протягом 2 годин. Фіксована ціна без прихованих доплат. Рахунок-фактура одразу після підтвердження деталей.",
+    body: "Заповни форму — менеджер зв'яжеться протягом 2 годин. Фіксована ціна без прихованих доплат. Рахунок-фактура одразу після підтвердження.",
     cta: "Написати нам",
     href: "#contact",
     time: "~2 год",
@@ -34,79 +34,111 @@ const STEPS = [
   {
     number: "4",
     title: "Отримай мерч",
-    body: "Виробництво 7–14 робочих днів. Доставка Новою Поштою по всій Україні. Кожна партія перевіряється перед відправкою — якщо щось не так, переробляємо безкоштовно.",
+    body: "Виробництво 7–14 робочих днів. Доставка Новою Поштою по всій Україні. Якщо щось не так — переробляємо безкоштовно.",
     cta: "Читати FAQ",
     href: "#faq",
     time: "7–14 днів",
   },
 ];
 
-// Desktop: horizontal timeline, one step at a time, slow and deliberate
+// The progress line animates from 0% to the target width over STEP_DURATION ms
+const STEP_DURATION = 3500; // ms per step
+
 function DesktopTimeline({ isInView }: { isInView: boolean }) {
   const [active, setActive] = useState(0);
   const [started, setStarted] = useState(false);
+  // progressPct: 0–100, represents how far the line has filled
+  // Each step occupies 1/(n-1) of the total width
+  const [progressPct, setProgressPct] = useState(0);
+  const rafRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+  const n = STEPS.length;
 
   useEffect(() => {
-    if (isInView && !started) setStarted(true);
+    if (isInView && !started) {
+      setStarted(true);
+      setActive(0);
+      setProgressPct(0);
+    }
   }, [isInView, started]);
 
-  // Slow auto-advance: 3.5s per step
+  // Animate progress from current step to next
   useEffect(() => {
     if (!started) return;
-    if (active >= STEPS.length - 1) return;
-    const t = setTimeout(() => setActive((s) => s + 1), 3500);
-    return () => clearTimeout(t);
-  }, [active, started]);
+    if (active >= n - 1) return; // already at last step
 
-  const progress = active / (STEPS.length - 1);
+    const targetPct = (active + 1) / (n - 1) * 100;
+    const startPct = active / (n - 1) * 100;
+    startTimeRef.current = null;
+
+    const animate = (ts: number) => {
+      if (startTimeRef.current === null) startTimeRef.current = ts;
+      const elapsed = ts - startTimeRef.current;
+      const t = Math.min(elapsed / STEP_DURATION, 1);
+      // ease in-out
+      const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      setProgressPct(startPct + (targetPct - startPct) * eased);
+
+      if (t < 1) {
+        rafRef.current = requestAnimationFrame(animate);
+      } else {
+        setProgressPct(targetPct);
+        setActive((s) => s + 1);
+      }
+    };
+
+    rafRef.current = requestAnimationFrame(animate);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [active, started, n]);
+
+  const handleStepClick = (i: number) => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    setActive(i);
+    setProgressPct(i / (n - 1) * 100);
+  };
 
   return (
     <div className="hidden lg:block">
-      {/* Progress track */}
-      <div className="relative mb-16" role="tablist" aria-label="Кроки процесу">
+      {/* Track + nodes */}
+      <div className="relative mb-14" role="tablist" aria-label="Кроки процесу">
         {/* Background track */}
-        <div className="absolute top-5 left-0 right-0 h-[2px] bg-border" aria-hidden="true" />
-        {/* Filled track */}
-        <motion.div
-          className="absolute top-5 left-0 h-[2px] bg-primary origin-left"
-          animate={{ width: `${progress * 100}%` }}
-          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+        <div className="absolute top-5 left-5 right-5 h-[2px] bg-border" aria-hidden="true" />
+
+        {/* Animated fill — width driven by progressPct */}
+        <div
+          className="absolute top-5 left-5 h-[2px] bg-primary transition-none"
+          style={{ width: `calc(${progressPct}% * (100% - 40px) / 100)` }}
           aria-hidden="true"
         />
 
         {/* Step nodes */}
         <div className="relative flex justify-between">
           {STEPS.map((step, i) => {
-            const isPast = i < active;
+            const isDone = i < active || (i === active && progressPct >= (i / (n - 1)) * 100);
             const isCurrent = i === active;
             return (
-              <button
-                key={step.number}
-                role="tab"
+              <button key={step.number} role="tab"
                 aria-selected={isCurrent}
                 aria-label={`Крок ${step.number}: ${step.title}`}
-                onClick={() => setActive(i)}
+                onClick={() => handleStepClick(i)}
                 className="flex flex-col items-center gap-3 group"
               >
-                {/* Node */}
                 <motion.div
                   animate={{
-                    backgroundColor: isPast || isCurrent ? "var(--color-primary)" : "var(--color-background)",
-                    borderColor: isPast || isCurrent ? "var(--color-primary)" : "var(--color-border)",
-                    scale: isCurrent ? 1.2 : 1,
+                    backgroundColor: isDone ? "var(--color-primary)" : "var(--color-background)",
+                    borderColor: isDone ? "var(--color-primary)" : "var(--color-border)",
+                    scale: isCurrent ? 1.18 : 1,
                   }}
-                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                   className="w-10 h-10 rounded-full border-2 flex items-center justify-center relative z-10 bg-background"
                 >
                   <motion.span
-                    animate={{ color: isPast || isCurrent ? "white" : "var(--color-muted-foreground)" }}
+                    animate={{ color: isDone ? "white" : "var(--color-muted-foreground)" }}
                     className="text-xs font-black tabular-nums"
                   >
                     {step.number}
                   </motion.span>
                 </motion.div>
-
-                {/* Label */}
                 <motion.span
                   animate={{
                     color: isCurrent ? "var(--color-foreground)" : "var(--color-muted-foreground)",
@@ -122,41 +154,31 @@ function DesktopTimeline({ isInView }: { isInView: boolean }) {
         </div>
       </div>
 
-      {/* Active step — large, editorial, lots of space */}
-      <div style={{ minHeight: 220 }}>
+      {/* Active step detail */}
+      <div style={{ minHeight: 200 }}>
         <AnimatePresence mode="wait">
-          <motion.div
-            key={active}
-            initial={{ opacity: 0, y: 20 }}
+          <motion.div key={active}
+            initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            exit={{ opacity: 0, y: -18 }}
+            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
             className="grid grid-cols-[1fr_auto] gap-12 items-start"
             role="tabpanel"
-            aria-label={`Крок ${STEPS[active].number}: ${STEPS[active].title}`}
           >
             <div>
-              {/* Large step number — decorative */}
-              <span className="text-[80px] font-black text-border leading-none select-none block mb-4" aria-hidden="true">
+              <span className="text-[72px] font-black text-border leading-none select-none block mb-4" aria-hidden="true">
                 {STEPS[active].number}
               </span>
-              <h3 className="text-2xl font-black text-foreground tracking-tight mb-4">
-                {STEPS[active].title}
-              </h3>
-              <p className="text-muted-foreground text-base leading-relaxed max-w-xl">
-                {STEPS[active].body}
-              </p>
+              <h3 className="text-2xl font-black text-foreground tracking-tight mb-4">{STEPS[active].title}</h3>
+              <p className="text-muted-foreground text-base leading-relaxed max-w-xl">{STEPS[active].body}</p>
             </div>
-
             <div className="flex flex-col items-end gap-4 pt-2 shrink-0">
               <div className="text-right">
                 <p className="text-2xl font-black text-foreground">{STEPS[active].time}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">час</p>
               </div>
-              <Link
-                href={STEPS[active].href}
-                className="inline-flex items-center gap-2 bg-primary text-white font-semibold text-sm px-6 py-3 rounded-full hover:bg-primary/90 active:scale-[0.97] transition-all duration-200 whitespace-nowrap"
-              >
+              <Link href={STEPS[active].href}
+                className="inline-flex items-center gap-2 bg-primary text-white font-semibold text-sm px-6 py-3 rounded-full hover:bg-primary/90 active:scale-[0.97] transition-all duration-200 whitespace-nowrap">
                 {STEPS[active].cta} <ArrowRight className="w-4 h-4" aria-hidden="true" />
               </Link>
             </div>
@@ -167,7 +189,6 @@ function DesktopTimeline({ isInView }: { isInView: boolean }) {
   );
 }
 
-// Mobile: vertical, stacked, no cards — just text with left border
 function MobileTimeline() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-60px" });
@@ -175,24 +196,18 @@ function MobileTimeline() {
   return (
     <div ref={ref} className="lg:hidden">
       {STEPS.map((step, i) => (
-        <motion.div
-          key={step.number}
+        <motion.div key={step.number}
           initial={{ opacity: 0, x: -16 }}
           animate={isInView ? { opacity: 1, x: 0 } : {}}
           transition={{ duration: 0.6, delay: i * 0.15, ease: [0.22, 1, 0.36, 1] }}
           className="flex gap-6 pb-12 last:pb-0"
         >
-          {/* Left: number + line */}
-          <div className="flex flex-col items-center gap-0 shrink-0">
+          <div className="flex flex-col items-center shrink-0">
             <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
               <span className="text-white text-xs font-black">{step.number}</span>
             </div>
-            {i < STEPS.length - 1 && (
-              <div className="w-px flex-1 bg-border mt-3" aria-hidden="true" />
-            )}
+            {i < STEPS.length - 1 && <div className="w-px flex-1 bg-border mt-3" aria-hidden="true" />}
           </div>
-
-          {/* Right: content — no card, just text */}
           <div className="pt-1 pb-4">
             <div className="flex items-center gap-3 mb-3">
               <h3 className="font-bold text-foreground text-lg">{step.title}</h3>

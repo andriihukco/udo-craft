@@ -46,7 +46,7 @@ export function TrustSection() {
         >
           <h2 id="trust-heading" className="text-white text-3xl sm:text-4xl font-black tracking-tight mb-4">
             Чому нам{" "}
-            <HighlightText delay={0.4} color="rgba(59,130,246,0.2)">довіряють</HighlightText>
+            <HighlightText delay={0.4} color="rgba(255,255,255,0.12)">довіряють</HighlightText>
           </h2>
           <p className="text-white/55 text-base max-w-lg leading-relaxed">
             Не просто слова — конкретні гарантії, які ми дотримуємось щодня.
