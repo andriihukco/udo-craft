@@ -49,7 +49,7 @@ export function PopupStandSection() {
   };
 
   return (
-    <section className="bg-[#06060e] py-24 sm:py-32 overflow-hidden" aria-labelledby="popup-heading">
+    <section className="bg-background py-24 sm:py-32 overflow-hidden" aria-labelledby="popup-heading">
       <div className="max-w-6xl mx-auto px-5 sm:px-10 lg:px-20">
 
         {/* Header */}
@@ -59,10 +59,10 @@ export function PopupStandSection() {
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           className="mb-16"
         >
-          <p className="text-white/40 text-xs font-semibold uppercase tracking-[0.2em] mb-5">U:DO Popup</p>
-          <h2 id="popup-heading" className="text-white text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.0] max-w-2xl">
+          <p className="text-muted-foreground text-xs font-semibold uppercase tracking-[0.2em] mb-5">U:DO Popup</p>
+          <h2 id="popup-heading" className="text-foreground text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.0] max-w-2xl">
             Виїзний стенд —{" "}
-            <HighlightText delay={0.5} color="rgba(255,255,255,0.12)">
+            <HighlightText delay={0.5}>
               мерч прямо на заході
             </HighlightText>
           </h2>
@@ -82,12 +82,12 @@ export function PopupStandSection() {
               <button
                 key={slide.title}
                 onClick={() => goTo(i, i > active ? 1 : -1)}
-                className="text-left py-7 border-b border-white/8 last:border-0 group"
+                className="text-left py-7 border-b border-border last:border-0 group"
                 aria-pressed={i === active}
               >
                 <motion.p
                   animate={{
-                    color: i === active ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.35)",
+                    color: i === active ? "var(--color-foreground)" : "var(--color-muted-foreground)",
                   }}
                   transition={{ duration: 0.3 }}
                   className="font-bold text-lg mb-1.5 leading-tight"
@@ -96,7 +96,7 @@ export function PopupStandSection() {
                 </motion.p>
                 <motion.p
                   animate={{
-                    color: i === active ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.2)",
+                    color: i === active ? "var(--color-muted-foreground)" : "oklch(0.7 0 0)",
                   }}
                   transition={{ duration: 0.3 }}
                   className="text-sm leading-relaxed"
@@ -109,10 +109,10 @@ export function PopupStandSection() {
             {/* CTAs — below the 3 items */}
             <div className="flex items-center gap-4 pt-8">
               <Link href="/popup"
-                className="inline-flex items-center gap-2 bg-white text-[#06060e] font-bold text-sm px-6 py-3 rounded-full hover:bg-white/90 active:scale-[0.97] transition-all duration-200">
+                className="inline-flex items-center gap-2 bg-primary text-white font-bold text-sm px-6 py-3 rounded-full hover:bg-primary/90 active:scale-[0.97] transition-all duration-200">
                 Дізнатись більше <ArrowRight className="w-4 h-4" aria-hidden="true" />
               </Link>
-              <Link href="#contact?ref=popup" className="text-white/40 hover:text-white/70 font-medium text-sm transition-colors duration-200">
+              <Link href="#contact?ref=popup" className="text-muted-foreground hover:text-foreground font-medium text-sm transition-colors duration-200">
                 Обговорити →
               </Link>
             </div>
@@ -159,7 +159,7 @@ export function PopupStandSection() {
                     style={{
                       width: i === active ? 20 : 6,
                       height: 6,
-                      backgroundColor: i === active ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.3)",
+                      backgroundColor: i === active ? "var(--color-primary)" : "var(--color-border)",
                     }}
                   />
                 ))}

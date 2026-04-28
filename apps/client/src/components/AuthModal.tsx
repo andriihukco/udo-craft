@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { sound } from "@/lib/sound";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -169,8 +170,10 @@ export function AuthModal({ open, onClose, onAuthSuccess, initialScreen = "login
     const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password: loginPassword });
     if (error) {
       setLoginError("Невірний email або пароль.");
+      sound.caution();
       setLoginLoading(false);
     } else {
+      sound.celebration();
       onAuthSuccess?.();
       onClose();
     }
@@ -275,7 +278,7 @@ export function AuthModal({ open, onClose, onAuthSuccess, initialScreen = "login
       {/* Backdrop — blurred, site visible behind */}
       <div
         className="absolute inset-0 bg-foreground/20 backdrop-blur-md"
-        onClick={onClose}
+        onClick={() => { sound.close(); onClose(); }}
         aria-hidden="true"
       />
 
@@ -284,7 +287,7 @@ export function AuthModal({ open, onClose, onAuthSuccess, initialScreen = "login
         {/* Close */}
         <button
           type="button"
-          onClick={onClose}
+          onClick={() => { sound.close(); onClose(); }}
           className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground z-10"
           aria-label="Закрити"
         >

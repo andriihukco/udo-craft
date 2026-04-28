@@ -32,9 +32,9 @@
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
-  /* Dark surface tokens used in dark sections */
-  --color-surface-dark: oklch(0.08 0.01 264);
-  --color-surface-dark-2: oklch(0.11 0.01 264);
+  /* Dark surface tokens — deep blue instead of pure black */
+  --color-surface-dark: oklch(0.10 0.03 264);
+  --color-surface-dark-2: oklch(0.13 0.03 264);
 }
 
 @layer base {

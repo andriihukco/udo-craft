@@ -3,22 +3,22 @@
 import Link from "next/link";
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
-import { ArrowRight, MessageCircle, Sparkles, CheckCircle2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { HighlightText } from "@/app/_components/HighlightText";
 
 const STEPS = [
   {
-    Icon: MessageCircle,
+    emoji: "💬",
     title: "Розкажи про бренд",
     body: "Надішли логотип, фірмові кольори та опис стилю. Якщо нічого немає — просто розкажи про компанію. Брифінг займає 10–15 хвилин онлайн або по телефону.",
   },
   {
-    Icon: Sparkles,
+    emoji: "✨",
     title: "Отримай концепцію",
     body: "Дизайнер підготує 2–3 варіанти адаптації для нанесення на одяг. Термін — 2 робочі дні. Включає адаптацію під шовкодрук, вишивку та DTF.",
   },
   {
-    Icon: CheckCircle2,
+    emoji: "✅",
     title: "Затверди і замовляй",
     body: "Обери варіант, внеси правки (до 2 раундів включено), отримай фінальні файли. Всі файли залишаються у тебе — для будь-яких майбутніх замовлень.",
   },
@@ -62,7 +62,7 @@ export function DesignerSection() {
 
         {/* 3 steps — icon + title + prose, no cards, no dividers */}
         <div className="grid md:grid-cols-3 gap-10 md:gap-12 mb-14">
-          {STEPS.map(({ Icon, title, body }, i) => (
+          {STEPS.map(({ emoji, title, body }, i) => (
             <motion.div
               key={title}
               initial={{ opacity: 0, y: 20 }}
@@ -70,10 +70,8 @@ export function DesignerSection() {
               transition={{ duration: 0.6, delay: 0.1 + i * 0.12, ease: [0.22, 1, 0.36, 1] }}
               className="flex flex-col gap-4"
             >
-              {/* Icon in a clean circle */}
-              <div className="w-11 h-11 rounded-2xl bg-primary/8 border border-primary/15 flex items-center justify-center">
-                <Icon className="w-5 h-5 text-primary" aria-hidden="true" />
-              </div>
+              {/* Emoji illustration */}
+              <div className="text-3xl" aria-hidden="true">{emoji}</div>
               <div>
                 <h3 className="font-bold text-foreground text-lg mb-2">{title}</h3>
                 <p className="text-muted-foreground text-sm leading-relaxed">{body}</p>

@@ -113,8 +113,6 @@ function DesktopTimeline({ isInView }: { isInView: boolean }) {
           }}
           aria-hidden="true"
         />
-          aria-hidden="true"
-        />
 
         {/* Step nodes */}
         <div className="relative flex justify-between">

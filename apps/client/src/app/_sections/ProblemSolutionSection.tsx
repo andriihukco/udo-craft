@@ -62,7 +62,7 @@ export function ProblemSolutionSection() {
             initial={{ opacity: 0, x: 24 }}
             animate={isInView ? { opacity: 1, x: 0 } : {}}
             transition={{ duration: 0.75, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-            className="bg-[#06060e] rounded-3xl p-8 sm:p-10"
+            className="bg-[oklch(0.10 0.03 264)] rounded-3xl p-8 sm:p-10"
           >
             <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-primary mb-5">Рішення U:DO</p>
             <h3 className="text-white text-2xl sm:text-3xl font-black tracking-tight leading-tight mb-8">
@@ -74,7 +74,7 @@ export function ProblemSolutionSection() {
                   initial={{ opacity: 0, x: 12 }}
                   animate={isInView ? { opacity: 1, x: 0 } : {}}
                   transition={{ duration: 0.5, delay: 0.2 + i * 0.08, ease: [0.22, 1, 0.36, 1] }}
-                  className="flex items-center gap-3 text-sm text-white/85"
+                  className="flex items-center gap-3 text-sm text-white/90"
                 >
                   <span className="w-5 h-5 rounded-full bg-blue-500/25 border border-blue-400/50 flex items-center justify-center shrink-0" aria-hidden="true">
                     <Check className="w-3 h-3 text-blue-300" />

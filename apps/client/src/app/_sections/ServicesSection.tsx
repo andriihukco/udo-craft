@@ -106,7 +106,7 @@ export function ServicesSection({ service1Title, service1Desc, service1Cta, serv
             initial={{ opacity: 0, y: 28 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.65, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-            className="relative bg-[#06060e] rounded-2xl overflow-hidden flex flex-col group"
+            className="relative bg-[oklch(0.10 0.03 264)] rounded-2xl overflow-hidden flex flex-col group"
           >
             <div className="absolute inset-0 opacity-20 pointer-events-none"
               style={{ backgroundImage: "radial-gradient(ellipse at 20% 20%, #3b82f6 0%, transparent 60%), radial-gradient(ellipse at 85% 85%, #6366f1 0%, transparent 55%)" }}
@@ -117,7 +117,7 @@ export function ServicesSection({ service1Title, service1Desc, service1Cta, serv
               </div>
               <div className="flex-1">
                 <h3 className="text-white text-xl font-black tracking-tight mb-3">{service1Title}</h3>
-                {/* white/75 on #06060e = 10:1+ passes AAA */}
+                {/* white/75 on oklch(0.10 0.03 264) = 10:1+ passes AAA */}
                 <p className="text-white/75 text-sm leading-relaxed">{service1Desc}</p>
               </div>
               <div className="mt-8 pt-6 border-t border-white/8">
@@ -160,7 +160,7 @@ export function ServicesSection({ service1Title, service1Desc, service1Cta, serv
             initial={{ opacity: 0, y: 28 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.65, delay: 0.26, ease: [0.22, 1, 0.36, 1] }}
-            className="bg-[#0c0c0c] rounded-2xl overflow-hidden flex flex-col p-7"
+            className="bg-[oklch(0.10 0.03 264)] rounded-2xl overflow-hidden flex flex-col p-7"
           >
             <div className="w-10 h-10 rounded-xl bg-white/8 border border-white/12 flex items-center justify-center mb-6">
               <Zap className="w-5 h-5 text-white" aria-hidden="true" />
@@ -191,7 +191,7 @@ export function ServicesSection({ service1Title, service1Desc, service1Cta, serv
           initial={{ opacity: 0, y: 16 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
-          className="bg-[#0c0c0c] rounded-2xl px-8 py-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5"
+          className="bg-[oklch(0.10 0.03 264)] rounded-2xl px-8 py-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5"
         >
           <div className="flex items-center gap-6">
             <div>
@@ -201,7 +201,7 @@ export function ServicesSection({ service1Title, service1Desc, service1Cta, serv
           </div>
           <div className="flex items-center gap-4 shrink-0">
             <Link href="/popup"
-              className="inline-flex items-center gap-2 bg-white text-[#0c0c0c] font-bold text-xs px-5 py-2.5 rounded-full hover:bg-white/90 active:scale-[0.97] transition-all duration-200">
+              className="inline-flex items-center gap-2 bg-white text-[oklch(0.10 0.03 264)] font-bold text-xs px-5 py-2.5 rounded-full hover:bg-white/90 active:scale-[0.97] transition-all duration-200">
               Дізнатись більше <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
             </Link>
             <Link href="#contact?ref=popup" className="text-white/50 hover:text-white/80 font-medium text-xs transition-colors duration-200 whitespace-nowrap">

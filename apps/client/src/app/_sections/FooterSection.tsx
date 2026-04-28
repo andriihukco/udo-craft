@@ -40,7 +40,7 @@ const NAV = [
 
 export function FooterSection({ tagline, copyright, instagram, telegram }: FooterSectionProps) {
   return (
-    <footer className="bg-[#06060e]" aria-label="Підвал сайту">
+    <footer className="bg-[oklch(0.10 0.03 264)]" aria-label="Підвал сайту">
       {/* Pre-footer CTA strip */}
       <div className="border-t border-white/8">
         <div className="max-w-6xl mx-auto px-5 sm:px-10 lg:px-20 py-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">

@@ -54,20 +54,20 @@ function Cell({ value, highlight }: { value: CellValue; highlight: boolean }) {
   return <span className={`text-sm font-semibold ${highlight ? "text-white" : "text-foreground"}`}>{value}</span>;
 }
 
-function CardContent({ col, highlight }: { col: typeof COLUMNS[0]; highlight: boolean }) {
+function CardContent({ col }: { col: typeof COLUMNS[0] }) {
   return (
-    <div className={`rounded-2xl overflow-hidden border ${highlight ? "border-primary bg-primary" : "border-border bg-card"}`}>
-      <div className={`px-5 py-4 border-b ${highlight ? "border-white/15" : "border-border"}`}>
-        {highlight && (
+    <div className={`rounded-2xl overflow-hidden border shadow-xl ${col.highlight ? "border-primary bg-primary" : "border-border bg-card"}`}>
+      <div className={`px-5 py-4 border-b ${col.highlight ? "border-white/15" : "border-border"}`}>
+        {col.highlight && (
           <p className="text-[10px] font-bold uppercase tracking-widest text-white/70 mb-0.5">Рекомендовано</p>
         )}
-        <p className={`font-bold text-base ${highlight ? "text-white" : "text-foreground"}`}>{col.name}</p>
+        <p className={`font-bold text-base ${col.highlight ? "text-white" : "text-foreground"}`}>{col.name}</p>
       </div>
-      <div className={`divide-y ${highlight ? "divide-white/10" : "divide-border/50"}`}>
+      <div className={`divide-y ${col.highlight ? "divide-white/10" : "divide-border/50"}`}>
         {FEATURES.map((feature, fi) => (
           <div key={feature} className="flex items-center justify-between px-5 py-3 gap-4">
-            <span className={`text-sm ${highlight ? "text-white/80" : "text-muted-foreground"}`}>{feature}</span>
-            <Cell value={col.values[fi]} highlight={highlight} />
+            <span className={`text-sm ${col.highlight ? "text-white/80" : "text-muted-foreground"}`}>{feature}</span>
+            <Cell value={col.values[fi]} highlight={col.highlight} />
           </div>
         ))}
       </div>
@@ -75,46 +75,48 @@ function CardContent({ col, highlight }: { col: typeof COLUMNS[0]; highlight: bo
   );
 }
 
-// Scroll-driven sticky card — scales down as next card slides over it
-function StickyCard({
+// Each card is sticky with increasing top offset — creates the stacking deck effect
+function StackCard({
   col,
-  i,
+  index,
   total,
   scrollYProgress,
 }: {
   col: typeof COLUMNS[0];
-  i: number;
+  index: number;
   total: number;
   scrollYProgress: ReturnType<typeof useScroll>["scrollYProgress"];
 }) {
-  // This card's scroll range: starts when it enters, ends when last card is done
-  const rangeStart = i / total;
-  const rangeEnd = Math.min((i + 1) / total, 1);
+  // Card starts entering at its fraction of scroll, finishes at next card's fraction
+  const start = index / total;
+  const end = (index + 1) / total;
 
-  // Scale shrinks as next card comes over — only if not the last card
+  // Scale down slightly as the next card slides over (only non-last cards)
   const scale = useTransform(
     scrollYProgress,
-    [rangeStart, rangeEnd],
-    i < total - 1 ? [1, 0.92] : [1, 1]
+    [start, end],
+    index < total - 1 ? [1, 0.93] : [1, 1]
   );
 
+  // Slight upward drift as it gets covered
+  const y = useTransform(
+    scrollYProgress,
+    [start, end],
+    index < total - 1 ? [0, -8] : [0, 0]
+  );
+
+  // Top offset increases per card so they visually stack like a deck
+  const topOffset = 72 + index * 20;
+
   return (
-    // Each card is sticky, offset by 16px per card so they visually stack
-    <div
-      className="sticky"
-      style={{ top: `${80 + i * 16}px` }}
-    >
-      <motion.div
-        style={{ scale, transformOrigin: "top center" }}
-        className="rounded-2xl overflow-hidden"
-      >
-        <CardContent col={col} highlight={col.highlight} />
+    <div className="sticky" style={{ top: topOffset }}>
+      <motion.div style={{ scale, y, transformOrigin: "top center" }}>
+        <CardContent col={col} />
       </motion.div>
     </div>
   );
 }
 
-// Mobile stack — scroll-driven, cards stack on top of each other
 function MobileCardStack() {
   const container = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
@@ -122,27 +124,27 @@ function MobileCardStack() {
     offset: ["start start", "end end"],
   });
 
-  // Order: U:DO first, then competitors
+  // U:DO first, then competitors
   const ordered = [
     COLUMNS.find((c) => c.highlight)!,
     ...COLUMNS.filter((c) => !c.highlight),
   ];
 
-  // Each card gets 80vh of scroll space so the stacking is visible
-  const cardScrollHeight = 80;
+  // Give each card 60vh of scroll space — enough to see the stack effect
+  // but not so much that there's excessive empty space
+  const VH_PER_CARD = 60;
 
   return (
+    // The container height drives the scroll — last card needs no extra space
     <div
       ref={container}
-      style={{ height: `${ordered.length * cardScrollHeight}vh` }}
-      className="relative"
-      aria-label="Порівняння карток"
+      style={{ height: `${(ordered.length - 1) * VH_PER_CARD + 100}vh` }}
     >
       {ordered.map((col, i) => (
-        <StickyCard
+        <StackCard
           key={col.name}
           col={col}
-          i={i}
+          index={i}
           total={ordered.length}
           scrollYProgress={scrollYProgress}
         />
@@ -158,8 +160,7 @@ export function ComparisonSection() {
   return (
     <section className="bg-background py-20 sm:py-28" aria-labelledby="comparison-heading">
       <div className="max-w-6xl mx-auto px-5 sm:px-10 lg:px-20">
-        <motion.div
-          ref={ref}
+        <motion.div ref={ref}
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
@@ -183,20 +184,11 @@ export function ComparisonSection() {
           <table className="w-full border-collapse min-w-[560px]" role="table" aria-label="Порівняння постачальників мерчу">
             <thead>
               <tr>
-                <th className="text-left py-4 pr-6 text-sm font-semibold text-muted-foreground w-[35%]" scope="col">
-                  Характеристика
-                </th>
+                <th className="text-left py-4 pr-6 text-sm font-semibold text-muted-foreground w-[35%]" scope="col">Характеристика</th>
                 {COLUMNS.map((col) => (
-                  <th
-                    key={col.name}
-                    scope="col"
-                    className={`py-4 px-4 text-center text-sm font-bold rounded-t-xl ${col.highlight ? "bg-primary text-white" : "text-muted-foreground"}`}
-                  >
-                    {col.highlight && (
-                      <span className="block text-[10px] font-semibold text-white/70 uppercase tracking-widest mb-0.5">
-                        Рекомендовано
-                      </span>
-                    )}
+                  <th key={col.name} scope="col"
+                    className={`py-4 px-4 text-center text-sm font-bold rounded-t-xl ${col.highlight ? "bg-primary text-white" : "text-muted-foreground"}`}>
+                    {col.highlight && <span className="block text-[10px] font-semibold text-white/70 uppercase tracking-widest mb-0.5">Рекомендовано</span>}
                     {col.name}
                   </th>
                 ))}
@@ -207,10 +199,8 @@ export function ComparisonSection() {
                 <tr key={feature} className="border-t border-border">
                   <td className="py-4 pr-6 text-sm text-foreground font-medium">{feature}</td>
                   {COLUMNS.map((col) => (
-                    <td
-                      key={col.name}
-                      className={`py-4 px-4 text-center ${col.highlight ? "bg-primary/5 border-x border-primary/15" : ""} ${fi === FEATURES.length - 1 && col.highlight ? "rounded-b-xl" : ""}`}
-                    >
+                    <td key={col.name}
+                      className={`py-4 px-4 text-center ${col.highlight ? "bg-primary/5 border-x border-primary/15" : ""} ${fi === FEATURES.length - 1 && col.highlight ? "rounded-b-xl" : ""}`}>
                       <div className="flex justify-center">
                         <Cell value={col.values[fi]} highlight={col.highlight} />
                       </div>
@@ -222,11 +212,9 @@ export function ComparisonSection() {
           </table>
         </motion.div>
 
-        {/* Mobile — scroll-driven card stack */}
-        <div className="sm:hidden -mx-5">
-          <div className="px-5">
-            <MobileCardStack />
-          </div>
+        {/* Mobile — sticky card stack */}
+        <div className="sm:hidden">
+          <MobileCardStack />
         </div>
       </div>
     </section>

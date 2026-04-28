@@ -53,7 +53,7 @@ export function HeroSection({
 }: HeroSectionProps) {
   return (
     <section
-      className="relative min-h-[100svh] bg-[#06060e] overflow-hidden flex flex-col"
+      className="relative min-h-[100svh] bg-[oklch(0.10_0.03_264)] overflow-hidden flex flex-col"
       aria-label="Головна секція"
     >
       {/* Skip link */}
@@ -82,14 +82,9 @@ export function HeroSection({
         aria-hidden="true"
       />
 
-      {/* Primary blue overlay at 25% + bottom fade for text legibility */}
+      {/* Bottom fade only — video fully visible */}
       <div
-        className="absolute inset-0 pointer-events-none"
-        style={{ backgroundColor: "oklch(0.36 0.22 264 / 0.25)" }}
-        aria-hidden="true"
-      />
-      <div
-        className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#06060e]/70 pointer-events-none"
+        className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[oklch(0.10_0.03_264)]/50 pointer-events-none"
         aria-hidden="true"
       />
 
@@ -150,17 +145,17 @@ export function HeroSection({
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, delay: 1.9, ease: [0.22, 1, 0.36, 1] }}
-          className="flex flex-wrap items-center justify-center gap-3"
+          className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-center gap-3 w-full sm:w-auto"
         >
           <Link
             href={ctaPrimaryUrl}
-            className="inline-flex items-center gap-2 bg-white text-[#06060e] font-bold text-sm px-7 py-3.5 rounded-full hover:bg-white/90 active:scale-[0.97] transition-all duration-200"
+            className="inline-flex items-center justify-center gap-2 bg-white text-[#06060e] font-bold text-sm px-7 py-3.5 rounded-full hover:bg-white/90 active:scale-[0.97] transition-all duration-200 w-full sm:w-auto"
           >
             {ctaPrimaryText}
           </Link>
           <Link
             href="#contact"
-            className="inline-flex items-center gap-2 border border-white/20 text-white/70 font-semibold text-sm px-7 py-3.5 rounded-full hover:border-white/40 hover:text-white active:scale-[0.97] transition-all duration-200"
+            className="inline-flex items-center justify-center gap-2 border border-white/20 text-white/70 font-semibold text-sm px-7 py-3.5 rounded-full hover:border-white/40 hover:text-white active:scale-[0.97] transition-all duration-200 w-full sm:w-auto"
           >
             {ctaSecondaryText}
           </Link>

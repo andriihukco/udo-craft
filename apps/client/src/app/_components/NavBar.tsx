@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, ShoppingBag, ArrowRight, X, Menu } from "lucide-react";
 import { BrandLogoFull } from "@/components/brand-logo";
+import { sound } from "@/lib/sound";
 
 interface NavBarProps {
   isLoggedIn: boolean;
@@ -62,7 +63,7 @@ export function NavBar({ isLoggedIn, cartCount, onCartOpen, cinemaMode, onAuthOp
     };
   }, []);
 
-  const isLight = scrolled;
+  const isLight = true; // always use light nav style
 
   return (
     <motion.nav
@@ -132,7 +133,7 @@ export function NavBar({ isLoggedIn, cartCount, onCartOpen, cinemaMode, onAuthOp
             </Link>
           ) : (
             <button
-              onClick={onAuthOpen}
+              onClick={() => { sound.tap(); onAuthOpen?.(); }}
               aria-label="Увійти"
               className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 ${
                 isLight
@@ -145,7 +146,7 @@ export function NavBar({ isLoggedIn, cartCount, onCartOpen, cinemaMode, onAuthOp
           )}
 
           <button
-            onClick={onCartOpen}
+            onClick={() => { sound.open(); onCartOpen(); }}
             aria-label="Кошик"
             className={`relative flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 ${
               isLight
@@ -169,13 +170,17 @@ export function NavBar({ isLoggedIn, cartCount, onCartOpen, cinemaMode, onAuthOp
           {/* CTA — always visible */}
           <Link
             href="/order"
-            className="hidden sm:inline-flex items-center gap-1.5 bg-primary text-white text-xs font-semibold px-4 py-2 rounded-full hover:bg-primary/90 active:scale-95 transition-all duration-200 whitespace-nowrap ml-1"
+            className={`hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-full active:scale-95 transition-all duration-200 whitespace-nowrap ml-1 ${
+              scrolled
+                ? "bg-primary text-white hover:bg-primary/90"
+                : "border border-primary text-primary hover:bg-primary hover:text-white"
+            }`}
           >
             Почати проєкт <ArrowRight className="w-3 h-3" aria-hidden="true" />
           </Link>
 
           <button
-            onClick={() => setMenuOpen(!menuOpen)}
+            onClick={() => { sound.toggle(!menuOpen); setMenuOpen(!menuOpen); }}
             aria-label={menuOpen ? "Закрити меню" : "Відкрити меню"}
             aria-expanded={menuOpen}
             className={`md:hidden flex items-center justify-center w-9 h-9 rounded-full transition-colors duration-200 ml-0.5 ${

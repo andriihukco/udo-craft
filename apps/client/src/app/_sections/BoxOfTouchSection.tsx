@@ -19,7 +19,8 @@ export function BoxOfTouchSection() {
 
   return (
     <section
-      className="bg-background border-t border-border overflow-hidden"
+      className="border-t border-border overflow-hidden"
+      style={{ backgroundColor: "oklch(0.10 0.03 264)" }}
       aria-labelledby="box-heading"
     >
       {/* Full-width grid — left column constrained, right bleeds to viewport edge */}
@@ -33,18 +34,18 @@ export function BoxOfTouchSection() {
           transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
           className="flex flex-col justify-center px-8 sm:px-12 lg:pl-[max(3rem,calc((100vw-72rem)/2+3rem))] lg:pr-12 py-16 lg:py-20"
         >
-            <p className="text-muted-foreground text-xs font-semibold uppercase tracking-[0.2em] mb-6">
+            <p className="text-white/50 text-xs font-semibold uppercase tracking-[0.2em] mb-6">
               Box of Touch
             </p>
             <h2
               id="box-heading"
-              className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.02] mb-6"
+              className="text-white text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.02] mb-6"
             >
               Відчуй якість{" "}
-              <HighlightText delay={0.5}>до того, як замовити</HighlightText>
+              <HighlightText delay={0.5} color="rgba(255,255,255,0.15)">до того, як замовити</HighlightText>
             </h2>
 
-            <p className="text-muted-foreground text-base leading-relaxed mb-8 max-w-md">
+            <p className="text-white/65 text-base leading-relaxed mb-8 max-w-md">
               Більшість компаній замовляють тираж наосліп — і отримують не те, що очікували. Box of Touch вирішує це: фізичний набір зразків тканин, кольорів та типів нанесення.
             </p>
 
@@ -60,8 +61,8 @@ export function BoxOfTouchSection() {
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 shrink-0" aria-hidden="true" />
                   <div>
-                    <span className="text-foreground text-sm font-semibold">{item.label}</span>
-                    <span className="text-muted-foreground text-sm"> — {item.desc}</span>
+                    <span className="text-white text-sm font-semibold">{item.label}</span>
+                    <span className="text-white/55 text-sm"> — {item.desc}</span>
                   </div>
                 </motion.li>
               ))}
@@ -75,7 +76,7 @@ export function BoxOfTouchSection() {
                 Замовити Box of Touch <ArrowRight className="w-4 h-4" aria-hidden="true" />
               </Link>
             </div>
-            <p className="text-muted-foreground text-xs mt-3">Безкоштовна доставка · Без зобов'язань</p>
+            <p className="text-white/45 text-xs mt-3">Безкоштовна доставка · Без зобов'язань</p>
           </motion.div>
 
           {/* Right — full-height video, bleeds to viewport edge */}

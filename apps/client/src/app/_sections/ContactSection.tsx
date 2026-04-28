@@ -22,7 +22,7 @@ export function ContactSection({
   const isInView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
-    <section id="contact" className="bg-[#06060e]" aria-labelledby="contact-heading">
+    <section id="contact" className="bg-[oklch(0.10 0.03 264)]" aria-labelledby="contact-heading">
       <div className="max-w-6xl mx-auto px-5 sm:px-10 lg:px-20 py-24 sm:py-32">
 
         {/* Heading — full width, generous space below */}

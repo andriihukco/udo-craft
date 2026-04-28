@@ -6,6 +6,7 @@ import { LogoLoader } from "@udo-craft/ui";
 import { createClient } from "@/lib/supabase/client";
 import { useCms } from "@/hooks/useCms";
 import { useCart } from "@/hooks/useCart";
+import { useSoundInit } from "@/hooks/useSoundInit";
 
 import { NavBar } from "@/app/_components/NavBar";
 import { CartSidebar } from "@/app/_components/CartSidebar";
@@ -25,7 +26,6 @@ import { TrustSection } from "@/app/_sections/TrustSection";
 import { ComparisonSection } from "@/app/_sections/ComparisonSection";
 import { TestimonialsSection } from "@/app/_sections/TestimonialsSection";
 import { FaqSection } from "@/app/_sections/FaqSection";
-import { AboutSection } from "@/app/_sections/AboutSection";
 import { FinalCtaSection } from "@/app/_sections/FinalCtaSection";
 import { ContactSection } from "@/app/_sections/ContactSection";
 import { FooterSection } from "@/app/_sections/FooterSection";
@@ -51,6 +51,7 @@ export default function HomePage() {
   const [authOpen, setAuthOpen] = useState(false);
 
   const { cart, cartCount, totalCents } = useCart();
+  useSoundInit();
 
   useEffect(() => {
     void supabase.auth.getSession().then((r: { data: { session: unknown } }) => setIsLoggedIn(!!r.data.session));
@@ -148,9 +149,6 @@ export default function HomePage() {
 
       {/* Objection handling */}
       <FaqSection />
-
-      {/* About */}
-      <AboutSection />
 
       {/* Final conversion */}
       <FinalCtaSection />

@@ -5,6 +5,7 @@ import { track } from "@/lib/analytics";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Loader2, Upload, X, ChevronDown, Check } from "lucide-react";
+import { sound } from "@/lib/sound";
 
 const TOPICS = [
   { value: "merch",    label: "Корпоративний мерч",  desc: "Футболки, худi, аксесуари для команди або бренду",  icon: "👕" },
@@ -95,10 +96,12 @@ export function ContactForm({ defaultTopic }: { defaultTopic?: TopicValue }) {
         }),
       });
       if (!response.ok) { const d = await response.json(); throw new Error(d.error || "Failed"); }
+      sound.celebration();
       setSent(true);
     } catch (err) {
       console.error(err);
       setError("Виникла помилка. Спробуйте ще раз або зв'яжiться з нами напряму.");
+      sound.caution();
     } finally {
       setSubmitting(false);
     }
