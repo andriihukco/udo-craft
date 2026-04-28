@@ -11,6 +11,7 @@ interface NavBarProps {
   cartCount: number;
   onCartOpen: () => void;
   cinemaMode: boolean;
+  onAuthOpen?: () => void;
 }
 
 const navLinks = [
@@ -21,7 +22,7 @@ const navLinks = [
   { href: "#contact", label: "Контакти" },
 ];
 
-export function NavBar({ isLoggedIn, cartCount, onCartOpen, cinemaMode }: NavBarProps) {
+export function NavBar({ isLoggedIn, cartCount, onCartOpen, cinemaMode, onAuthOpen }: NavBarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [navVisible, setNavVisible] = useState(true);
@@ -116,17 +117,32 @@ export function NavBar({ isLoggedIn, cartCount, onCartOpen, cinemaMode }: NavBar
 
         {/* Actions — always visible */}
         <div className="flex items-center gap-0.5">
-          <Link
-            href={isLoggedIn ? "/cabinet" : "/cabinet/login"}
-            aria-label="Кабінет"
-            className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 ${
-              isLight
-                ? "text-muted-foreground hover:text-foreground hover:bg-muted"
-                : "text-white/60 hover:text-white hover:bg-white/10"
-            }`}
-          >
-            <User className="w-4 h-4" strokeWidth={2} />
-          </Link>
+          {/* User icon — opens auth modal if not logged in, navigates to cabinet if logged in */}
+          {isLoggedIn ? (
+            <Link
+              href="/cabinet"
+              aria-label="Кабінет"
+              className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 ${
+                isLight
+                  ? "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  : "text-white/60 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              <User className="w-4 h-4" strokeWidth={2} />
+            </Link>
+          ) : (
+            <button
+              onClick={onAuthOpen}
+              aria-label="Увійти"
+              className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 ${
+                isLight
+                  ? "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  : "text-white/60 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              <User className="w-4 h-4" strokeWidth={2} />
+            </button>
+          )}
 
           <button
             onClick={onCartOpen}

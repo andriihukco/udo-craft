@@ -9,6 +9,7 @@ import { useCart } from "@/hooks/useCart";
 
 import { NavBar } from "@/app/_components/NavBar";
 import { CartSidebar } from "@/app/_components/CartSidebar";
+import { AuthModal } from "@/components/AuthModal";
 
 // Sections — ordered by AIDA + conversion best practices
 import { HeroSection } from "@/app/_sections/HeroSection";
@@ -47,6 +48,7 @@ export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [cinemaMode, setCinemaMode] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
 
   const { cart, cartCount, totalCents } = useCart();
 
@@ -75,8 +77,13 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden scroll-smooth">
-      <NavBar isLoggedIn={isLoggedIn} cartCount={cartCount} onCartOpen={() => setCartOpen(true)} cinemaMode={cinemaMode} />
+      <NavBar isLoggedIn={isLoggedIn} cartCount={cartCount} onCartOpen={() => setCartOpen(true)} cinemaMode={cinemaMode} onAuthOpen={() => setAuthOpen(true)} />
       <CartSidebar open={cartOpen} onClose={() => setCartOpen(false)} cart={cart} cartCount={cartCount} totalCents={totalCents} />
+      <AuthModal
+        open={authOpen}
+        onClose={() => setAuthOpen(false)}
+        onAuthSuccess={() => { setIsLoggedIn(true); setAuthOpen(false); }}
+      />
 
       {/* A — Attention */}
       <HeroSection
