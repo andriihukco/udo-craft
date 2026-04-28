@@ -116,8 +116,7 @@ export function CollectionsSection({ products, categories, materials, colorVaria
                       transition={{ duration: 0.5, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
                       className="h-full"
                     >
-                      <div className="h-full">
-                        <ProductCardDetailed
+                      <ProductCardDetailed
                         product={item}
                         colorVariants={colorVariants.filter((v) => v.product_id === item.id)}
                         materials={materials}

@@ -57,7 +57,12 @@ export function NavBar({ isLoggedIn, cartCount, onCartOpen, cinemaMode }: NavBar
       }`}>
         {/* Logo */}
         <Link href="/" aria-label="U:DO CRAFT" className="shrink-0 pl-1 pr-2">
-          <BrandLogoFull className="h-6 w-auto" color={isLight ? "var(--color-primary)" : "#ffffff"} />
+          {isLight ? (
+            <BrandLogoFull className="h-6 w-auto" color="var(--color-primary)" />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src="/logo-inverted.png" alt="U:DO CRAFT" className="h-6 w-auto" />
+          )}
         </Link>
 
         <div className={`hidden md:block w-px h-5 shrink-0 ${isLight ? "bg-border" : "bg-white/12"}`} />

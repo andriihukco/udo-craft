@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Instagram, Send, ArrowRight } from "lucide-react";
-import { BrandLogoFull } from "@/components/brand-logo";
 
 interface FooterSectionProps {
   tagline: string; copyright: string; instagram: string; telegram: string;
@@ -64,7 +63,8 @@ export function FooterSection({ tagline, copyright, instagram, telegram }: Foote
             {/* Brand */}
             <div className="col-span-2 md:col-span-1 flex flex-col gap-5">
               <Link href="/" aria-label="U:DO CRAFT — на головну">
-                <BrandLogoFull className="h-7 w-auto" color="var(--color-primary)" />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo-inverted.png" alt="U:DO CRAFT" className="h-10 w-auto" />
               </Link>
               <p className="text-white/35 text-xs leading-relaxed max-w-[200px]">{tagline}</p>
               <div className="flex gap-2">
