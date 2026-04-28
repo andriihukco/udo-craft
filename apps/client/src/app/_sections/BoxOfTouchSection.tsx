@@ -22,17 +22,17 @@ export function BoxOfTouchSection() {
       className="bg-background border-t border-border overflow-hidden"
       aria-labelledby="box-heading"
     >
-      <div className="max-w-6xl mx-auto">
-        <div className="grid lg:grid-cols-2 min-h-[520px]">
+      {/* Full-width grid — left column constrained, right bleeds to viewport edge */}
+      <div className="grid lg:grid-cols-2 min-h-[520px]">
 
-          {/* Left — content, full height */}
-          <motion.div
-            ref={ref}
-            initial={{ opacity: 0, x: -24 }}
-            animate={isInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
-            className="flex flex-col justify-center px-8 sm:px-12 lg:px-16 py-16 lg:py-20"
-          >
+        {/* Left — content with max-width padding */}
+        <motion.div
+          ref={ref}
+          initial={{ opacity: 0, x: -24 }}
+          animate={isInView ? { opacity: 1, x: 0 } : {}}
+          transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+          className="flex flex-col justify-center px-8 sm:px-12 lg:pl-[max(3rem,calc((100vw-72rem)/2+3rem))] lg:pr-12 py-16 lg:py-20"
+        >
             <p className="text-muted-foreground text-xs font-semibold uppercase tracking-[0.2em] mb-6">
               Box of Touch
             </p>
@@ -78,7 +78,7 @@ export function BoxOfTouchSection() {
             <p className="text-muted-foreground text-xs mt-3">Безкоштовна доставка · Без зобов'язань</p>
           </motion.div>
 
-          {/* Right — full-height video */}
+          {/* Right — full-height video, bleeds to viewport edge */}
           <motion.div
             initial={{ opacity: 0, scale: 1.02 }}
             animate={isInView ? { opacity: 1, scale: 1 } : {}}
@@ -95,14 +95,13 @@ export function BoxOfTouchSection() {
               preload="auto"
               aria-hidden="true"
             />
-            {/* Subtle left fade to blend with content */}
+            {/* Left fade blends into content column */}
             <div
               className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-transparent lg:block hidden"
               aria-hidden="true"
             />
           </motion.div>
         </div>
-      </div>
     </section>
   );
 }
