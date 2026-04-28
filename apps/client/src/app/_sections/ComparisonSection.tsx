@@ -54,6 +54,40 @@ function Cell({ value, highlight }: { value: CellValue; highlight: boolean }) {
   return <span className={`text-sm font-semibold ${highlight ? "text-white" : "text-foreground"}`}>{value}</span>;
 }
 
+// Mobile comparison card — slides up from below when scrolled into view
+function MobileCompareCard({
+  col,
+  idx,
+}: {
+  col: { name: string; highlight: boolean; values: CellValue[] };
+  idx: number;
+}) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-60px" });
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 60 }}
+      animate={isInView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.55, delay: idx * 0.12, ease: [0.22, 1, 0.36, 1] }}
+      className="rounded-2xl overflow-hidden border border-border bg-card"
+    >
+      <div className="px-5 py-4 border-b border-border">
+        <p className="font-bold text-base text-foreground">{col.name}</p>
+      </div>
+      <div className="divide-y divide-border/50">
+        {FEATURES.map((feature, fi) => (
+          <div key={feature} className="flex items-center justify-between px-5 py-3 gap-4">
+            <span className="text-sm text-muted-foreground">{feature}</span>
+            <Cell value={col.values[fi]} highlight={false} />
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
 export function ComparisonSection() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
@@ -125,41 +159,36 @@ export function ComparisonSection() {
           </table>
         </motion.div>
 
-        {/* Mobile — stacked cards per column */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-          className="sm:hidden space-y-4"
-        >
-          {COLUMNS.map((col) => (
-            <div
-              key={col.name}
-              className={`rounded-2xl overflow-hidden border ${col.highlight ? "border-primary bg-primary" : "border-border bg-card"}`}
-            >
-              <div className={`px-5 py-4 border-b ${col.highlight ? "border-white/15" : "border-border"}`}>
-                {col.highlight && (
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/70 mb-0.5">
-                    Рекомендовано
-                  </p>
-                )}
-                <p className={`font-bold text-base ${col.highlight ? "text-white" : "text-foreground"}`}>
-                  {col.name}
-                </p>
+        {/* Mobile — U:DO first (sticky), others slide up on scroll */}
+        <div className="sm:hidden">
+          {/* U:DO card — always visible first */}
+          {(() => {
+            const udo = COLUMNS.find((c) => c.highlight)!;
+            return (
+              <div className="rounded-2xl overflow-hidden border border-primary bg-primary mb-3">
+                <div className="px-5 py-4 border-b border-white/15">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/70 mb-0.5">Рекомендовано</p>
+                  <p className="font-bold text-base text-white">{udo.name}</p>
+                </div>
+                <div className="divide-y divide-white/10">
+                  {FEATURES.map((feature, fi) => (
+                    <div key={feature} className="flex items-center justify-between px-5 py-3 gap-4">
+                      <span className="text-sm text-white/80">{feature}</span>
+                      <Cell value={udo.values[fi]} highlight={true} />
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="divide-y divide-border/50">
-                {FEATURES.map((feature, fi) => (
-                  <div key={feature} className="flex items-center justify-between px-5 py-3 gap-4">
-                    <span className={`text-sm ${col.highlight ? "text-white/80" : "text-muted-foreground"}`}>
-                      {feature}
-                    </span>
-                    <Cell value={col.values[fi]} highlight={col.highlight} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </motion.div>
+            );
+          })()}
+
+          {/* Comparison cards — slide up on scroll */}
+          <div className="space-y-3">
+            {COLUMNS.filter((c) => !c.highlight).map((col, idx) => (
+              <MobileCompareCard key={col.name} col={col} idx={idx} />
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );
