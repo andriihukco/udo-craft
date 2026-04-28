@@ -82,9 +82,14 @@ export function HeroSection({
         aria-hidden="true"
       />
 
-      {/* Very light gradient — mostly transparent so video shows through */}
+      {/* Primary blue overlay at 25% + bottom fade for text legibility */}
       <div
-        className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/50 pointer-events-none"
+        className="absolute inset-0 pointer-events-none"
+        style={{ backgroundColor: "oklch(0.36 0.22 264 / 0.25)" }}
+        aria-hidden="true"
+      />
+      <div
+        className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#06060e]/70 pointer-events-none"
         aria-hidden="true"
       />
 

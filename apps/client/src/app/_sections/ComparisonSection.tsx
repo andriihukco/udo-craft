@@ -87,18 +87,27 @@ function StickyCard({
   total: number;
   scrollYProgress: ReturnType<typeof useScroll>["scrollYProgress"];
 }) {
-  // Each card occupies 1/total of the scroll range
+  // This card's scroll range: starts when it enters, ends when last card is done
   const rangeStart = i / total;
-  const rangeEnd = (i + 1) / total;
+  const rangeEnd = Math.min((i + 1) / total, 1);
 
-  // Scale shrinks slightly as the next card comes over
-  const scale = useTransform(scrollYProgress, [rangeStart, rangeEnd], [1, 0.94]);
-  // Slight upward push as it gets covered
-  const y = useTransform(scrollYProgress, [rangeStart, rangeEnd], [0, -12]);
+  // Scale shrinks as next card comes over — only if not the last card
+  const scale = useTransform(
+    scrollYProgress,
+    [rangeStart, rangeEnd],
+    i < total - 1 ? [1, 0.92] : [1, 1]
+  );
 
   return (
-    <div className="sticky top-20">
-      <motion.div style={{ scale, y, transformOrigin: "top center" }}>
+    // Each card is sticky, offset by 16px per card so they visually stack
+    <div
+      className="sticky"
+      style={{ top: `${80 + i * 16}px` }}
+    >
+      <motion.div
+        style={{ scale, transformOrigin: "top center" }}
+        className="rounded-2xl overflow-hidden"
+      >
         <CardContent col={col} highlight={col.highlight} />
       </motion.div>
     </div>
@@ -119,11 +128,13 @@ function MobileCardStack() {
     ...COLUMNS.filter((c) => !c.highlight),
   ];
 
+  // Each card gets 80vh of scroll space so the stacking is visible
+  const cardScrollHeight = 80;
+
   return (
-    // Height = number of cards × viewport height so each card gets scroll space
     <div
       ref={container}
-      style={{ height: `${ordered.length * 100}vh` }}
+      style={{ height: `${ordered.length * cardScrollHeight}vh` }}
       className="relative"
       aria-label="Порівняння карток"
     >

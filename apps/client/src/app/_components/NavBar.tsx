@@ -83,7 +83,7 @@ export function NavBar({ isLoggedIn, cartCount, onCartOpen, cinemaMode }: NavBar
           isLight
             ? "bg-background/90 backdrop-blur-xl border-border shadow-xl shadow-black/8"
             : "bg-white/8 backdrop-blur-xl border-white/12 shadow-lg shadow-black/20"
-        }`}
+        } md:h-12 h-14 md:px-3 px-4`}
       >
         {/* Logo — inverted on dark, normal on light */}
         <Link href="/" aria-label="U:DO CRAFT" className="shrink-0 pl-1 pr-1">

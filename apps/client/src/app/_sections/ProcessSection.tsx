@@ -104,10 +104,15 @@ function DesktopTimeline({ isInView }: { isInView: boolean }) {
         {/* Background track */}
         <div className="absolute top-5 left-5 right-5 h-[2px] bg-border" aria-hidden="true" />
 
-        {/* Animated fill — width driven by progressPct */}
+        {/* Animated fill — correct calc: track width × progress fraction */}
         <div
-          className="absolute top-5 left-5 h-[2px] bg-primary transition-none"
-          style={{ width: `calc(${progressPct}% * (100% - 40px) / 100)` }}
+          className="absolute top-5 left-5 h-[2px] bg-primary"
+          style={{
+            width: `calc((100% - 40px) * ${progressPct} / 100)`,
+            transition: "none",
+          }}
+          aria-hidden="true"
+        />
           aria-hidden="true"
         />
 
