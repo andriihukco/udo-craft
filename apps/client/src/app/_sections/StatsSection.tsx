@@ -31,7 +31,7 @@ export function StatsSection(p: StatsSectionProps) {
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
-              className="px-6 sm:px-10 py-10 border-r border-b md:border-b-0 border-border last:border-r-0 [&:nth-child(2)]:border-r-0 md:[&:nth-child(2)]:border-r"
+              className="px-6 sm:px-10 py-10 border-r border-b md:border-b-0 border-border last:border-r-0 [&:nth-child(2)]:border-r-0 md:[&:nth-child(2)]:border-r text-center"
             >
               {/* foreground on background = 14:1 passes AAA */}
               <p className="text-4xl sm:text-5xl font-black text-foreground tabular-nums tracking-tight leading-none mb-2">

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, Play, Shrink } from "lucide-react";
+import { ChevronDown, Play, X } from "lucide-react";
 
 interface HeroSectionProps {
   cinemaMode: boolean;
@@ -82,9 +82,9 @@ export function HeroSection({
         aria-hidden="true"
       />
 
-      {/* Gradient — bottom fade only */}
+      {/* Very light gradient — mostly transparent so video shows through */}
       <div
-        className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#06060e]/70 pointer-events-none"
+        className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/50 pointer-events-none"
         aria-hidden="true"
       />
 
@@ -112,9 +112,9 @@ export function HeroSection({
             <button
               onClick={onCinemaExit}
               aria-label="Закрити відео"
-              className="absolute bottom-6 right-6 flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-semibold transition-all"
+              className="absolute top-6 right-6 flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white transition-all"
             >
-              <Shrink className="w-3.5 h-3.5" aria-hidden="true" /> Закрити
+              <X className="w-4 h-4" aria-hidden="true" />
             </button>
           </motion.div>
         )}
@@ -158,14 +158,14 @@ export function HeroSection({
         </motion.div>
       </motion.div>
 
-      {/* "See Reel" button — bottom-right, expands after 1.5s */}
+      {/* "See Reel" button — bottom-right, expands after 3s */}
       <motion.button
         onClick={onCinemaEnter}
         aria-label="Дивитись відео"
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4, delay: 1.5, ease: [0.22, 1, 0.36, 1] }}
-        className="absolute bottom-8 right-6 sm:right-8 z-10 flex items-center overflow-hidden rounded-full bg-white/10 hover:bg-white/18 backdrop-blur-sm border border-white/15 text-white transition-all duration-300 group"
+        className="absolute bottom-8 right-6 sm:right-8 z-10 flex items-center overflow-hidden rounded-full bg-white/10 hover:bg-white/18 backdrop-blur-sm border border-white/15 text-white transition-colors duration-200 group"
         style={{ height: 44 }}
       >
         {/* Play icon — always visible */}
@@ -173,14 +173,14 @@ export function HeroSection({
           <Play className="w-4 h-4 fill-current" aria-hidden="true" />
         </span>
 
-        {/* Label — slides in after mount */}
+        {/* Label — slides in after 3s */}
         <motion.span
           initial={{ width: 0, opacity: 0 }}
           animate={{ width: "auto", opacity: 1 }}
-          transition={{ duration: 0.5, delay: 2.2, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.5, delay: 3.0, ease: [0.22, 1, 0.36, 1] }}
           className="overflow-hidden whitespace-nowrap pr-4 text-xs font-semibold"
         >
-          See Reel
+          Відео
         </motion.span>
       </motion.button>
 

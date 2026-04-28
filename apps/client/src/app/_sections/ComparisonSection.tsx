@@ -35,10 +35,10 @@ const COLUMNS: { name: string; highlight: boolean; values: CellValue[] }[] = [
   },
 ];
 
-function Cell({ value }: { value: CellValue }) {
+function Cell({ value, highlight }: { value: CellValue; highlight: boolean }) {
   if (value === "check") return (
-    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/15 border border-primary/30" aria-label="Так">
-      <Check className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
+    <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${highlight ? "bg-white/20 border border-white/30" : "bg-primary/10 border border-primary/25"}`} aria-label="Так">
+      <Check className={`w-3.5 h-3.5 ${highlight ? "text-white" : "text-primary"}`} aria-hidden="true" />
     </span>
   );
   if (value === "cross") return (
@@ -51,7 +51,7 @@ function Cell({ value }: { value: CellValue }) {
       <Minus className="w-3.5 h-3.5 text-amber-500" aria-hidden="true" />
     </span>
   );
-  return <span className="text-sm font-semibold">{value}</span>;
+  return <span className={`text-sm font-semibold ${highlight ? "text-white" : "text-foreground"}`}>{value}</span>;
 }
 
 export function ComparisonSection() {
@@ -59,9 +59,10 @@ export function ComparisonSection() {
   const isInView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
-    <section className="bg-background py-20 sm:py-28 overflow-x-auto" aria-labelledby="comparison-heading">
+    <section className="bg-background py-20 sm:py-28" aria-labelledby="comparison-heading">
       <div className="max-w-6xl mx-auto px-5 sm:px-10 lg:px-20">
-        <motion.div ref={ref}
+        <motion.div
+          ref={ref}
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
@@ -75,28 +76,29 @@ export function ComparisonSection() {
           </p>
         </motion.div>
 
+        {/* Desktop table */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-          className="min-w-[600px]"
+          className="hidden sm:block overflow-x-auto"
         >
-          <table className="w-full border-collapse" role="table" aria-label="Порівняння постачальників мерчу">
+          <table className="w-full border-collapse min-w-[560px]" role="table" aria-label="Порівняння постачальників мерчу">
             <thead>
               <tr>
                 <th className="text-left py-4 pr-6 text-sm font-semibold text-muted-foreground w-[35%]" scope="col">
                   Характеристика
                 </th>
                 {COLUMNS.map((col) => (
-                  <th key={col.name} scope="col"
-                    className={`py-4 px-4 text-center text-sm font-bold rounded-t-xl ${
-                      col.highlight
-                        ? "bg-primary text-white"
-                        : "text-muted-foreground"
-                    }`}
+                  <th
+                    key={col.name}
+                    scope="col"
+                    className={`py-4 px-4 text-center text-sm font-bold rounded-t-xl ${col.highlight ? "bg-primary text-white" : "text-muted-foreground"}`}
                   >
                     {col.highlight && (
-                      <span className="block text-[10px] font-semibold text-white/70 uppercase tracking-widest mb-0.5">Рекомендовано</span>
+                      <span className="block text-[10px] font-semibold text-white/70 uppercase tracking-widest mb-0.5">
+                        Рекомендовано
+                      </span>
                     )}
                     {col.name}
                   </th>
@@ -108,15 +110,12 @@ export function ComparisonSection() {
                 <tr key={feature} className="border-t border-border">
                   <td className="py-4 pr-6 text-sm text-foreground font-medium">{feature}</td>
                   {COLUMNS.map((col) => (
-                    <td key={col.name}
-                      className={`py-4 px-4 text-center ${
-                        col.highlight
-                          ? "bg-primary/5 border-x border-primary/15"
-                          : ""
-                      } ${fi === FEATURES.length - 1 && col.highlight ? "rounded-b-xl" : ""}`}
+                    <td
+                      key={col.name}
+                      className={`py-4 px-4 text-center ${col.highlight ? "bg-primary/5 border-x border-primary/15" : ""} ${fi === FEATURES.length - 1 && col.highlight ? "rounded-b-xl" : ""}`}
                     >
                       <div className="flex justify-center">
-                        <Cell value={col.values[fi]} />
+                        <Cell value={col.values[fi]} highlight={col.highlight} />
                       </div>
                     </td>
                   ))}
@@ -124,6 +123,42 @@ export function ComparisonSection() {
               ))}
             </tbody>
           </table>
+        </motion.div>
+
+        {/* Mobile — stacked cards per column */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+          className="sm:hidden space-y-4"
+        >
+          {COLUMNS.map((col) => (
+            <div
+              key={col.name}
+              className={`rounded-2xl overflow-hidden border ${col.highlight ? "border-primary bg-primary" : "border-border bg-card"}`}
+            >
+              <div className={`px-5 py-4 border-b ${col.highlight ? "border-white/15" : "border-border"}`}>
+                {col.highlight && (
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/70 mb-0.5">
+                    Рекомендовано
+                  </p>
+                )}
+                <p className={`font-bold text-base ${col.highlight ? "text-white" : "text-foreground"}`}>
+                  {col.name}
+                </p>
+              </div>
+              <div className="divide-y divide-border/50">
+                {FEATURES.map((feature, fi) => (
+                  <div key={feature} className="flex items-center justify-between px-5 py-3 gap-4">
+                    <span className={`text-sm ${col.highlight ? "text-white/80" : "text-muted-foreground"}`}>
+                      {feature}
+                    </span>
+                    <Cell value={col.values[fi]} highlight={col.highlight} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </motion.div>
       </div>
     </section>
