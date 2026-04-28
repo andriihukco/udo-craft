@@ -93,7 +93,7 @@ export function HeroSection({
         aria-hidden="true"
       />
 
-      {/* Cinema overlay */}
+      {/* Cinema overlay — video unmuted on user gesture */}
       <AnimatePresence>
         {cinemaMode && (
           <motion.div
@@ -106,11 +106,21 @@ export function HeroSection({
             aria-label="Відео у повноекранному режимі"
           >
             <video
+              ref={(el) => {
+                if (el) {
+                  // Unmute after user gesture — browsers allow this
+                  el.muted = false;
+                  el.volume = 0.8;
+                  el.play().catch(() => {
+                    // Fallback: keep muted if browser blocks
+                    el.muted = true;
+                    el.play().catch(() => {});
+                  });
+                }
+              }}
               className="absolute inset-0 w-full h-full object-cover"
               src="/hero-video.mp4"
-              autoPlay
               loop
-              muted
               playsInline
               aria-hidden="true"
             />
