@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { motion, useInView } from "framer-motion";
+import { motion, useInView, useScroll, useTransform } from "framer-motion";
 import { Check, X, Minus } from "lucide-react";
 
 const FEATURES = [
@@ -54,45 +54,95 @@ function Cell({ value, highlight }: { value: CellValue; highlight: boolean }) {
   return <span className={`text-sm font-semibold ${highlight ? "text-white" : "text-foreground"}`}>{value}</span>;
 }
 
-// Mobile competitor card — slides up over the U:DO card on scroll
-function MobileCompareCard({
-  col,
-  idx,
-}: {
-  col: { name: string; highlight: boolean; values: CellValue[] };
-  idx: number;
-}) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-40px" });
-
+function CardContent({ col, highlight }: { col: typeof COLUMNS[0]; highlight: boolean }) {
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 80 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.6, delay: idx * 0.15, ease: [0.22, 1, 0.36, 1] }}
-      className="rounded-2xl overflow-hidden border border-border bg-card"
-    >
-      <div className="px-5 py-4 border-b border-border">
-        <p className="font-bold text-base text-foreground">{col.name}</p>
+    <div className={`rounded-2xl overflow-hidden border ${highlight ? "border-primary bg-primary" : "border-border bg-card"}`}>
+      <div className={`px-5 py-4 border-b ${highlight ? "border-white/15" : "border-border"}`}>
+        {highlight && (
+          <p className="text-[10px] font-bold uppercase tracking-widest text-white/70 mb-0.5">Рекомендовано</p>
+        )}
+        <p className={`font-bold text-base ${highlight ? "text-white" : "text-foreground"}`}>{col.name}</p>
       </div>
-      <div className="divide-y divide-border/50">
+      <div className={`divide-y ${highlight ? "divide-white/10" : "divide-border/50"}`}>
         {FEATURES.map((feature, fi) => (
           <div key={feature} className="flex items-center justify-between px-5 py-3 gap-4">
-            <span className="text-sm text-muted-foreground">{feature}</span>
-            <Cell value={col.values[fi]} highlight={false} />
+            <span className={`text-sm ${highlight ? "text-white/80" : "text-muted-foreground"}`}>{feature}</span>
+            <Cell value={col.values[fi]} highlight={highlight} />
           </div>
         ))}
       </div>
-    </motion.div>
+    </div>
+  );
+}
+
+// Scroll-driven sticky card — scales down as next card slides over it
+function StickyCard({
+  col,
+  i,
+  total,
+  scrollYProgress,
+}: {
+  col: typeof COLUMNS[0];
+  i: number;
+  total: number;
+  scrollYProgress: ReturnType<typeof useScroll>["scrollYProgress"];
+}) {
+  // Each card occupies 1/total of the scroll range
+  const rangeStart = i / total;
+  const rangeEnd = (i + 1) / total;
+
+  // Scale shrinks slightly as the next card comes over
+  const scale = useTransform(scrollYProgress, [rangeStart, rangeEnd], [1, 0.94]);
+  // Slight upward push as it gets covered
+  const y = useTransform(scrollYProgress, [rangeStart, rangeEnd], [0, -12]);
+
+  return (
+    <div className="sticky top-20">
+      <motion.div style={{ scale, y, transformOrigin: "top center" }}>
+        <CardContent col={col} highlight={col.highlight} />
+      </motion.div>
+    </div>
+  );
+}
+
+// Mobile stack — scroll-driven, cards stack on top of each other
+function MobileCardStack() {
+  const container = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: container,
+    offset: ["start start", "end end"],
+  });
+
+  // Order: U:DO first, then competitors
+  const ordered = [
+    COLUMNS.find((c) => c.highlight)!,
+    ...COLUMNS.filter((c) => !c.highlight),
+  ];
+
+  return (
+    // Height = number of cards × viewport height so each card gets scroll space
+    <div
+      ref={container}
+      style={{ height: `${ordered.length * 100}vh` }}
+      className="relative"
+      aria-label="Порівняння карток"
+    >
+      {ordered.map((col, i) => (
+        <StickyCard
+          key={col.name}
+          col={col}
+          i={i}
+          total={ordered.length}
+          scrollYProgress={scrollYProgress}
+        />
+      ))}
+    </div>
   );
 }
 
 export function ComparisonSection() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
-  const udo = COLUMNS.find((c) => c.highlight)!;
-  const competitors = COLUMNS.filter((c) => !c.highlight);
 
   return (
     <section className="bg-background py-20 sm:py-28" aria-labelledby="comparison-heading">
@@ -112,7 +162,7 @@ export function ComparisonSection() {
           </p>
         </motion.div>
 
-        {/* ── Desktop table ── */}
+        {/* Desktop table */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -161,38 +211,10 @@ export function ComparisonSection() {
           </table>
         </motion.div>
 
-        {/* ── Mobile: sticky U:DO card, competitors slide over it ── */}
-        <div className="sm:hidden">
-          {/*
-            Outer wrapper has enough height for the sticky effect.
-            U:DO card is sticky at top, competitors stack on top of it as you scroll.
-            After the last competitor card, normal scroll resumes.
-          */}
-          <div className="relative">
-            {/* U:DO card — sticky */}
-            <div className="sticky top-20 z-0">
-              <div className="rounded-2xl overflow-hidden border border-primary bg-primary">
-                <div className="px-5 py-4 border-b border-white/15">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/70 mb-0.5">Рекомендовано</p>
-                  <p className="font-bold text-base text-white">{udo.name}</p>
-                </div>
-                <div className="divide-y divide-white/10">
-                  {FEATURES.map((feature, fi) => (
-                    <div key={feature} className="flex items-center justify-between px-5 py-3 gap-4">
-                      <span className="text-sm text-white/80">{feature}</span>
-                      <Cell value={udo.values[fi]} highlight={true} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Competitor cards — stack on top with negative margin + z-index */}
-            <div className="relative z-10 mt-4 space-y-4">
-              {competitors.map((col, idx) => (
-                <MobileCompareCard key={col.name} col={col} idx={idx} />
-              ))}
-            </div>
+        {/* Mobile — scroll-driven card stack */}
+        <div className="sm:hidden -mx-5">
+          <div className="px-5">
+            <MobileCardStack />
           </div>
         </div>
       </div>

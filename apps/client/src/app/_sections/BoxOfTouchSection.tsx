@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { ArrowRight } from "lucide-react";
@@ -79,18 +78,22 @@ export function BoxOfTouchSection() {
             <p className="text-muted-foreground text-xs mt-3">Безкоштовна доставка · Без зобов'язань</p>
           </motion.div>
 
-          {/* Right — full-height image */}
+          {/* Right — full-height video */}
           <motion.div
             initial={{ opacity: 0, scale: 1.02 }}
             animate={isInView ? { opacity: 1, scale: 1 } : {}}
             transition={{ duration: 0.9, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-            className="relative min-h-[360px] lg:min-h-0"
+            className="relative min-h-[360px] lg:min-h-0 overflow-hidden"
           >
-            <Image
-              src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=900&q=85"
-              alt="Box of Touch — зразки тканин та виробів"
-              fill
-              className="object-cover"
+            <video
+              className="absolute inset-0 w-full h-full object-cover"
+              src="/bot-video.mp4"
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="auto"
+              aria-hidden="true"
             />
             {/* Subtle left fade to blend with content */}
             <div

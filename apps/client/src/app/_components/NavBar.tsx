@@ -88,10 +88,10 @@ export function NavBar({ isLoggedIn, cartCount, onCartOpen, cinemaMode }: NavBar
         {/* Logo — inverted on dark, normal on light */}
         <Link href="/" aria-label="U:DO CRAFT" className="shrink-0 pl-1 pr-1">
           {isLight ? (
-            <BrandLogoFull className="h-6 w-auto" color="var(--color-primary)" />
+            <BrandLogoFull className="h-8 w-auto" color="var(--color-primary)" />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src="/logo-inverted.png" alt="U:DO CRAFT" className="h-6 w-auto object-contain" />
+            <img src="/logo-inverted.png" alt="U:DO CRAFT" className="h-8 w-auto object-contain" />
           )}
         </Link>
 
