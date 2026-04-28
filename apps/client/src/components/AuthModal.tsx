@@ -272,8 +272,12 @@ export function AuthModal({ open, onClose, onAuthSuccess, initialScreen = "login
 
   return createPortal(
     <div className="fixed inset-0 z-[10010] flex items-center justify-center px-4">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+      {/* Backdrop — blurred, site visible behind */}
+      <div
+        className="absolute inset-0 bg-foreground/20 backdrop-blur-md"
+        onClick={onClose}
+        aria-hidden="true"
+      />
 
       {/* Panel */}
       <div className="relative bg-card rounded-2xl w-full max-w-md shadow-xl overflow-hidden">

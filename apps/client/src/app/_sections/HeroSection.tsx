@@ -109,13 +109,7 @@ export function HeroSection({
               playsInline
               aria-hidden="true"
             />
-            <button
-              onClick={onCinemaExit}
-              aria-label="Закрити відео"
-              className="absolute top-6 right-6 flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white transition-all"
-            >
-              <X className="w-4 h-4" aria-hidden="true" />
-            </button>
+            {/* Close is handled by the bottom-right circle button */}
           </motion.div>
         )}
       </AnimatePresence>
@@ -158,30 +152,42 @@ export function HeroSection({
         </motion.div>
       </motion.div>
 
-      {/* "See Reel" button — bottom-right, expands after 3s */}
+      {/* Video reel button — fixed 44×44 circle, icon toggles Play ↔ X */}
       <motion.button
-        onClick={onCinemaEnter}
-        aria-label="Дивитись відео"
+        onClick={cinemaMode ? onCinemaExit : onCinemaEnter}
+        aria-label={cinemaMode ? "Закрити відео" : "Дивитись відео"}
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4, delay: 1.5, ease: [0.22, 1, 0.36, 1] }}
-        className="absolute bottom-8 right-6 sm:right-8 z-10 flex items-center overflow-hidden rounded-full bg-white/10 hover:bg-white/18 backdrop-blur-sm border border-white/15 text-white transition-colors duration-200 group"
-        style={{ height: 44 }}
+        className={`z-[9999] w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/15 text-white transition-colors duration-200 ${
+          cinemaMode
+            ? "fixed bottom-8 right-6 sm:right-8"
+            : "absolute bottom-8 right-6 sm:right-8"
+        }`}
       >
-        {/* Play icon — always visible */}
-        <span className="flex items-center justify-center w-11 h-11 shrink-0">
-          <Play className="w-4 h-4 fill-current" aria-hidden="true" />
-        </span>
-
-        {/* Label — slides in after 3s */}
-        <motion.span
-          initial={{ width: 0, opacity: 0 }}
-          animate={{ width: "auto", opacity: 1 }}
-          transition={{ duration: 0.5, delay: 3.0, ease: [0.22, 1, 0.36, 1] }}
-          className="overflow-hidden whitespace-nowrap pr-4 text-xs font-semibold"
-        >
-          Відео
-        </motion.span>
+        <AnimatePresence mode="wait" initial={false}>
+          {cinemaMode ? (
+            <motion.span key="close"
+              initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
+              animate={{ opacity: 1, rotate: 0, scale: 1 }}
+              exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
+              transition={{ duration: 0.2 }}
+              className="flex items-center justify-center"
+            >
+              <X className="w-4 h-4" aria-hidden="true" />
+            </motion.span>
+          ) : (
+            <motion.span key="play"
+              initial={{ opacity: 0, rotate: 90, scale: 0.5 }}
+              animate={{ opacity: 1, rotate: 0, scale: 1 }}
+              exit={{ opacity: 0, rotate: -90, scale: 0.5 }}
+              transition={{ duration: 0.2 }}
+              className="flex items-center justify-center"
+            >
+              <Play className="w-4 h-4 fill-current" aria-hidden="true" />
+            </motion.span>
+          )}
+        </AnimatePresence>
       </motion.button>
 
       {/* Scroll chevron — bottom center */}
