@@ -25,8 +25,6 @@ export function NavBar({ isLoggedIn, cartCount, onCartOpen, cinemaMode }: NavBar
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [navVisible, setNavVisible] = useState(true);
-  // compact = scrolled past hero AND scroll has stopped
-  const [compact, setCompact] = useState(false);
   const lastScrollY = useRef(0);
   const scrollStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -35,28 +33,24 @@ export function NavBar({ isLoggedIn, cartCount, onCartOpen, cinemaMode }: NavBar
       const y = window.scrollY;
       setScrolled(y > 80);
 
-      // Hide while actively scrolling down past 120px
       if (y < 120) {
         setNavVisible(true);
-        setCompact(false);
       } else if (y > lastScrollY.current + 8) {
+        // Scrolling down — hide
         setNavVisible(false);
-        setCompact(false);
       } else if (y < lastScrollY.current - 8) {
-        // Scrolling up — show full nav
+        // Scrolling up — show full
         setNavVisible(true);
-        setCompact(false);
       }
 
       lastScrollY.current = y;
 
-      // Detect scroll stop: after 600ms of no scroll events, show compact nav
+      // Scroll stopped — show full nav after 500ms
       if (scrollStopTimer.current) clearTimeout(scrollStopTimer.current);
       if (y > 120) {
         scrollStopTimer.current = setTimeout(() => {
           setNavVisible(true);
-          setCompact(true);
-        }, 600);
+        }, 500);
       }
     };
 
@@ -85,11 +79,11 @@ export function NavBar({ isLoggedIn, cartCount, onCartOpen, cinemaMode }: NavBar
       aria-label="Головна навігація"
     >
       <div
-        className={`pointer-events-auto inline-flex items-center gap-2 rounded-full border transition-all duration-300 ${
+        className={`pointer-events-auto inline-flex items-center gap-2 h-12 px-3 rounded-full border transition-all duration-300 ${
           isLight
             ? "bg-background/90 backdrop-blur-xl border-border shadow-xl shadow-black/8"
             : "bg-white/8 backdrop-blur-xl border-white/12 shadow-lg shadow-black/20"
-        } ${compact ? "h-10 px-2" : "h-12 px-3"}`}
+        }`}
       >
         {/* Logo — inverted on dark, normal on light */}
         <Link href="/" aria-label="U:DO CRAFT" className="shrink-0 pl-1 pr-1">
@@ -101,35 +95,24 @@ export function NavBar({ isLoggedIn, cartCount, onCartOpen, cinemaMode }: NavBar
           )}
         </Link>
 
-        {/* Nav links — hidden in compact mode */}
-        <AnimatePresence initial={false}>
-          {!compact && (
-            <motion.div
-              key="nav-links"
-              initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: "auto" }}
-              exit={{ opacity: 0, width: 0 }}
-              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-              className="hidden md:flex items-center overflow-hidden"
+        {/* Nav links — always visible on desktop */}
+        <div className="hidden md:flex items-center">
+          <div className={`w-px h-5 shrink-0 mx-1 ${isLight ? "bg-border" : "bg-white/12"}`} aria-hidden="true" />
+          {navLinks.map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              className={`px-3 py-1.5 text-sm font-medium rounded-full transition-all duration-200 whitespace-nowrap ${
+                isLight
+                  ? "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  : "text-white/60 hover:text-white hover:bg-white/10"
+              }`}
             >
-              <div className={`w-px h-5 shrink-0 mx-1 ${isLight ? "bg-border" : "bg-white/12"}`} aria-hidden="true" />
-              {navLinks.map((l) => (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-full transition-all duration-200 whitespace-nowrap ${
-                    isLight
-                      ? "text-muted-foreground hover:text-foreground hover:bg-muted"
-                      : "text-white/60 hover:text-white hover:bg-white/10"
-                  }`}
-                >
-                  {l.label}
-                </Link>
-              ))}
-              <div className={`w-px h-5 shrink-0 mx-1 ${isLight ? "bg-border" : "bg-white/12"}`} aria-hidden="true" />
-            </motion.div>
-          )}
-        </AnimatePresence>
+              {l.label}
+            </Link>
+          ))}
+          <div className={`w-px h-5 shrink-0 mx-1 ${isLight ? "bg-border" : "bg-white/12"}`} aria-hidden="true" />
+        </div>
 
         {/* Actions — always visible */}
         <div className="flex items-center gap-0.5">
@@ -167,26 +150,13 @@ export function NavBar({ isLoggedIn, cartCount, onCartOpen, cinemaMode }: NavBar
             )}
           </button>
 
-          {/* CTA — hidden in compact mode */}
-          <AnimatePresence initial={false}>
-            {!compact && (
-              <motion.div
-                key="cta"
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: "auto" }}
-                exit={{ opacity: 0, width: 0 }}
-                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                className="overflow-hidden"
-              >
-                <Link
-                  href="/order"
-                  className="hidden sm:inline-flex items-center gap-1.5 bg-primary text-white text-xs font-semibold px-4 py-2 rounded-full hover:bg-primary/90 active:scale-95 transition-all duration-200 whitespace-nowrap ml-1"
-                >
-                  Почати проєкт <ArrowRight className="w-3 h-3" aria-hidden="true" />
-                </Link>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* CTA — always visible */}
+          <Link
+            href="/order"
+            className="hidden sm:inline-flex items-center gap-1.5 bg-primary text-white text-xs font-semibold px-4 py-2 rounded-full hover:bg-primary/90 active:scale-95 transition-all duration-200 whitespace-nowrap ml-1"
+          >
+            Почати проєкт <ArrowRight className="w-3 h-3" aria-hidden="true" />
+          </Link>
 
           <button
             onClick={() => setMenuOpen(!menuOpen)}

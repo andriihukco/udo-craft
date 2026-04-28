@@ -54,7 +54,7 @@ function Cell({ value, highlight }: { value: CellValue; highlight: boolean }) {
   return <span className={`text-sm font-semibold ${highlight ? "text-white" : "text-foreground"}`}>{value}</span>;
 }
 
-// Mobile comparison card — slides up from below when scrolled into view
+// Mobile competitor card — slides up over the U:DO card on scroll
 function MobileCompareCard({
   col,
   idx,
@@ -63,14 +63,14 @@ function MobileCompareCard({
   idx: number;
 }) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-60px" });
+  const isInView = useInView(ref, { once: true, margin: "-40px" });
 
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 60 }}
+      initial={{ opacity: 0, y: 80 }}
       animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.55, delay: idx * 0.12, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.6, delay: idx * 0.15, ease: [0.22, 1, 0.36, 1] }}
       className="rounded-2xl overflow-hidden border border-border bg-card"
     >
       <div className="px-5 py-4 border-b border-border">
@@ -91,6 +91,8 @@ function MobileCompareCard({
 export function ComparisonSection() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
+  const udo = COLUMNS.find((c) => c.highlight)!;
+  const competitors = COLUMNS.filter((c) => !c.highlight);
 
   return (
     <section className="bg-background py-20 sm:py-28" aria-labelledby="comparison-heading">
@@ -110,7 +112,7 @@ export function ComparisonSection() {
           </p>
         </motion.div>
 
-        {/* Desktop table */}
+        {/* ── Desktop table ── */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -159,13 +161,17 @@ export function ComparisonSection() {
           </table>
         </motion.div>
 
-        {/* Mobile — U:DO first (sticky), others slide up on scroll */}
+        {/* ── Mobile: sticky U:DO card, competitors slide over it ── */}
         <div className="sm:hidden">
-          {/* U:DO card — always visible first */}
-          {(() => {
-            const udo = COLUMNS.find((c) => c.highlight)!;
-            return (
-              <div className="rounded-2xl overflow-hidden border border-primary bg-primary mb-3">
+          {/*
+            Outer wrapper has enough height for the sticky effect.
+            U:DO card is sticky at top, competitors stack on top of it as you scroll.
+            After the last competitor card, normal scroll resumes.
+          */}
+          <div className="relative">
+            {/* U:DO card — sticky */}
+            <div className="sticky top-20 z-0">
+              <div className="rounded-2xl overflow-hidden border border-primary bg-primary">
                 <div className="px-5 py-4 border-b border-white/15">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-white/70 mb-0.5">Рекомендовано</p>
                   <p className="font-bold text-base text-white">{udo.name}</p>
@@ -179,14 +185,14 @@ export function ComparisonSection() {
                   ))}
                 </div>
               </div>
-            );
-          })()}
+            </div>
 
-          {/* Comparison cards — slide up on scroll */}
-          <div className="space-y-3">
-            {COLUMNS.filter((c) => !c.highlight).map((col, idx) => (
-              <MobileCompareCard key={col.name} col={col} idx={idx} />
-            ))}
+            {/* Competitor cards — stack on top with negative margin + z-index */}
+            <div className="relative z-10 mt-4 space-y-4">
+              {competitors.map((col, idx) => (
+                <MobileCompareCard key={col.name} col={col} idx={idx} />
+              ))}
+            </div>
           </div>
         </div>
       </div>
