@@ -2,7 +2,6 @@
 
 import { useRef } from "react";
 import { motion, useInView, useScroll, useTransform, MotionValue } from "framer-motion";
-import { ReactLenis } from "lenis/react";
 import { Check, X, Minus } from "lucide-react";
 
 const FEATURES = [
@@ -311,11 +310,9 @@ export function ComparisonSection() {
           </table>
         </motion.div>
 
-        {/* Mobile — Oliver Larose sticky card stack with Lenis smooth scroll */}
+        {/* Mobile — Oliver Larose sticky card stack */}
         <div className="sm:hidden -mx-5">
-          <ReactLenis options={{ lerp: 0.08, duration: 1.2 }}>
-            <MobileCardStack />
-          </ReactLenis>
+          <MobileCardStack />
         </div>
       </div>
     </section>
