@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { X, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AuthModal } from "@/components/AuthModal";
+import { sound } from "@/lib/sound";
 
 // PaywallModal = AI-specific gate that shows a "choice" screen first,
 // then delegates to AuthModal for the actual login/register flow.
@@ -50,9 +51,9 @@ export function PaywallModal({ open, onClose, onAuthSuccess }: PaywallModalProps
   // Choice screen — AI-specific copy
   return createPortal(
     <div className="fixed inset-0 z-[10010] flex items-center justify-center px-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => { sound.close(); onClose(); }} aria-hidden="true" />
       <div className="relative bg-card rounded-2xl w-full max-w-md shadow-xl p-6 space-y-5">
-        <button type="button" onClick={onClose}
+        <button type="button" onClick={() => { sound.close(); onClose(); }}
           className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
           aria-label="Закрити">
           <X className="w-4 h-4" />
@@ -67,14 +68,14 @@ export function PaywallModal({ open, onClose, onAuthSuccess }: PaywallModalProps
           </p>
         </div>
         <div className="flex flex-col gap-3 pt-1">
-          <Button className="w-full" onClick={() => setAuthScreen("register")}>
+          <Button className="w-full" onClick={() => { sound.button(); setAuthScreen("register"); }}>
             Зареєструватись
           </Button>
-          <Button variant="outline" className="w-full" onClick={() => setAuthScreen("login")}>
+          <Button variant="outline" className="w-full" onClick={() => { sound.button(); setAuthScreen("login"); }}>
             Увійти
           </Button>
         </div>
-        <button type="button" onClick={onClose}
+        <button type="button" onClick={() => { sound.close(); onClose(); }}
           className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors text-center">
           Продовжити без реєстрації
         </button>

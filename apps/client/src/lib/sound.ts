@@ -27,8 +27,8 @@ export const sound = {
       .then((s) => s.play(on ? Snd.SOUNDS.TOGGLE_ON : Snd.SOUNDS.TOGGLE_OFF))
       .catch(() => {}),
   select: () => getSnd().then((s) => s.play(Snd.SOUNDS.SELECT)).catch(() => {}),
-  open: () => getSnd().then((s) => s.play(Snd.SOUNDS.TRANSITION_OPEN)).catch(() => {}),
-  close: () => getSnd().then((s) => s.play(Snd.SOUNDS.TRANSITION_CLOSE)).catch(() => {}),
+  open: () => getSnd().then((s) => s.play(Snd.SOUNDS.TRANSITION_UP)).catch(() => {}),
+  close: () => getSnd().then((s) => s.play(Snd.SOUNDS.TRANSITION_DOWN)).catch(() => {}),
   type: () => getSnd().then((s) => s.play(Snd.SOUNDS.TYPE)).catch(() => {}),
   notification: () => getSnd().then((s) => s.play(Snd.SOUNDS.NOTIFICATION)).catch(() => {}),
   caution: () => getSnd().then((s) => s.play(Snd.SOUNDS.CAUTION)).catch(() => {}),

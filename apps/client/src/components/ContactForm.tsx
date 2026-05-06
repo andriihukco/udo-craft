@@ -134,6 +134,7 @@ export function ContactForm({ defaultTopic }: { defaultTopic?: TopicValue }) {
         <Label htmlFor="cf-name" className="text-white/60 text-xs font-semibold uppercase tracking-wide">Ваше iм&apos;я *</Label>
         <input id="cf-name" type="text" placeholder="Iван Петренко" value={name}
           onChange={(e) => setName(e.target.value)} required disabled={submitting}
+          onFocus={() => sound.tap()}
           className={inputCls} />
       </div>
 
@@ -141,6 +142,7 @@ export function ContactForm({ defaultTopic }: { defaultTopic?: TopicValue }) {
         <Label htmlFor="cf-email" className="text-white/60 text-xs font-semibold uppercase tracking-wide">Email *</Label>
         <input id="cf-email" type="email" placeholder="hr@company.com" value={email}
           onChange={(e) => setEmail(e.target.value)} required disabled={submitting}
+          onFocus={() => sound.tap()}
           className={inputCls} />
       </div>
 
@@ -148,6 +150,7 @@ export function ContactForm({ defaultTopic }: { defaultTopic?: TopicValue }) {
         <Label htmlFor="cf-phone" className="text-white/60 text-xs font-semibold uppercase tracking-wide">Телефон *</Label>
         <input id="cf-phone" type="tel" placeholder="+380 XX XXX XX XX" value={phone}
           onChange={(e) => setPhone(e.target.value)} required disabled={submitting}
+          onFocus={() => sound.tap()}
           className={inputCls} />
       </div>
 
@@ -155,6 +158,7 @@ export function ContactForm({ defaultTopic }: { defaultTopic?: TopicValue }) {
         <Label htmlFor="cf-company" className="text-white/60 text-xs font-semibold uppercase tracking-wide">Компанiя</Label>
         <input id="cf-company" type="text" placeholder="Назва компанiї" value={company}
           onChange={(e) => setCompany(e.target.value)} disabled={submitting}
+          onFocus={() => sound.tap()}
           className={inputCls} />
       </div>
 
@@ -187,7 +191,7 @@ export function ContactForm({ defaultTopic }: { defaultTopic?: TopicValue }) {
           >
             {TOPICS.map((t) => (
               <button key={t.value} type="button"
-                onClick={() => { setTopic(t.value); setTopicOpen(false); }}
+                onClick={() => { setTopic(t.value); setTopicOpen(false); sound.select(); }}
                 style={{ color: topic === t.value ? "#fff" : "rgba(255,255,255,0.7)" }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors focus:outline-none ${
                   topic === t.value ? "bg-white/10" : "hover:bg-white/5"
