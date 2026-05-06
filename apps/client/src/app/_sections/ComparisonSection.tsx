@@ -115,29 +115,20 @@ interface StickyCardProps {
 }
 
 function StickyCard({ col, i, progress, range, targetScale }: StickyCardProps) {
-  const container = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: container,
-    offset: ["start end", "start start"],
-  });
-
-  // Subtle image-scale effect reused for the card entrance
-  const cardEntrance = useTransform(scrollYProgress, [0, 1], [0.92, 1]);
   const scale = useTransform(progress, range, [1, targetScale]);
+  const opacity = useTransform(progress, range, [1, 0.5]);
 
   return (
-    <div
-      ref={container}
-      className="h-screen flex items-center justify-center sticky top-0"
+    <motion.div
+      style={{
+        backgroundColor: col.bg,
+        scale,
+        opacity,
+        top: `calc(-5vh + ${i * 28}px)`,
+      }}
+      className="sticky top-0 h-screen flex items-center justify-center origin-top"
     >
-      <motion.div
-        style={{
-          backgroundColor: col.bg,
-          scale,
-          top: `calc(-5vh + ${i * 28}px)`,
-        }}
-        className="relative w-full max-w-sm rounded-2xl overflow-hidden origin-top shadow-2xl"
-      >
+      <div className="relative w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl">
         {/* Header */}
         <div
           className="px-5 py-4 border-b"
@@ -157,7 +148,7 @@ function StickyCard({ col, i, progress, range, targetScale }: StickyCardProps) {
         </div>
 
         {/* Rows */}
-        <motion.div style={{ scale: cardEntrance }}>
+        <div>
           {FEATURES.map((feature, fi) => (
             <div
               key={feature}
@@ -175,9 +166,9 @@ function StickyCard({ col, i, progress, range, targetScale }: StickyCardProps) {
               <Cell value={col.values[fi]} highlight={col.highlight} />
             </div>
           ))}
-        </motion.div>
-      </motion.div>
-    </div>
+        </div>
+      </div>
+    </motion.div>
   );
 }
 
@@ -197,13 +188,15 @@ function MobileCardStack() {
     <div ref={container} style={{ height: `${n * 100}vh` }}>
       {COLUMNS.map((col, i) => {
         const targetScale = 1 - (n - i) * 0.05;
+        const start = i / n;
+        const end = (i + 1) / n;
         return (
           <StickyCard
             key={col.name}
             col={col}
             i={i}
             progress={scrollYProgress}
-            range={[i * (1 / n), 1]}
+            range={[start, end]}
             targetScale={targetScale}
           />
         );
