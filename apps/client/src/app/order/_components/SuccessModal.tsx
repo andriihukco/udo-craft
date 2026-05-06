@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CheckCircle, Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { sound } from "@/lib/sound";
 
 export function SuccessModal({ email: initialEmail, onClose }: { email: string; onClose: () => void }) {
   const router = useRouter();
@@ -45,9 +46,10 @@ export function SuccessModal({ email: initialEmail, onClose }: { email: string; 
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !/\S+@\S+\.\S+/.test(email)) { setError("Введіть коректний email"); return; }
-    if (password.length < 6) { setError("Мінімум 6 символів"); return; }
+    if (!email || !/\S+@\S+\.\S+/.test(email)) { setError("Введіть коректний email"); sound.caution(); return; }
+    if (password.length < 6) { setError("Мінімум 6 символів"); sound.caution(); return; }
     setLoading(true); setError(null);
+    sound.button();
     const { error: signUpErr } = await supabase.auth.signUp({ email, password });
     if (signUpErr) {
       if (signUpErr.message.includes("already registered")) { setAlreadyExists(true); }
@@ -55,7 +57,7 @@ export function SuccessModal({ email: initialEmail, onClose }: { email: string; 
       setLoading(false); return;
     }
     const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
-    if (signInErr) { setDone(true); } else { router.push("/cabinet"); }
+    if (signInErr) { setDone(true); } else { sound.celebration(); router.push("/cabinet"); }
     setLoading(false);
   };
 

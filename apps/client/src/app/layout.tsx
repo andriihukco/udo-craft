@@ -5,6 +5,7 @@ import { PageTracker } from "@/components/PageTracker";
 import { Toaster } from "@/components/ui/sonner";
 import { ClarityInit } from "@/components/clarity";
 import { Analytics } from "@vercel/analytics/next";
+import { SoundProvider } from "@/app/_components/SoundProvider";
 import "./globals.css";
 
 const cousine = Cousine({
@@ -62,6 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen bg-background text-foreground antialiased">
         <ClarityInit clarityId="w7kk9avzfh" />
         <PageTracker />
+        <SoundProvider />
         {children}
         <Toaster richColors position="top-right" />
         <Analytics />

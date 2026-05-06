@@ -10,6 +10,7 @@ import { generateInvoicePDF } from "@/lib/generate-invoice";
 import { track } from "@/lib/analytics";
 import { Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { sound } from "@/lib/sound";
 import type { PrintLayer } from "@udo-craft/shared";
 import { OrderReview } from "./OrderReview";
 import { ContactForm } from "./ContactForm";
@@ -102,12 +103,13 @@ export function CartSummary({
   );
 
   const handleSubmit = async () => {
-    if (!contact.name || !contact.phone) { toast.error("Заповніть обов'язкові поля"); return; }
+    if (!contact.name || !contact.phone) { toast.error("Заповніть обов'язкові поля"); sound.caution(); return; }
     if (contact.delivery === "nova_poshta" && !contact.novaPoshtaDetails.trim()) {
-      toast.error("Вкажіть адресу Нової Пошти"); return;
+      toast.error("Вкажіть адресу Нової Пошти"); sound.caution(); return;
     }
-    if (cart.length === 0) { toast.error("Додайте товар"); return; }
+    if (cart.length === 0) { toast.error("Додайте товар"); sound.caution(); return; }
     setSubmitting(true);
+    sound.button();
     try {
       let attachmentUrls: string[] = [];
       if (extraFiles.length > 0) {
@@ -139,6 +141,7 @@ export function CartSummary({
 
       track("form_submit", { form: "order", lead_id: lead.id });
       sessionStorage.removeItem(SESSION_KEY);
+      sound.celebration();
       onSubmitSuccess(contact.email);
 
       for (const item of cart) {
@@ -189,6 +192,7 @@ export function CartSummary({
     } catch (err) {
       console.error("[handleSubmit]", err);
       toast.error("Помилка при відправці замовлення");
+      sound.caution();
     } finally {
       setSubmitting(false);
     }

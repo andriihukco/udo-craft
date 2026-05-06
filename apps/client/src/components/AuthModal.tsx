@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { sound } from "@/lib/sound";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -31,6 +32,7 @@ function OTPInput({ value, onChange }: { value: string; onChange: (v: string) =>
     const next = [...digits];
     next[i] = clean;
     onChange(next.join(""));
+    if (clean) sound.type();
     if (clean && i < 5) inputs.current[i + 1]?.focus();
   };
 
@@ -166,11 +168,14 @@ export function AuthModal({ open, onClose, onAuthSuccess, initialScreen = "login
     e.preventDefault();
     setLoginLoading(true);
     setLoginError(null);
+    sound.button();
     const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password: loginPassword });
     if (error) {
       setLoginError("Невірний email або пароль.");
+      sound.caution();
       setLoginLoading(false);
     } else {
+      sound.celebration();
       onAuthSuccess?.();
       onClose();
     }
@@ -189,8 +194,9 @@ export function AuthModal({ open, onClose, onAuthSuccess, initialScreen = "login
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setRegError(null);
-    if (regPassword.length < 8) { setRegError("Пароль має містити щонайменше 8 символів."); return; }
+    if (regPassword.length < 8) { setRegError("Пароль має містити щонайменше 8 символів."); sound.caution(); return; }
     setRegLoading(true);
+    sound.button();
     try {
       // Check if email already exists before sending OTP
       const checkRes = await fetch("/api/auth/check-email", {
@@ -211,6 +217,7 @@ export function AuthModal({ open, onClose, onAuthSuccess, initialScreen = "login
       setOtpInput("");
       setOtpError(null);
       setResendCooldown(60);
+      sound.open();
       setScreen("verify");
     } catch {
       setRegError("Не вдалося надіслати код. Спробуйте ще раз.");
@@ -226,6 +233,7 @@ export function AuthModal({ open, onClose, onAuthSuccess, initialScreen = "login
 
     if (otpInput !== sentOtp) {
       setOtpError("Невірний код. Перевірте email та спробуйте ще раз.");
+      sound.caution();
       setVerifying(false);
       return;
     }
@@ -245,6 +253,7 @@ export function AuthModal({ open, onClose, onAuthSuccess, initialScreen = "login
           ? "Цей email вже зареєстровано. Спробуйте увійти."
           : "Помилка реєстрації. Спробуйте ще раз."
       );
+      sound.caution();
       setVerifying(false);
       return;
     }
@@ -252,6 +261,7 @@ export function AuthModal({ open, onClose, onAuthSuccess, initialScreen = "login
     const { error: signInError } = await supabase.auth.signInWithPassword({ email: regEmail, password: regPassword });
     setVerifying(false);
     if (!signInError) {
+      sound.celebration();
       onAuthSuccess?.();
       onClose();
     } else {
@@ -272,15 +282,19 @@ export function AuthModal({ open, onClose, onAuthSuccess, initialScreen = "login
 
   return createPortal(
     <div className="fixed inset-0 z-[10010] flex items-center justify-center px-4">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+      {/* Backdrop — blurred, site visible behind */}
+      <div
+        className="absolute inset-0 bg-foreground/20 backdrop-blur-md"
+        onClick={() => { sound.close(); onClose(); }}
+        aria-hidden="true"
+      />
 
       {/* Panel */}
       <div className="relative bg-card rounded-2xl w-full max-w-md shadow-xl overflow-hidden">
         {/* Close */}
         <button
           type="button"
-          onClick={onClose}
+          onClick={() => { sound.close(); onClose(); }}
           className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground z-10"
           aria-label="Закрити"
         >
@@ -292,14 +306,14 @@ export function AuthModal({ open, onClose, onAuthSuccess, initialScreen = "login
           {/* ── LOGIN ── */}
           {screen === "login" && (
             <>
-              <button onClick={onClose} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <button onClick={() => { sound.close(); onClose(); }} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
                 <ArrowLeft className="size-3.5" /> Закрити
               </button>
               <div>
                 <h2 className="font-bold text-xl">Вхід</h2>
                 <p className="text-sm text-muted-foreground mt-1">
                   Немає акаунту?{" "}
-                  <button type="button" onClick={() => setScreen("register")} className="text-primary font-medium hover:underline">
+                  <button type="button" onClick={() => { sound.select(); setScreen("register"); }} className="text-primary font-medium hover:underline">
                     Зареєструватись
                   </button>
                 </p>
@@ -338,14 +352,14 @@ export function AuthModal({ open, onClose, onAuthSuccess, initialScreen = "login
           {/* ── REGISTER ── */}
           {screen === "register" && (
             <>
-              <button onClick={() => setScreen("login")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <button onClick={() => { sound.close(); setScreen("login"); }} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
                 <ArrowLeft className="size-3.5" /> Назад
               </button>
               <div>
                 <h2 className="font-bold text-xl">Створити акаунт</h2>
                 <p className="text-sm text-muted-foreground mt-1">
                   Вже є акаунт?{" "}
-                  <button type="button" onClick={() => setScreen("login")} className="text-primary font-medium hover:underline">
+                  <button type="button" onClick={() => { sound.select(); setScreen("login"); }} className="text-primary font-medium hover:underline">
                     Увійти
                   </button>
                 </p>
@@ -409,7 +423,7 @@ export function AuthModal({ open, onClose, onAuthSuccess, initialScreen = "login
           {/* ── VERIFY OTP ── */}
           {screen === "verify" && (
             <>
-              <button onClick={() => setScreen("register")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <button onClick={() => { sound.close(); setScreen("register"); }} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
                 <ArrowLeft className="size-3.5" /> Назад
               </button>
               <div className="text-center space-y-1">
@@ -427,7 +441,7 @@ export function AuthModal({ open, onClose, onAuthSuccess, initialScreen = "login
                 {otpError && (
                   <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm text-center">{otpError}</div>
                 )}
-                <Button className="w-full" onClick={handleVerify} disabled={otpInput.length !== 6 || verifying}>
+                <Button className="w-full" onClick={() => { sound.button(); handleVerify(); }} disabled={otpInput.length !== 6 || verifying}>
                   {verifying ? <Loader2 className="size-4 animate-spin mr-2" /> : <CheckCircle2 className="size-4 mr-2" />}
                   {verifying ? "Перевіряємо..." : "Підтвердити"}
                 </Button>

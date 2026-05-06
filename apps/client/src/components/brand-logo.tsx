@@ -34,9 +34,10 @@ export function BrandLogoFull({ className, color: _color }: { className?: string
     <Image
       src="/logo.png"
       alt="U:DO CRAFT"
-      width={160}
-      height={48}
-      className={`object-contain w-auto ${className ?? ""}`}
+      width={0}
+      height={0}
+      sizes="200px"
+      className={`object-contain w-auto ${className ?? "h-8"}`}
     />
   );
 }
