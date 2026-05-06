@@ -62,7 +62,7 @@ export function ProblemSolutionSection() {
             initial={{ opacity: 0, x: 24 }}
             animate={isInView ? { opacity: 1, x: 0 } : {}}
             transition={{ duration: 0.75, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-            className="bg-[oklch(0.10 0.03 264)] rounded-3xl p-8 sm:p-10"
+            className="bg-[#0a0d1a] rounded-3xl p-8 sm:p-10"
           >
             <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-primary mb-5">Рішення U:DO</p>
             <h3 className="text-white text-2xl sm:text-3xl font-black tracking-tight leading-tight mb-8">

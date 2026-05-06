@@ -51,7 +51,7 @@ function Cell({ value, highlight }: { value: CellValue; highlight: boolean }) {
       <Minus className="w-3.5 h-3.5 text-amber-500" aria-hidden="true" />
     </span>
   );
-  return <span className={`text-sm font-semibold ${highlight ? "text-white" : "text-foreground"}`}>{value}</span>;
+  return <span className={`text-sm font-semibold ${highlight ? "text-primary font-bold" : "text-foreground"}`}>{value}</span>;
 }
 
 function CardContent({ col }: { col: typeof COLUMNS[0] }) {

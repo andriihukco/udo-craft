@@ -20,7 +20,7 @@ export function BoxOfTouchSection() {
   return (
     <section
       className="border-t border-border overflow-hidden"
-      style={{ backgroundColor: "oklch(0.10 0.03 264)" }}
+      style={{ backgroundColor: "#0a0d1a" }}
       aria-labelledby="box-heading"
     >
       {/* Full-width grid — left column constrained, right bleeds to viewport edge */}

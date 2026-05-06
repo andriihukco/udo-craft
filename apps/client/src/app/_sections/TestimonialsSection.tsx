@@ -58,7 +58,7 @@ export function TestimonialsSection() {
   return (
     <section
       id="testimonials"
-      className="bg-[oklch(0.10 0.03 264)] py-24 sm:py-32"
+      className="bg-[#0a0d1a] py-24 sm:py-32"
       aria-labelledby="testimonials-heading"
     >
       <div className="max-w-6xl mx-auto px-5 sm:px-10 lg:px-20">

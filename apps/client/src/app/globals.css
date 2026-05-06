@@ -35,6 +35,8 @@
   /* Dark surface tokens — deep blue instead of pure black */
   --color-surface-dark: oklch(0.10 0.03 264);
   --color-surface-dark-2: oklch(0.13 0.03 264);
+  /* Shorthand hex equivalents for Tailwind arbitrary values */
+  --dark-blue: #0a0d1a;
 }
 
 @layer base {

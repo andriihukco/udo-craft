@@ -53,7 +53,7 @@ export function HeroSection({
 }: HeroSectionProps) {
   return (
     <section
-      className="relative min-h-[100svh] bg-[oklch(0.10_0.03_264)] overflow-hidden flex flex-col"
+      className="relative min-h-[100svh] bg-[#0a0d1a] overflow-hidden flex flex-col"
       aria-label="Головна секція"
     >
       {/* Skip link */}
@@ -84,7 +84,7 @@ export function HeroSection({
 
       {/* Bottom fade only — video fully visible */}
       <div
-        className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[oklch(0.10_0.03_264)]/50 pointer-events-none"
+        className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#0a0d1a]/50 pointer-events-none"
         aria-hidden="true"
       />
 
