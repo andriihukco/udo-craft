@@ -112,7 +112,7 @@ export function ProductCardDetailed({
       aria-disabled={isOutOfStock}
       onClick={handleCardClick}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleCardClick(); }}
-      className={`bg-muted rounded-2xl overflow-hidden flex flex-col cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${isOutOfStock ? "opacity-60 pointer-events-none" : ""}`}
+      className={`bg-muted rounded-2xl overflow-hidden flex flex-col h-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${isOutOfStock ? "opacity-60 pointer-events-none" : ""}`}
     >
       {/* Image */}
       <div className="p-3 sm:p-4 w-full flex items-center justify-center aspect-square flex-shrink-0 relative overflow-hidden">

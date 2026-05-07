@@ -8,7 +8,7 @@ import { User, ShoppingBag, ArrowRight, X, Menu } from "lucide-react";
 import { BrandLogoFull } from "@/components/brand-logo";
 import { createClient } from "@/lib/supabase/client";
 import { MockupViewer } from "@/components/MockupViewer";
-import { PaywallModal } from "@/components/PaywallModal";
+import { AuthModal } from "@/components/AuthModal";
 
 const NAV_LINKS = [
   { href: "/#collections", label: "Колекції" },
@@ -159,7 +159,7 @@ export function SiteHeader() {
       </motion.nav>
 
       {/* Auth modal — login/register without leaving the page */}
-      <PaywallModal
+      <AuthModal
         open={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
         initialScreen="login"
