@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { Product, PrintZone, Material, ProductColorVariant, useCustomizer, type SidebarTabId, resolveProductImages, getCustomizableImages } from "@udo-craft/shared";
-import { ArrowLeft, X, Ruler, Loader2, Layers, Pencil, Type, Upload, LayoutList, Shapes, MirrorRound, Shirt } from "lucide-react";
+import { ArrowLeft, X, Ruler, Loader2, Layers, Pencil, Type, Upload, LayoutList, Shapes, MirrorRound, PackageOpen } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { type PrintLayer } from "@/components/print-types";
@@ -511,7 +511,7 @@ export function Customizer({ product, printZones, sizeChart, materials, variants
           <button onClick={() => { setActiveTab(null); setMobilePriceOpen((v) => !v); }}
             aria-label="Тираж та ціна"
             className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors min-h-[44px] ${mobilePriceOpen ? "text-primary border-t-2 border-primary -mt-px" : "text-muted-foreground"}`}>
-            <Shirt className="size-4" />Тираж
+            <PackageOpen className="size-4" />Тираж
           </button>
         </div>
       </div>

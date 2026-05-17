@@ -374,9 +374,7 @@ export default function MessagesPage() {
   return (
     <div className="flex flex-1 h-0 flex-col overflow-hidden relative">
       {viewerUrl && <FileViewer url={viewerUrl} onClose={() => setViewerUrl(null)} />}
-      <div className="px-4 pt-4 pb-2 border-b border-border shrink-0">
-        <PageHeader title="Повідомлення" />
-      </div>
+      <PageHeader title="Повідомлення" />
       <div className="flex flex-1 h-0 overflow-hidden relative">
 
       {/* ── Chat list — full screen on mobile, fixed sidebar on desktop ── */}

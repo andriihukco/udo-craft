@@ -185,6 +185,7 @@ export default function ProductCanvas({
     const saveTransform = (e: any) => {
       const obj = e.target;
       if (!obj || !(obj as any)._isLayer) return;
+      (obj as any)._userScaled = true;
       const id = (obj as any)._layerId as string;
       const transform = {
         left: obj.left ?? 0,
@@ -198,7 +199,6 @@ export default function ProductCanvas({
       onLayerTransformChangeRef.current?.(id, transform);
     };
     canvas.on("object:modified", saveTransform);
-    canvas.on("object:scaling", saveTransform);
 
     // ── Snap-to-center guide lines ───────────────────────────────────────
     const snapColor = typeof document !== "undefined"
@@ -375,6 +375,10 @@ export default function ProductCanvas({
       return;
     }
     if (layerSizeSignatureRef.current[layer.id] === signature) return;
+    if ((obj as any)._userScaled) {
+      layerSizeSignatureRef.current[layer.id] = signature;
+      return;
+    }
     const zone = getPrintZone(layer.side);
     const ratio = product.px_to_mm_ratio || 0;
     const targetCm = layer.sizeMinCm != null && layer.sizeMaxCm != null

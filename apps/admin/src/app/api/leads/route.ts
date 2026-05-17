@@ -10,7 +10,7 @@ function getServiceClient() {
   );
 }
 
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
 
@@ -23,10 +23,13 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const limit = Number(request.nextUrl.searchParams.get("limit")) || 100;
+
     const { data, error } = await getServiceClient()
       .from("leads")
       .select("*, order_items!order_items_lead_id_fkey(*)")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(limit);
 
     if (error) {
       console.error("Database error:", error);

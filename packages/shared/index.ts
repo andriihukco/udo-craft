@@ -252,6 +252,10 @@ export interface PrintLayer {
   textBoxHeight?: number;
   /** Layer opacity 0–1 */
   opacity?: number;
+  /** Text combo parent grouping ID */
+  comboId?: string;
+  /** Whether this layer is a secondary child of a text combo (cost is 0) */
+  isComboChild?: boolean;
 }
 
 // ── Shape presets ───────────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -47,6 +47,7 @@ const EMPTY_FORM = { name: "", email: "", phone: "", company: "", social_channel
 
 export default function ClientsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [clients, setClients] = useState<ClientRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -86,6 +87,11 @@ export default function ClientsPage() {
   }, []);
 
   useEffect(() => { fetchClients(); }, [fetchClients]);
+
+  useEffect(() => {
+    const initialSearch = searchParams.get("search");
+    if (initialSearch) setSearch(initialSearch);
+  }, [searchParams]);
 
   const filtered = clients.filter(
     (c) => c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -167,28 +173,25 @@ export default function ClientsPage() {
       {/* ── Table area ── */}
       <div className="flex-1 flex flex-col overflow-hidden transition-[margin] duration-200" style={{ marginRight: selected ? drawerWidth : 0 }}>
 
-        {/* Header */}
-        <div className="px-4 pt-4 pb-2 border-b border-border shrink-0">
-          <PageHeader
-            title={`Клієнти${clients.length > 0 ? ` (${filtered.length})` : ""}`}
-            actions={
-              <>
-                <div className="relative max-w-xs w-full">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-                  <Input
-                    placeholder="Пошук..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="pl-8 h-8 text-sm"
-                  />
-                </div>
-                <Button size="sm" className="gap-1.5 shrink-0" onClick={() => setAddOpen(true)}>
-                  <UserPlus className="size-3.5" /> Додати клієнта
-                </Button>
-              </>
-            }
-          />
-        </div>
+        <PageHeader
+          title={`Клієнти${clients.length > 0 ? ` (${filtered.length})` : ""}`}
+          actions={
+            <>
+              <div className="relative max-w-xs w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                <Input
+                  placeholder="Пошук..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-8 h-8 text-sm"
+                />
+              </div>
+              <Button size="sm" className="gap-1.5 shrink-0" onClick={() => setAddOpen(true)}>
+                <UserPlus className="size-3.5" /> Додати клієнта
+              </Button>
+            </>
+          }
+        />
 
         {/* Table */}
         <div className="flex-1 overflow-y-auto">

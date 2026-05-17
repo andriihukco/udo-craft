@@ -1,4 +1,27 @@
+import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ShoppingCart, ChevronRight, X, Trash2 } from "lucide-react";
+
+interface CartItem {
+  productName: string;
+  size: string;
+  color: string;
+  quantity: number;
+  unitPriceCents: number;
+  printCostCents: number;
+  productImage: string;
+  mockupDataUrl?: string;
+  mockupsMap?: Record<string, string>;
+}
+
+interface MobileAdminCartProps {
+  cart: CartItem[];
+  totalCents: number;
+  onEdit: (index: number) => void;
+  onRemove: (index: number) => void;
+  onCheckout: () => void;
+}
 
 export function MobileAdminCart({ cart, totalCents, onEdit, onRemove, onCheckout }: MobileAdminCartProps) {
   const [open, setOpen] = useState(false);
@@ -118,4 +141,3 @@ export function MobileAdminCart({ cart, totalCents, onEdit, onRemove, onCheckout
     </>
   );
 }
-

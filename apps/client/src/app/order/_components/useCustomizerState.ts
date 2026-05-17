@@ -194,7 +194,7 @@ export function useCustomizerState({
   }, [layersRef, setLayersWithRef]);
 
   const layerHandlers = useLayerHandlers({
-    activeLayerId, printPricing, quantity, setActiveLayerId, setLayersWithRef, layersRef,
+    activeLayerId, printPricing, quantity, setActiveLayerId, setLayersWithRef: setLayersWithHistory, layersRef,
   });
 
   // Paste handler
@@ -206,16 +206,27 @@ export function useCustomizerState({
         if (item.type.startsWith("image/")) { const f = item.getAsFile(); if (f) { addLayer(f); return; } }
       }
       const text = e.clipboardData?.getData("text/plain") ?? "";
-      const svgMatch = text.match(/<svg[\s\S]*<\/svg>/i);
-      if (svgMatch) {
-        const blob = new Blob([svgMatch[0]], { type: "image/svg+xml" });
-        addLayer(new File([blob], "pasted.svg", { type: "image/svg+xml" }));
+      if (text) {
+        const svgMatch = text.match(/<svg[\s\S]*<\/svg>/i);
+        if (svgMatch) {
+          const blob = new Blob([svgMatch[0]], { type: "image/svg+xml" });
+          addLayer(new File([blob], "pasted.svg", { type: "image/svg+xml" }));
+        } else {
+          const id = `text-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+          const placeholder = new File([], "text-layer.txt", { type: "text/plain" });
+          const minSizeRow = printPricing.filter((r) => r.print_type === "dtf").sort((a, b) => (a.size_min_cm + a.size_max_cm) / 2 - (b.size_min_cm + b.size_max_cm) / 2)[0];
+          const layer: PrintLayer = {
+            id, file: placeholder, url: "", type: "dtf", side: activeSide, kind: "text", textContent: text, textFont: "Montserrat", textColor: "#000000", textFontSize: 48, sizeLabel: minSizeRow?.size_label, sizeMinCm: minSizeRow?.size_min_cm, sizeMaxCm: minSizeRow?.size_max_cm,
+          };
+          setLayersWithHistory((prev) => [...prev, layer]);
+          setActiveLayerId(id);
+        }
       }
     };
     window.addEventListener("paste", handlePaste);
     return () => window.removeEventListener("paste", handlePaste);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSide]);
+  }, [activeSide, printPricing]);
 
   // Auto-capture mockup on side change
   useEffect(() => {
@@ -259,7 +270,7 @@ export function useCustomizerState({
     fileInputRef, canvasSaveRef, fabricCanvasRef, captureRef, layersRef,
     // state
     mounted, layers, activeLayerId, setActiveLayerId, mockups, setMockups,
-    setLayersWithRef, mobileSheet, setMobileSheet, activeTab, setActiveTab,
+    setLayersWithRef, setLayersWithHistory, mobileSheet, setMobileSheet, activeTab, setActiveTab,
     selectedSize, setSelectedSize, selectedColor, setSelectedColor,
     selectedVariant, setSelectedVariant,
     quantity, setQuantity, qtyStr, setQtyStr,

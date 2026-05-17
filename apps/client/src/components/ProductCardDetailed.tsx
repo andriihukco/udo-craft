@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Product, ProductColorVariant, Material, resolveProductImages, getCustomizableImages } from "@udo-craft/shared";
 
 interface ProductCardDetailedProps {
@@ -40,6 +41,7 @@ export function ProductCardDetailed({
   const [hoveredVariantId, setHoveredVariantId] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [descExpanded, setDescExpanded] = useState(false);
+  const [imgIndex, setImgIndex] = useState(0);
 
   const displayVariantId = hoveredVariantId ?? activeVariantId;
   const activeVariant = hasVariants
@@ -50,7 +52,8 @@ export function ProductCardDetailed({
   const productImgs = resolveProductImages((product as any).product_images, product.images);
   const variantImgs = activeVariant ? resolveProductImages((activeVariant as any).variant_images, activeVariant.images) : null;
   const currentImages = getCustomizableImages(variantImgs?.length ? variantImgs : productImgs);
-  const imageUrl = currentImages.front ?? Object.values(currentImages)[0] ?? "";
+  const availableImages = Object.values(currentImages).filter(Boolean);
+  const imageUrl = availableImages[imgIndex % availableImages.length] ?? "";
 
   const colorDots =
     hasVariants && materials
@@ -115,10 +118,30 @@ export function ProductCardDetailed({
       className={`bg-muted rounded-2xl overflow-hidden flex flex-col h-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${isOutOfStock ? "opacity-60 pointer-events-none" : ""}`}
     >
       {/* Image */}
-      <div className="p-3 sm:p-4 w-full flex items-center justify-center aspect-square flex-shrink-0 relative overflow-hidden">
+      <div className="p-3 sm:p-4 w-full flex items-center justify-center aspect-square flex-shrink-0 relative overflow-hidden group/img">
         {imageUrl ? (
           <div className="relative w-full h-full">
             <Image src={imageUrl} alt={product.name} fill className="object-contain" />
+            {availableImages.length > 1 && (
+              <div className="absolute inset-y-0 inset-x-1 flex items-center justify-between opacity-0 group-hover/img:opacity-100 transition-opacity pointer-events-none z-10">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setImgIndex((prev) => (prev - 1 + availableImages.length) % availableImages.length); }}
+                  className="size-7 rounded-full bg-background/80 hover:bg-background text-foreground flex items-center justify-center shadow-md backdrop-blur-sm transition-transform hover:scale-105 active:scale-95 pointer-events-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  aria-label="Попереднє зображення"
+                >
+                  <ChevronLeft className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setImgIndex((prev) => (prev + 1) % availableImages.length); }}
+                  className="size-7 rounded-full bg-background/80 hover:bg-background text-foreground flex items-center justify-center shadow-md backdrop-blur-sm transition-transform hover:scale-105 active:scale-95 pointer-events-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  aria-label="Наступне зображення"
+                >
+                  <ChevronRight className="size-4" />
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">

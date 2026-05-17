@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
 import { Activity, Bell, Loader2, Lock, User } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { SystemTab } from "./_components/SystemTab";
 import { PageHeader } from "@/components/page-header";
 
@@ -27,16 +28,10 @@ function NotifRow({ label, desc, checked, onChange, disabled }: { label: string;
 
 type Tab = "profile" | "security" | "notifications" | "system";
 
-const TABS: { key: Tab; icon: React.ElementType; label: string }[] = [
-  { key: "profile",        icon: User,     label: "Профіль" },
-  { key: "security",       icon: Lock,     label: "Безпека" },
-  { key: "notifications",  icon: Bell,     label: "Сповіщення" },
-  { key: "system",         icon: Activity, label: "Система" },
-];
-
 export default function SettingsPage() {
   const supabase = useMemo(() => createClient(), []);
-  const [tab, setTab] = useState<Tab>("profile");
+  const searchParams = useSearchParams();
+  const tab = (searchParams.get("tab") || "profile") as Tab;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -102,24 +97,8 @@ export default function SettingsPage() {
 
   return (
     <div className="flex flex-1 h-0 flex-col overflow-hidden">
-      {/* Header + tabs */}
-      <div className="px-4 pt-4 border-b border-border shrink-0">
-        <PageHeader title="Налаштування" />
-        <nav className="flex h-10">
-          {TABS.map(({ key, icon: Icon, label }) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              className={`flex items-center gap-1.5 px-3 h-full text-sm font-medium border-b-2 transition-colors ${
-                tab === key ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              {label}
-            </button>
-          ))}
-        </nav>
-      </div>
+      <PageHeader title="Налаштування" />
+
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto p-4 md:p-6 flex justify-center">

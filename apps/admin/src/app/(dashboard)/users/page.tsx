@@ -16,7 +16,9 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { UserPlus, Pencil, Trash2, RefreshCw, Loader2 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { DashboardPage } from "@/components/dashboard-page";
+import { UserPlus, Pencil, Trash2, RefreshCw, Loader2, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Role = "admin" | "manager" | "viewer";
@@ -35,13 +37,6 @@ interface AdminUser {
 const ROLES: { value: Role; label: string }[] = [
   { value: "admin",   label: "Адмін" },
   { value: "manager", label: "Менеджер" },
-  { value: "viewer",  label: "Перегляд" },
-];
-
-const FILTERS: { value: Role | "all"; label: string }[] = [
-  { value: "all",     label: "Всі" },
-  { value: "admin",   label: "Адміни" },
-  { value: "manager", label: "Менеджери" },
   { value: "viewer",  label: "Перегляд" },
 ];
 
@@ -88,9 +83,10 @@ function RolePicker({ value, onChange }: { value: Role; onChange: (r: Role) => v
 const EMPTY_FORM = { email: "", full_name: "", role: "viewer" as Role };
 
 export default function UsersPage() {
+  const searchParams = useSearchParams();
+  const filter = (searchParams.get("role") || "all") as Role | "all";
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<Role | "all">("all");
   const [inviteOpen, setInviteOpen] = useState(false);
   const [editUser, setEditUser] = useState<AdminUser | null>(null);
   const [deleteUser, setDeleteUser] = useState<AdminUser | null>(null);
@@ -173,10 +169,14 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="flex flex-col gap-5 p-4 md:p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-xl font-semibold">Користувачі</h1>
+    <DashboardPage
+      title="Користувачі"
+      subtitle={
+        <span className="flex items-center gap-1">
+          <Users className="size-3.5" /> {users.length} користувачів
+        </span>
+      }
+      actions={
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={load} disabled={loading} aria-label="Оновити">
             <RefreshCw className={cn("size-4", loading && "animate-spin")} />
@@ -186,33 +186,9 @@ export default function UsersPage() {
             Запросити
           </Button>
         </div>
-      </div>
-
-      {/* Filters */}
-      <div className="flex gap-1.5 flex-wrap">
-        {FILTERS.map((f) => {
-          const count = f.value === "all" ? users.length : users.filter((u) => u.role === f.value).length;
-          return (
-            <button
-              key={f.value}
-              onClick={() => setFilter(f.value)}
-              aria-pressed={filter === f.value}
-              className={cn(
-                "px-3 py-1 rounded-full text-sm font-medium transition-colors border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
-                filter === f.value
-                  ? "bg-foreground text-background border-foreground"
-                  : "bg-transparent text-muted-foreground border-border hover:border-foreground/40 hover:text-foreground"
-              )}
-            >
-              {f.label}
-              <span className={cn("ml-1.5 text-xs", filter === f.value ? "opacity-70" : "opacity-50")}>
-                {count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
+      }
+      contentClassName="p-4 md:p-6 space-y-5"
+    >
       {/* Table */}
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         {loading ? (
@@ -368,6 +344,6 @@ export default function UsersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </DashboardPage>
   );
 }

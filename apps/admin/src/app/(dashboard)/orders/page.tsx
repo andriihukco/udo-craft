@@ -87,7 +87,7 @@ function OrdersBoard() {
   }, [fetchLeads, supabase]);
 
   return (
-    <div className="flex flex-1 min-h-0 overflow-hidden bg-muted/5 selection:bg-primary/10 selection:text-primary">
+    <div className="flex flex-1 min-h-0 overflow-hidden selection:bg-primary/10 selection:text-primary">
       <div className="flex-1 flex flex-col overflow-hidden">
         <DashboardHeader
           title="Замовлення"
@@ -101,7 +101,7 @@ function OrdersBoard() {
           actions={
             <Button
               size="lg"
-              className="gap-2 shadow-xl shadow-primary/20 hover:shadow-primary/30 transition-all active:scale-[0.98] font-black uppercase tracking-widest text-[10px] rounded-2xl h-12 px-6"
+              className="h-10 gap-2 px-4 text-xs font-semibold uppercase tracking-widest"
               onClick={() => router.push("/orders/new")}
             >
               <Plus className="size-4" />
@@ -116,7 +116,7 @@ function OrdersBoard() {
               <Loader2 className="size-10 animate-spin text-primary/40" />
             </div>
           ) : (
-            <div className="flex gap-6 h-full px-8 py-8 animate-in" style={{ width: "max-content", minWidth: "100%" }}>
+            <div className="flex h-full gap-4 px-6 py-6 animate-in" style={{ width: "max-content", minWidth: "100%" }}>
               {STATUSES.map((status) => {
                 const colLeads = leads.filter((l) => l.status === status);
                 return (

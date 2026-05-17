@@ -2,35 +2,9 @@
 
 import { GripVertical } from "lucide-react";
 import { PREDEFINED_TAGS } from "@udo-craft/shared";
-import type { LeadStatus } from "@/components/status-badge";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-
-interface OrderItem {
-  id: string;
-  quantity: number;
-  size: string;
-  color: string;
-  unit_price_cents?: number;
-  technical_metadata?: { unit_price_cents?: number; item_note?: string };
-}
-
-interface Lead {
-  id: string;
-  status: LeadStatus;
-  customer_data: {
-    name: string;
-    email?: string;
-    phone?: string;
-    company?: string;
-  };
-  tags?: string[];
-  notes?: string;
-  created_at: string;
-  updated_at: string;
-  total_amount_cents: number;
-  order_items?: OrderItem[];
-}
+import type { Lead } from "./useKanbanDrag";
 
 interface OrderCardProps {
   order: Lead;
@@ -80,10 +54,10 @@ export function OrderCard({
       aria-label={`Замовлення від ${order.customer_data?.name}`}
       aria-pressed={isSelected}
       className={cn(
-        "group relative bg-card rounded-xl border p-4 cursor-pointer select-none transition-all duration-300 animate-in",
-        "hover:shadow-premium hover:border-primary/30 focus-visible:ring-2 focus-visible:ring-primary outline-none touch-none",
-        isDragging ? "opacity-40 scale-[0.98] rotate-1" : "shadow-sm",
-        isSelected ? "ring-2 ring-primary border-transparent bg-primary/[0.03] shadow-depth" : "border-border"
+        "group relative cursor-pointer select-none rounded-md border bg-card p-4 transition-colors animate-in",
+        "hover:border-primary/30 focus-visible:ring-2 focus-visible:ring-ring outline-none touch-none",
+        isDragging ? "opacity-40" : "",
+        isSelected ? "border-primary bg-primary/[0.03] ring-2 ring-primary/20" : "border-border"
       )}
     >
       <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -159,4 +133,3 @@ export function OrderCard({
     </div>
   );
 }
-

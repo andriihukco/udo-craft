@@ -55,12 +55,12 @@ function CommandDialog({
       </DialogHeader>
       <DialogContent
         className={cn(
-          "top-1/3 translate-y-0 overflow-hidden rounded-xl! p-0",
+          "top-[12vh] max-w-2xl translate-y-0 overflow-hidden rounded-2xl! border-border/80 p-0 shadow-2xl",
           className
         )}
         showCloseButton={showCloseButton}
       >
-        <Command className="[&_[data-slot=command-input-wrapper]]:border-b [&_[data-slot=command-input-wrapper]_svg]:size-5 [&_[data-slot=command-input]]:h-12 [&_[data-slot=command-empty]]:py-6 [&_[data-slot=command-group-heading]]:px-2 [&_[data-slot=command-group-heading]]:font-medium [&_[data-slot=command-group-heading]]:text-muted-foreground [&_[data-slot=command-group]]:px-2 [&_[data-slot=command-group]_+[data-slot=command-group]]:pt-0 [&_[data-slot=command-group]]:mt-2 [&_[data-slot=command-separator]]:mx-2 [&_[data-slot=command-item]]:px-3 [&_[data-slot=command-item]]:py-3 [&_[data-slot=command-item]_svg]:size-5 [&_[data-slot=command-shortcut]]:display-none">
+        <Command className="[&_[data-slot=command-input-wrapper]_svg]:size-5 [&_[data-slot=command-input]]:h-10 [&_[data-slot=command-empty]]:py-10 [&_[data-slot=command-group-heading]]:px-3 [&_[data-slot=command-group-heading]]:font-semibold [&_[data-slot=command-group-heading]]:uppercase [&_[data-slot=command-group-heading]]:tracking-[0.16em] [&_[data-slot=command-group-heading]]:text-muted-foreground [&_[data-slot=command-group]]:px-1 [&_[data-slot=command-group]_+[data-slot=command-group]]:pt-0 [&_[data-slot=command-group]]:mt-1 [&_[data-slot=command-separator]]:mx-2 [&_[data-slot=command-item]]:rounded-xl [&_[data-slot=command-item]_svg]:size-5">
           {children}
         </Command>
       </DialogContent>
@@ -73,18 +73,18 @@ function CommandInput({
   ...props
 }: React.ComponentProps<typeof CommandPrimitive.Input>) {
   return (
-    <div data-slot="command-input-wrapper" className="p-1 pb-0">
-      <InputGroup className="h-8! rounded-lg! border-input/30 bg-input/30 shadow-none! *:data-[slot=input-group-addon]:pl-2!">
+    <div data-slot="command-input-wrapper">
+      <InputGroup className="h-10! rounded-xl! border-input/60 bg-muted/40 shadow-none! *:data-[slot=input-group-addon]:pl-3!">
         <CommandPrimitive.Input
           data-slot="command-input"
           className={cn(
-            "w-full text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
+            "w-full text-sm outline-hidden placeholder:text-muted-foreground/70 disabled:cursor-not-allowed disabled:opacity-50",
             className
           )}
           {...props}
         />
         <InputGroupAddon>
-        <Search className="size-4 shrink-0 opacity-50" />
+          <Search className="size-4 shrink-0 opacity-50" />
         </InputGroupAddon>
       </InputGroup>
     </div>

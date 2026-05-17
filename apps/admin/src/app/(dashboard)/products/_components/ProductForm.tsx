@@ -196,7 +196,7 @@ export function ProductForm({ product, categories, sizeCharts, printAreas, onSav
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>Категорія</Label>
-              <Select value={categoryId || "none"} onValueChange={v => { setCategoryId(v === "none" ? "" : v); markDirty(); }}>
+              <Select value={categoryId || "none"} onValueChange={v => { setCategoryId(v === "none" || !v ? "" : v); markDirty(); }}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="— Без категорії —" />
                 </SelectTrigger>
@@ -208,7 +208,7 @@ export function ProductForm({ product, categories, sizeCharts, printAreas, onSav
             </div>
             <div className="space-y-1.5">
               <Label>Таблиця розмірів</Label>
-              <Select value={sizeChartId || "none"} onValueChange={v => { setSizeChartId(v === "none" ? "" : v); markDirty(); }}>
+              <Select value={sizeChartId || "none"} onValueChange={v => { setSizeChartId(v === "none" || !v ? "" : v); markDirty(); }}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="— Без таблиці —" />
                 </SelectTrigger>

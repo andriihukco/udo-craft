@@ -12,6 +12,7 @@ import {
   AlignCenter as AlignCenterIcon,
   AlignLeft as AlignLeftIcon,
   AlignRight as AlignRightIcon,
+  Blend,
   Bold,
   Copy,
   FlipHorizontal,
@@ -104,18 +105,35 @@ function OpacityControl({
   value: number;
   onChange: (v: number) => void;
 }) {
+  const [open, setOpen] = useState(false);
   return (
-    <div className="flex items-center gap-1.5 shrink-0">
-      <span className="text-[10px] text-muted-foreground whitespace-nowrap">Прозорість</span>
-      <input
-        type="range"
-        min={0}
-        max={100}
-        value={Math.round(value * 100)}
-        onChange={(e) => onChange(Number(e.target.value) / 100)}
-        className="w-20 h-1.5 accent-primary"
-      />
-      <span className="text-[10px] text-muted-foreground w-7 text-right">{Math.round(value * 100)}%</span>
+    <div className="relative shrink-0">
+      <button
+        type="button"
+        title="Прозорість"
+        aria-label="Прозорість"
+        onClick={() => setOpen((v) => !v)}
+        className={`h-8 px-2.5 rounded-lg border transition-all flex items-center gap-1.5 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${open ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 hover:bg-muted/60"}`}
+      >
+        <Blend className="size-3.5" />
+        <span>{Math.round(value * 100)}%</span>
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 mt-1 z-50 bg-card border border-border rounded-xl shadow-lg p-3 w-48 flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold">Прозорість</span>
+            <span className="text-xs font-mono text-muted-foreground">{Math.round(value * 100)}%</span>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={Math.round(value * 100)}
+            onChange={(e) => onChange(Number(e.target.value) / 100)}
+            className="w-full h-1.5 accent-primary cursor-pointer"
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -160,7 +178,7 @@ function ColorSwatch({
               type="text"
               value={value}
               onChange={(e) => onChange(e.target.value)}
-              className="flex-1 text-xs rounded border border-input bg-background px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
+              className="flex-1 text-xs rounded border border-input bg-background px-2 py-1 focus: outline-none focus:ring-1 focus:ring-primary font-mono"
             />
             <button type="button" onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground">
               <X className="size-3.5" />
@@ -218,14 +236,13 @@ function FontSelect({
           <div className="p-2 border-b border-border">
             <input
               type="text"
-              placeholder="Пошук…"
+              placeholder="Пошук шрифту..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              autoFocus
-              className="w-full text-xs rounded-lg border border-input bg-background px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full text-xs rounded border border-input bg-background px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
-          <div className="max-h-48 overflow-y-auto">
+          <div className="max-h-48 overflow-y-auto p-1 space-y-0.5">
             {filtered.map((f) => (
               <button
                 key={f.id}
@@ -339,19 +356,21 @@ function SvgControls({
   onTextChange: (id: string, patch: TextLayerPatch) => void;
 }) {
   const canvas = fabricCanvasRef.current;
+  const [mode, setMode] = useState<"fill" | "stroke">("fill");
+
   return (
     <>
-      <span className="text-[10px] text-muted-foreground whitespace-nowrap">Заливка</span>
+      <button
+        type="button"
+        onClick={() => setMode(mode === "fill" ? "stroke" : "fill")}
+        className="h-8 px-2.5 rounded-lg border border-border bg-background hover:border-primary/50 transition-colors text-xs font-semibold flex items-center gap-1.5 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+      >
+        <span className="text-muted-foreground">{mode === "fill" ? "Заливка" : "Обводка"}</span>
+      </button>
       <ColorSwatch
-        value={layer.svgFillColor ?? "#000000"}
-        onChange={(v) => onTextChange(layer.id, { svgFillColor: v } as TextLayerPatch)}
-        title="Колір заливки"
-      />
-      <span className="text-[10px] text-muted-foreground whitespace-nowrap">Обводка</span>
-      <ColorSwatch
-        value={layer.svgStrokeColor ?? "#000000"}
-        onChange={(v) => onTextChange(layer.id, { svgStrokeColor: v } as TextLayerPatch)}
-        title="Колір обводки"
+        value={(mode === "fill" ? layer.svgFillColor : layer.svgStrokeColor) ?? "#000000"}
+        onChange={(v) => onTextChange(layer.id, { [mode === "fill" ? "svgFillColor" : "svgStrokeColor"]: v } as any)}
+        title={mode === "fill" ? "Колір заливки" : "Колір обводки"}
       />
       <OpacityControl
         value={layer.opacity ?? 1}

@@ -53,12 +53,6 @@ export function FinalCtaSection() {
             >
               Почати проєкт <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </Link>
-            <Link
-              href="#contact"
-              className="inline-flex items-center gap-2.5 border border-white/25 text-white font-semibold text-sm px-8 py-4 rounded-full hover:border-white/50 hover:bg-white/10 active:scale-[0.97] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
-            >
-              Поговорити з менеджером
-            </Link>
           </div>
 
           <p className="text-white/30 text-xs mt-8">

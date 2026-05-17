@@ -25,6 +25,7 @@ import type { TextComposition } from "@udo-craft/shared";
 import { useLayersBadge } from "@/hooks/useLayersBadge";
 import type { AiQuotaState } from "@/hooks/useAiQuota";
 import { PaywallModal } from "@/components/PaywallModal";
+import { cancelRemoveBg } from "@/lib/remove-bg-client";
 
 interface ProductWithConfig extends Product {
   size_chart_id?: string | null;
@@ -55,6 +56,7 @@ export interface CartItem {
   mockupsMap?: Record<string, string>;
   offsetTopMm?: number;
   printZone?: PrintZone | null;
+  cartItemId?: string;
 }
 
 export interface CustomizerProps {
@@ -70,27 +72,16 @@ export interface CustomizerProps {
   initialLayers?: PrintLayer[];
   autoOpenCanvas?: boolean;
   existingMockupUploadedUrl?: string;
+  cartItemId?: string;
   isAuthenticated: boolean;
   aiQuota: AiQuotaState;
   onAuthSuccess?: () => void;
 }
 
-// ── Mobile tab config ─────────────────────────────────────────────────────
-
-const MOBILE_TABS: { id: SidebarTabId; label: string; Icon: React.ElementType }[] = [
-  { id: "prints",  label: "Принти",  Icon: Layers      },
-  { id: "shapes",  label: "Фігури",  Icon: Shapes      },
-  { id: "draw",    label: "Малюнок", Icon: Pencil      },
-  { id: "text",    label: "Текст",   Icon: Type        },
-  { id: "upload",  label: "Файл",    Icon: Upload      },
-  { id: "layers",  label: "Шари",    Icon: LayoutList  },
-];
-
-// ── Component ─────────────────────────────────────────────────────────────
-
 export function Customizer({
   product,
   printZones,
+  sizeChart,
   materials,
   variants,
   onAdd,
@@ -99,12 +90,14 @@ export function Customizer({
   initialColor,
   initialLayers,
   existingMockupUploadedUrl,
+  cartItemId,
   isAuthenticated,
   aiQuota,
   onAuthSuccess,
 }: CustomizerProps) {
   const s = useCustomizerState({
-    product, printZones, materials, variants, onAdd,
+    product, printZones, materials, variants, 
+    onAdd: (item) => onAdd({ ...item, cartItemId }),
     initialSize, initialColor, initialLayers, existingMockupUploadedUrl,
   });
 
@@ -122,6 +115,13 @@ export function Customizer({
 
   if (!s.mounted) return null;
 
+  const handleClose = () => {
+    if (s.layers.length > 0) {
+      if (!confirm("Повернутися? Незбережені зміни буде втрачено.")) return;
+    }
+    onClose();
+  };
+
   const addLayer = (file: File) => s.addLayer(file);
   const addTextLayer = () => s.addTextLayer();
 
@@ -136,9 +136,12 @@ export function Customizer({
       kind: "text" as const,
       sizeLabel: minSizeRow?.size_label, sizeMinCm: minSizeRow?.size_min_cm, sizeMaxCm: minSizeRow?.size_max_cm,
     };
+    const comboId = `text-combo-${now}`;
     const newLayers = composition.layers.map((cl, i) => ({
       ...base,
       id: `text-${now}-${i}`,
+      comboId,
+      isComboChild: i > 0,
       textContent: cl.textContent,
       textFont: cl.textFont,
       textFontSize: cl.textFontSize,
@@ -230,7 +233,7 @@ export function Customizer({
 
   // ── Sidebar (desktop icon strip) ─────────────────────────────────────
 
-  const sidebar = <EditorSidebar activeTab={s.activeTab} onTabChange={s.setActiveTab} onBack={onClose} layerCount={s.layers.length} />;
+  const sidebar = <EditorSidebar activeTab={s.activeTab} onTabChange={s.setActiveTab} onBack={handleClose} layerCount={s.layers.length} />;
 
   // ── Animated panel column (desktop) ──────────────────────────────────
 
@@ -267,7 +270,7 @@ export function Customizer({
       </div>
       <button
         type="button"
-        onClick={onClose}
+        onClick={handleClose}
         className="shrink-0 text-xs font-medium text-primary hover:underline focus-visible:outline-none whitespace-nowrap"
       >
         Змінити
@@ -404,10 +407,10 @@ export function Customizer({
       onRemoveBg={s.handleRemoveBg}
       onRemoveBgStateChange={s.setRemovingBg}
       onLayerDelete={s.handleDelete}
-      onLayerDuplicate={(layer) => { s.setLayersWithRef((prev) => [...prev, layer]); s.setActiveLayerId(layer.id); }}
+      onLayerDuplicate={(layer) => { s.setLayersWithHistory((prev) => [...prev, layer]); s.setActiveLayerId(layer.id); }}
       onLayerTransformChange={(id, transform) => {
         s.setLayerScales((prev) => ({ ...prev, [id]: transform.scaleX }));
-        s.setLayersWithRef((prev) => prev.map((l) => l.id === id ? { ...l, transform: transform as PrintLayer["transform"] } : l));
+        s.setLayersWithHistory((prev) => prev.map((l) => l.id === id ? { ...l, transform: transform as PrintLayer["transform"] } : l));
       }}
       onTextChange={s.handleTextChange}
       onLayerPatch={(id, patch) => s.handleTextChange(id, patch as any)}
@@ -427,6 +430,7 @@ export function Customizer({
         setMobileSheet={s.setMobileSheet}
         addingToCart={s.addingToCart}
         removingBg={s.removingBg}
+        onCancelRemoveBg={() => { cancelRemoveBg(); s.setRemovingBg(false); }}
         sidebar={sidebar}
         panel={panel}
         activeTab={s.activeTab}

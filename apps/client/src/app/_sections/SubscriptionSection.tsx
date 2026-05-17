@@ -36,7 +36,6 @@ export function SubscriptionSection() {
           >
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 mb-8">
               <RotateCcw className="w-4 h-4 text-primary" />
-              <span className="text-xs font-bold uppercase tracking-widest text-white">Нова послуга</span>
             </div>
             
             <h2 id="subscription-heading" className="text-white text-4xl sm:text-5xl font-black tracking-tight leading-[1.05] mb-6">

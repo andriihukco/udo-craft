@@ -190,20 +190,30 @@ export function HeroSection({
           transition={{ duration: 0.55, delay: 1.9, ease: [0.22, 1, 0.36, 1] }}
           className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-center gap-3 w-full sm:w-auto"
         >
-          <Link
+          <a
             href={ctaPrimaryUrl}
-            onClick={() => sound.button()}
+            onClick={(e) => {
+              sound.button();
+              if (ctaPrimaryUrl.startsWith("#")) {
+                e.preventDefault();
+                document.querySelector(ctaPrimaryUrl)?.scrollIntoView({ behavior: "smooth" });
+              }
+            }}
             className="inline-flex items-center justify-center gap-2 bg-white text-[#06060e] font-bold text-sm px-7 py-3.5 rounded-full hover:bg-white/90 active:scale-[0.97] transition-all duration-200 w-full sm:w-auto"
           >
             {ctaPrimaryText}
-          </Link>
-          <Link
+          </a>
+          <a
             href="#contact"
-            onClick={() => sound.button()}
+            onClick={(e) => {
+              sound.button();
+              e.preventDefault();
+              document.querySelector("#contact")?.scrollIntoView({ behavior: "smooth" });
+            }}
             className="inline-flex items-center justify-center gap-2 border border-white/20 text-white/70 font-semibold text-sm px-7 py-3.5 rounded-full hover:border-white/40 hover:text-white active:scale-[0.97] transition-all duration-200 w-full sm:w-auto"
           >
             {ctaSecondaryText}
-          </Link>
+          </a>
         </motion.div>
 
       </motion.div>

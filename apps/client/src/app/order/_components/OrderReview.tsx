@@ -62,9 +62,24 @@ export function OrderReview({
               );
             })}
           </div>
-          <div className="flex justify-between font-bold text-base mt-3 pt-3 border-t border-border">
-            <span>Разом</span>
-            <div><AnimatedNumber value={totalCents / 100} decimals={0} className="text-primary font-bold" /> <span>₴</span></div>
+          <div className="mt-4 p-4 rounded-2xl bg-muted/30 border border-dashed border-border/80 space-y-2 relative overflow-hidden shadow-inner">
+            <div className="flex justify-between text-xs text-muted-foreground font-mono">
+              <span>Сума товарів:</span>
+              <span>{(cart.reduce((sum, item) => sum + item.unitPriceCents * item.quantity, 0) / 100).toFixed(0)} ₴</span>
+            </div>
+            {cart.some(item => item.printCostCents > 0) && (
+              <div className="flex justify-between text-xs text-muted-foreground font-mono">
+                <span>Вартість нанесення:</span>
+                <span>{(cart.reduce((sum, item) => sum + item.printCostCents * item.quantity, 0) / 100).toFixed(0)} ₴</span>
+              </div>
+            )}
+            <div className="border-t border-dotted border-border/80 pt-2.5 flex justify-between items-baseline text-base font-black">
+              <span className="uppercase tracking-wider text-xs text-foreground">Загалом до сплати</span>
+              <div className="font-mono text-primary flex items-baseline gap-1 text-xl">
+                <AnimatedNumber value={totalCents / 100} decimals={0} className="font-black" />
+                <span className="text-sm font-bold">₴</span>
+              </div>
+            </div>
           </div>
           <div className="pt-4">
             <button onClick={onDownloadInvoice} disabled={generatingPdf}

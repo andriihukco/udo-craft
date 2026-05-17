@@ -3,7 +3,6 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { MobileHeader } from "@/components/mobile-header";
 import { createClient } from "@/lib/supabase/server";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { GlobalTopBar } from "@/components/global-top-bar";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -16,11 +15,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
   };
 
   return (
-    <SidebarProvider>
+    <SidebarProvider className="bg-muted/40">
       <AppSidebar user={sidebarUser} />
-      <SidebarInset className="overflow-hidden flex flex-col bg-muted/10">
+      <SidebarInset className="overflow-hidden flex flex-col bg-muted/40">
         <MobileHeader />
-        <main className="flex-1 flex flex-col overflow-hidden">
+        <main className="flex-1 flex flex-col overflow-hidden bg-muted/40">
           {children}
         </main>
       </SidebarInset>

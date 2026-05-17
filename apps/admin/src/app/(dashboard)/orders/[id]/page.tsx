@@ -390,7 +390,7 @@ export default function OrderDetailPage() {
                   <Label htmlFor="delivery">Доставка</Label>
                   <Select
                     value={contactData.delivery ?? "nova_poshta"}
-                    onValueChange={(v) => setContactData({ ...contactData, delivery: v })}
+                    onValueChange={(v) => setContactData({ ...contactData, delivery: v || undefined })}
                   >
                     <SelectTrigger id="delivery">
                       <SelectValue />

@@ -122,12 +122,28 @@ export function DesktopCartPanel({ cart, totalCents, onCheckout, onEdit, onRemov
           </div>
         ))}
       </div>
-      <div className="p-3 border-t border-border shrink-0 space-y-2">
-        <div className="flex justify-between text-sm font-bold">
-          <span>Разом</span>
-          <div><AnimatedNumber value={totalCents / 100} decimals={0} className="text-primary font-bold" /> <span>₴</span></div>
+      <div className="p-4 bg-muted/30 border-t border-dashed border-border shrink-0 space-y-3 relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-[radial-gradient(ellipse_at_top,_var(--color-border)_20%,_transparent_20%)] bg-[length:10px_10px]" />
+        <div className="space-y-1.5 pt-1">
+          <div className="flex justify-between text-xs text-muted-foreground font-mono">
+            <span>Сума товарів:</span>
+            <span>{(cart.reduce((sum, item) => sum + item.unitPriceCents * item.quantity, 0) / 100).toFixed(0)} ₴</span>
+          </div>
+          {cart.some(item => item.printCostCents > 0) && (
+            <div className="flex justify-between text-xs text-muted-foreground font-mono">
+              <span>Вартість нанесення:</span>
+              <span>{(cart.reduce((sum, item) => sum + item.printCostCents * item.quantity, 0) / 100).toFixed(0)} ₴</span>
+            </div>
+          )}
+          <div className="border-t border-dotted border-border/80 my-2 pt-2 flex justify-between items-baseline text-base font-black">
+            <span className="uppercase tracking-wider text-xs text-foreground">Загалом до сплати</span>
+            <div className="font-mono text-primary flex items-baseline gap-1 text-lg">
+              <AnimatedNumber value={totalCents / 100} decimals={0} className="font-black" />
+              <span className="text-sm font-bold">₴</span>
+            </div>
+          </div>
         </div>
-        <Button className="w-full cursor-pointer" onClick={onCheckout}>Оформити →</Button>
+        <Button className="w-full cursor-pointer rounded-full shadow-md hover:shadow-lg transition-all" onClick={onCheckout}>Оформити замовлення →</Button>
       </div>
     </div>
   );

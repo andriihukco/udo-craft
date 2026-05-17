@@ -8,7 +8,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { RefreshCw, ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { MetricCard, calcTrend, fmtCurrency } from "@/components/metrics";
-import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { BarChart2 } from "lucide-react";
 
@@ -385,95 +384,18 @@ export default function AnalyticsPage() {
 
   const fetchAnalytics = useCallback(async () => {
     setLoading(true);
-    const rangeMs = range.to.getTime() - range.from.getTime();
-    const prevFrom = new Date(range.from.getTime() - rangeMs);
-    const prevTo = range.from;
-
     try {
-      const [
-        { data: events },
-        { data: prevEvents },
-        { data: leads },
-        { data: prevLeads },
-        { data: items },
-      ] = await Promise.all([
-        supabase.from("site_events").select("event_type, session_id, visitor_id, created_at")
-          .gte("created_at", range.from.toISOString()).lte("created_at", range.to.toISOString()),
-        supabase.from("site_events").select("event_type, session_id, visitor_id, created_at")
-          .gte("created_at", prevFrom.toISOString()).lt("created_at", prevTo.toISOString()),
-        supabase.from("leads").select("id, status, total_amount_cents, customer_data, created_at")
-          .gte("created_at", range.from.toISOString()).lte("created_at", range.to.toISOString()),
-        supabase.from("leads").select("id, status, total_amount_cents, created_at")
-          .gte("created_at", prevFrom.toISOString()).lt("created_at", prevTo.toISOString()),
-        supabase.from("order_items").select("id, quantity, lead_id, created_at")
-          .gte("created_at", range.from.toISOString()).lte("created_at", range.to.toISOString()),
-      ]);
-
-      const ev = events || [];
-      const pev = prevEvents || [];
-      const lds = leads || [];
-      const plds = prevLeads || [];
-      const its = items || [];
-
-      const sessions = new Set(ev.filter((e: any) => e.event_type === "session_start").map((e: any) => e.session_id)).size;
-      const sessionsPrev = new Set(pev.filter((e: any) => e.event_type === "session_start").map((e: any) => e.session_id)).size;
-      const uniqueVisitors = new Set(ev.map((e: any) => e.visitor_id)).size;
-      const uniqueVisitorsPrev = new Set(pev.map((e: any) => e.visitor_id)).size;
-      const pageViews = ev.filter((e: any) => e.event_type === "pageview").length;
-      const pageViewsPrev = pev.filter((e: any) => e.event_type === "pageview").length;
-      const formSubmissions = ev.filter((e: any) => e.event_type === "form_submit").length;
-      const formSubmissionsPrev = pev.filter((e: any) => e.event_type === "form_submit").length;
-      const customStarts = ev.filter((e: any) => e.event_type === "customize_start").length;
-      const customCompletes = ev.filter((e: any) => e.event_type === "customize_complete").length;
-      const conversionRate = sessions > 0 ? (formSubmissions / sessions) * 100 : 0;
-      const conversionRatePrev = sessionsPrev > 0 ? (formSubmissionsPrev / sessionsPrev) * 100 : 0;
-      const totalOrders = lds.length;
-      const totalOrdersPrev = plds.length;
-      const totalRevenue = lds.reduce((s: number, l: any) => s + (l.total_amount_cents || 0), 0);
-      const totalRevenuePrev = plds.reduce((s: number, l: any) => s + (l.total_amount_cents || 0), 0);
-      const completed = lds.filter((l: any) => l.status === "completed");
-      const completedPrev = plds.filter((l: any) => l.status === "completed");
-      const paidRevenue = completed.reduce((s: number, l: any) => s + (l.total_amount_cents || 0), 0);
-      const paidRevenuePrev = completedPrev.reduce((s: number, l: any) => s + (l.total_amount_cents || 0), 0);
-      const avgOrderValue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
-      const avgOrderValuePrev = totalOrdersPrev > 0 ? Math.round(totalRevenuePrev / totalOrdersPrev) : 0;
-      const itemsSold = its.reduce((s: number, i: any) => s + (i.quantity || 0), 0);
-      const totalClients = new Set(lds.map((l: any) => l.customer_data?.email).filter(Boolean)).size;
-      const totalClientsPrev = new Set(plds.map((l: any) => (l as any).customer_data?.email).filter(Boolean)).size;
-
-      const dailyMap = new Map<string, { sessions: number; pageViews: number; forms: number; revenue: number }>();
-      ev.forEach((e: any) => {
-        const key = new Date(e.created_at).toLocaleDateString("uk-UA", { day: "numeric", month: "short" });
-        if (!dailyMap.has(key)) dailyMap.set(key, { sessions: 0, pageViews: 0, forms: 0, revenue: 0 });
-        const d = dailyMap.get(key)!;
-        if (e.event_type === "session_start") d.sessions++;
-        if (e.event_type === "pageview") d.pageViews++;
-        if (e.event_type === "form_submit") d.forms++;
-      });
-      lds.forEach((l: any) => {
-        const key = new Date(l.created_at).toLocaleDateString("uk-UA", { day: "numeric", month: "short" });
-        if (!dailyMap.has(key)) dailyMap.set(key, { sessions: 0, pageViews: 0, forms: 0, revenue: 0 });
-        dailyMap.get(key)!.revenue += (l.total_amount_cents || 0) / 100;
-      });
-
-      setData({
-        sessions, sessionsPrev, uniqueVisitors, uniqueVisitorsPrev,
-        pageViews, pageViewsPrev,
-        pagesPerSession: sessions > 0 ? pageViews / sessions : 0,
-        formSubmissions, formSubmissionsPrev,
-        customizationStarts: customStarts, customizationCompletions: customCompletes,
-        conversionRate, conversionRatePrev,
-        totalOrders, totalOrdersPrev, totalRevenue, totalRevenuePrev,
-        paidRevenue, paidRevenuePrev, avgOrderValue, avgOrderValuePrev,
-        itemsSold, totalClients, totalClientsPrev,
-        completedOrders: completed.length, completedOrdersPrev: completedPrev.length,
-        dailyStats: Array.from(dailyMap.entries()).map(([date, s]) => ({ date, ...s })),
-      });
-    } catch (err) {      console.error("Analytics fetch error:", err);
+      const res = await fetch(`/api/analytics/range?from=${range.from.toISOString()}&to=${range.to.toISOString()}`);
+      if (!res.ok) throw new Error("Failed to fetch analytics");
+      const result = await res.json();
+      setData(result);
+    } catch (err) {
+      console.error("Analytics fetch error:", err);
+      setData(null);
     } finally {
       setLoading(false);
     }
-  }, [range, supabase]);
+  }, [range]);
 
   useEffect(() => { fetchAnalytics(); }, [fetchAnalytics]);
 
@@ -496,7 +418,7 @@ export default function AnalyticsPage() {
   const d = data;
 
   return (
-    <div className="flex flex-1 h-0 flex-col overflow-hidden bg-muted/20">
+    <div className="flex flex-1 h-0 flex-col overflow-hidden">
       <DashboardHeader
         title="Аналітика"
         subtitle={
@@ -659,4 +581,3 @@ export default function AnalyticsPage() {
     </div>
   );
 }
-

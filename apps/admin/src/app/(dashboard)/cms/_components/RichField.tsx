@@ -37,13 +37,13 @@ const extensions = [
   Command.configure({
     suggestion: {
       items: () => createSuggestionItems([
-        { title: "Текст", searchTerms: ["p"], icon: <Text size={14} />, command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleNode("paragraph", "paragraph").run() },
-        { title: "Заголовок 2", searchTerms: ["h2"], icon: <Heading2 size={14} />, command: ({ editor, range }) => editor.chain().focus().deleteRange(range).setNode("heading", { level: 2 }).run() },
-        { title: "Заголовок 3", searchTerms: ["h3"], icon: <Heading3 size={14} />, command: ({ editor, range }) => editor.chain().focus().deleteRange(range).setNode("heading", { level: 3 }).run() },
-        { title: "Маркований список", searchTerms: ["ul", "bullet"], icon: <List size={14} />, command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleBulletList().run() },
-        { title: "Нумерований список", searchTerms: ["ol"], icon: <ListOrdered size={14} />, command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleOrderedList().run() },
-        { title: "Цитата", searchTerms: ["quote"], icon: <TextQuote size={14} />, command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleBlockquote().run() },
-        { title: "Код", searchTerms: ["code"], icon: <Code size={14} />, command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleCodeBlock().run() },
+        { title: "Текст", description: "Звичайний текст", searchTerms: ["p"], icon: <Text size={14} />, command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleNode("paragraph", "paragraph").run() },
+        { title: "Заголовок 2", description: "Заголовок другого рівня", searchTerms: ["h2"], icon: <Heading2 size={14} />, command: ({ editor, range }) => editor.chain().focus().deleteRange(range).setNode("heading", { level: 2 }).run() },
+        { title: "Заголовок 3", description: "Заголовок третього рівня", searchTerms: ["h3"], icon: <Heading3 size={14} />, command: ({ editor, range }) => editor.chain().focus().deleteRange(range).setNode("heading", { level: 3 }).run() },
+        { title: "Маркований список", description: "Список з маркерами", searchTerms: ["ul", "bullet"], icon: <List size={14} />, command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleBulletList().run() },
+        { title: "Нумерований список", description: "Список з номерами", searchTerms: ["ol"], icon: <ListOrdered size={14} />, command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleOrderedList().run() },
+        { title: "Цитата", description: "Блок цитати", searchTerms: ["quote"], icon: <TextQuote size={14} />, command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleBlockquote().run() },
+        { title: "Код", description: "Блок коду", searchTerms: ["code"], icon: <Code size={14} />, command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleCodeBlock().run() },
       ]),
       render: renderItems,
     },
@@ -80,11 +80,11 @@ export default function RichField({ label, value, onChange }: RichFieldProps) {
               <EditorCommandEmpty className="px-3 py-2 text-sm text-muted-foreground">Нічого не знайдено</EditorCommandEmpty>
               <EditorCommandList>
                 {createSuggestionItems([
-                  { title: "Текст", searchTerms: ["p"], icon: <Text size={14} />, command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleNode("paragraph", "paragraph").run() },
-                  { title: "Заголовок 2", searchTerms: ["h2"], icon: <Heading2 size={14} />, command: ({ editor, range }) => editor.chain().focus().deleteRange(range).setNode("heading", { level: 2 }).run() },
-                  { title: "Маркований список", searchTerms: ["ul"], icon: <List size={14} />, command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleBulletList().run() },
-                  { title: "Цитата", searchTerms: ["quote"], icon: <TextQuote size={14} />, command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleBlockquote().run() },
-                  { title: "Код", searchTerms: ["code"], icon: <Code size={14} />, command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleCodeBlock().run() },
+                  { title: "Текст", description: "Звичайний текст", searchTerms: ["p"], icon: <Text size={14} />, command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleNode("paragraph", "paragraph").run() },
+                  { title: "Заголовок 2", description: "Заголовок другого рівня", searchTerms: ["h2"], icon: <Heading2 size={14} />, command: ({ editor, range }) => editor.chain().focus().deleteRange(range).setNode("heading", { level: 2 }).run() },
+                  { title: "Маркований список", description: "Список з маркерами", searchTerms: ["ul"], icon: <List size={14} />, command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleBulletList().run() },
+                  { title: "Цитата", description: "Блок цитати", searchTerms: ["quote"], icon: <TextQuote size={14} />, command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleBlockquote().run() },
+                  { title: "Код", description: "Блок коду", searchTerms: ["code"], icon: <Code size={14} />, command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleCodeBlock().run() },
                 ]).map((item) => (
                   <EditorCommandItem
                     key={item.title}

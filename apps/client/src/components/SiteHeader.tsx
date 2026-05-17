@@ -63,8 +63,11 @@ export function SiteHeader() {
     };
     readCart();
     window.addEventListener("storage", readCart);
-    const t = setInterval(readCart, 2000);
-    return () => { window.removeEventListener("storage", readCart); clearInterval(t); };
+    window.addEventListener("udo_cart_update", readCart);
+    return () => {
+      window.removeEventListener("storage", readCart);
+      window.removeEventListener("udo_cart_update", readCart);
+    };
   }, []);
 
   return (

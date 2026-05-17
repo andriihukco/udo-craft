@@ -154,6 +154,9 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_site_events_visitor_id') THEN
     CREATE INDEX idx_site_events_visitor_id ON site_events(visitor_id);
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_leads_customer_email') THEN
+    CREATE INDEX idx_leads_customer_email ON leads ((customer_data->>'email'));
+  END IF;
 END $$;
 
 -- ─────────────────────────────────────────────

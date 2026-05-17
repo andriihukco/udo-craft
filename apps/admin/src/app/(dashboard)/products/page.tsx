@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Shirt, FolderTree, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/page-header";
+import { DashboardPage } from "@/components/dashboard-page";
 import { useProductsData } from "./_components/useProductsData";
 import { ProductsTab } from "./_components/ProductsTab";
 import { CategoriesTab } from "./_components/CategoriesTab";
@@ -41,44 +41,37 @@ export default function ProductsPage() {
     refreshProducts();
   };
 
+  const tabs = (
+    <nav className="flex h-full">
+      {TABS.map(({ key, icon: Icon, label }) => (
+        <button
+          key={key}
+          onClick={() => setTab(key)}
+          className={`flex items-center gap-1.5 px-3 h-full text-sm font-medium border-b-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset ${
+            tab === key
+              ? "border-primary text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Icon className="w-3.5 h-3.5" />
+          {label}
+        </button>
+      ))}
+    </nav>
+  );
+
   return (
-    <div className="flex flex-1 h-0 flex-col overflow-hidden">
-      {/* Page header */}
-      <div className="px-4 pt-4 pb-2 shrink-0">
-        <PageHeader
-          title="Товари"
-          actions={
-            tab === "products" ? (
-              <Button size="sm" onClick={() => router.push("/products/new")}>
-                <Plus className="w-3.5 h-3.5 mr-1" /> Додати товар
-              </Button>
-            ) : undefined
-          }
-        />
-      </div>
-
-      {/* Tab bar */}
-      <div className="h-10 px-4 border-b border-border shrink-0 flex items-center gap-1">
-        <nav className="flex h-full">
-          {TABS.map(({ key, icon: Icon, label }) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              className={`flex items-center gap-1.5 px-3 h-full text-sm font-medium border-b-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset ${
-                tab === key
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              {label}
-            </button>
-          ))}
-        </nav>
-      </div>
-
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto">
+    <DashboardPage
+      title="Товари"
+      tabs={tabs}
+      actions={
+        tab === "products" ? (
+          <Button size="sm" onClick={() => router.push("/products/new")}>
+            <Plus className="w-3.5 h-3.5 mr-1" /> Додати товар
+          </Button>
+        ) : undefined
+      }
+    >
         {tab === "products" && (
           <ProductsTab
             products={products}
@@ -95,7 +88,6 @@ export default function ProductsPage() {
             onRefresh={refresh}
           />
         )}
-      </div>
-    </div>
+    </DashboardPage>
   );
 }

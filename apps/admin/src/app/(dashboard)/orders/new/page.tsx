@@ -350,14 +350,14 @@ export default function NewOrderPage() {
         <div className="hidden lg:block w-96 border-l border-border/40 bg-background/50 backdrop-blur-xl sticky top-16 h-[calc(100vh-4rem)] overflow-hidden">
           <DesktopCartPanel cart={cart} totalCents={totalCents} products={products}
             variants={variants} materials={materials} onEdit={handleEditCartItem}
-            onRemove={(i) => setCart((prev) => prev.filter((_, idx) => idx !== i))}
+            onRemove={(i: number) => setCart((prev) => prev.filter((_, idx) => idx !== i))}
             onCheckout={() => setStep("checkout")} />
         </div>
       </div>
 
       {/* Mobile cart bar */}
       <MobileAdminCart cart={cart} totalCents={totalCents} onEdit={handleEditCartItem}
-        onRemove={(i) => setCart((prev) => prev.filter((_, idx) => idx !== i))}
+        onRemove={(i: number) => setCart((prev) => prev.filter((_, idx) => idx !== i))}
         onCheckout={() => setStep("checkout")} />
     </div>
   );

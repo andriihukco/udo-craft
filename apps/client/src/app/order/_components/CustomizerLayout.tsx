@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ArrowLeft, Layers, LayoutList, Loader2, Palette, Pencil, Ruler, Shapes, Shirt, Type, Upload } from "lucide-react";
+import { ArrowLeft, Layers, LayoutList, Loader2, Palette, Pencil, Ruler, Shapes, PackageOpen, Type, Upload } from "lucide-react";
 import { type SidebarTabId } from "@udo-craft/shared";
 import { CustomizerMobileSheet } from "./CustomizerMobileSheet";
 
@@ -25,6 +25,7 @@ interface CustomizerLayoutProps {
   setMobileSheet: (v: "config" | "price" | null) => void;
   addingToCart: boolean;
   removingBg?: boolean;
+  onCancelRemoveBg?: () => void;
   sidebar?: React.ReactNode;
   panel?: React.ReactNode;
   activeTab?: SidebarTabId | null;
@@ -46,7 +47,7 @@ interface CustomizerLayoutProps {
 // ── Component ─────────────────────────────────────────────────────────────
 
 export function CustomizerLayout({
-  productName, total, mobileSheet, setMobileSheet, addingToCart, removingBg,
+  productName, total, mobileSheet, setMobileSheet, addingToCart, removingBg, onCancelRemoveBg,
   sidebar, panel, activeTab, onTabChange, onPriceOpen,
   leftPanel, canvas, rightPanel, stickyButton,
   mobileTabSheet, mobilePriceSheet,
@@ -163,7 +164,7 @@ export function CustomizerLayout({
               aria-label="Тираж та ціна"
               className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors min-h-[44px] text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
             >
-              <Shirt className="size-4" />
+              <PackageOpen className="size-4" />
               Тираж
             </button>
           </div>
@@ -183,7 +184,7 @@ export function CustomizerLayout({
               onClick={() => setMobileSheet(mobileSheet === "price" ? null : "price")}
               className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset ${mobileSheet === "price" ? "text-primary border-t-2 border-primary -mt-px" : "text-muted-foreground"}`}
             >
-              <Ruler className="size-4" />
+              <PackageOpen className="size-4" />
               Тираж та ціна
             </button>
           </div>
@@ -214,13 +215,28 @@ export function CustomizerLayout({
         </div>
       )}
       {removingBg && (
-        <div className="fixed inset-0 z-[10001] bg-background/60 backdrop-blur-sm flex items-center justify-center">
-          <div className="flex items-center gap-2.5 rounded-2xl border border-border bg-card px-5 py-3.5 shadow-xl text-sm font-semibold">
-            <Loader2 className="size-4 animate-spin text-primary" />
-            Видаляємо фон...
+        <div className="fixed inset-0 z-[10001] bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="flex flex-col items-center gap-3 rounded-3xl border border-border bg-card px-6 py-6 shadow-2xl max-w-sm text-center animate-in fade-in zoom-in-95 duration-200">
+            <Loader2 className="size-8 animate-spin text-primary" />
+            <div className="space-y-1">
+              <p className="text-base font-bold">Видалення фону з допомогою AI</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Будь ласка, зачекайте. Обробка зображення високої якості може зайняти <span className="font-semibold text-foreground">15–20 секунд</span>.
+              </p>
+            </div>
+            {onCancelRemoveBg && (
+              <button
+                type="button"
+                onClick={onCancelRemoveBg}
+                className="mt-2 h-9 px-4 rounded-xl border border-border text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+              >
+                Скасувати
+              </button>
+            )}
           </div>
         </div>
       )}
     </div>
   );
 }
+

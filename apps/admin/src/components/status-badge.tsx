@@ -3,13 +3,13 @@ import { cn } from "@/lib/utils";
 
 export type LeadStatus = "draft" | "new" | "in_progress" | "production" | "completed" | "archived";
 
-const STATUS_CONFIG: Record<LeadStatus, { label: string; variant: "success" | "warning" | "info" | "destructive" | "outline" | "secondary" | "default" }> = {
-  draft:       { label: "Чернетка",     variant: "outline" },
-  new:         { label: "Новий",        variant: "info" },
-  in_progress: { label: "В роботі",     variant: "warning" },
-  production:  { label: "Виробництво",  variant: "default" },
-  completed:   { label: "Завершено",    variant: "success" },
-  archived:    { label: "Архів",        variant: "secondary" },
+const STATUS_CONFIG: Record<LeadStatus, { label: string; variant: "success" | "warning" | "info" | "destructive" | "outline" | "secondary" | "default"; className: string }> = {
+  draft:       { label: "Чернетка",     variant: "outline",   className: "bg-muted-foreground" },
+  new:         { label: "Новий",        variant: "info",      className: "bg-blue-500" },
+  in_progress: { label: "В роботі",     variant: "warning",   className: "bg-amber-500" },
+  production:  { label: "Виробництво",  variant: "default",   className: "bg-primary" },
+  completed:   { label: "Завершено",    variant: "success",   className: "bg-emerald-500" },
+  archived:    { label: "Архів",        variant: "secondary", className: "bg-slate-400" },
 };
 
 interface StatusBadgeProps {

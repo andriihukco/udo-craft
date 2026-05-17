@@ -121,6 +121,7 @@ export function OrderPageInner({
           mockupDataUrl: undefined, mockupBackDataUrl: undefined, mockupsMap: undefined,
         })),
       }));
+      window.dispatchEvent(new Event("udo_cart_update"));
     } catch { /* quota */ }
   }, [step, cart, contact]);
 

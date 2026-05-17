@@ -42,10 +42,10 @@ export function NavUser({ user }: NavUserProps) {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className={isCollapsed ? "rounded-full size-8 p-0 flex items-center justify-center hover:bg-sidebar-accent transition-colors" : "flex w-full items-center gap-2 rounded-md p-2 text-left text-sm hover:bg-sidebar-accent transition-colors data-[state=open]:bg-sidebar-accent"}>
-        <Avatar className={isCollapsed ? "size-8 rounded-full" : "size-8 rounded-lg"}>
+      <DropdownMenuTrigger className={isCollapsed ? "flex size-9 items-center justify-center rounded-md p-0 transition-colors hover:bg-sidebar-accent" : "flex h-11 w-full items-center gap-3 rounded-md p-2 text-left text-sm transition-colors hover:bg-sidebar-accent data-[state=open]:bg-sidebar-accent"}>
+        <Avatar className={isCollapsed ? "size-8 rounded-md" : "size-8 rounded-md"}>
           <AvatarImage src={user.avatar} alt={user.name} />
-          <AvatarFallback className={isCollapsed ? "rounded-full bg-primary/15 text-primary text-xs font-semibold" : "rounded-lg bg-primary/15 text-primary text-xs font-semibold"}>
+          <AvatarFallback className="rounded-md bg-primary/10 text-xs font-semibold text-primary">
             {initials}
           </AvatarFallback>
         </Avatar>

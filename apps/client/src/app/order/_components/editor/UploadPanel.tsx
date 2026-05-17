@@ -85,13 +85,18 @@ function RecentFileThumbnail({
   );
 }
 
+// ── Global persistence across visitor session ───────────────────────────────
+
+const globalRecentFiles: File[] = [];
+const globalObjectUrls = new Map<File, string>();
+
 // ── Main component ────────────────────────────────────────────────────────
 
 export default function UploadPanel({ onFileAdd }: UploadPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [recentFiles, setRecentFiles] = useState<File[]>([]);
-  const [objectUrls, setObjectUrls] = useState<Map<File, string>>(new Map());
+  const [recentFiles, setRecentFiles] = useState<File[]>(globalRecentFiles);
+  const [objectUrls, setObjectUrls] = useState<Map<File, string>>(globalObjectUrls);
 
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -121,12 +126,19 @@ export default function UploadPanel({ onFileAdd }: UploadPanelProps) {
             (f) => f.name === file.name && f.size === file.size
           );
           if (isDuplicate) return prev;
-          return [file, ...prev];
+          const next = [file, ...prev];
+          globalRecentFiles.length = 0;
+          globalRecentFiles.push(...next);
+          return next;
         });
 
         if (isImageMime(file.type)) {
           const url = URL.createObjectURL(file);
-          setObjectUrls((prev) => new Map(prev).set(file, url));
+          setObjectUrls((prev) => {
+            const next = new Map(prev).set(file, url);
+            globalObjectUrls.set(file, url);
+            return next;
+          });
         }
       } catch {
         setError(`Не вдалося додати "${file.name}". Спробуйте ще раз.`);

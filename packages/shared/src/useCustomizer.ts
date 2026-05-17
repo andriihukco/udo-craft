@@ -225,6 +225,7 @@ export function useCustomizer(config: UseCustomizerConfig): UseCustomizerReturn 
       quantity: number,
       printPricing: PrintTypePricingRow[],
     ): number => {
+      if (layer.isComboChild) return 0;
       const rows = printPricing.filter((r) => r.print_type === layer.type);
       if (!rows.length) return 0;
       const sizeLabel = layer.sizeLabel;

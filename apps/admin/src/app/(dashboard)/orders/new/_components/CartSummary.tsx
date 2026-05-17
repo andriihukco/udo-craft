@@ -6,6 +6,7 @@ import { MockupViewer } from "@/components/mockup-viewer";
 import { Trash2, ShoppingCart } from "lucide-react";
 import type { PrintLayer } from "@/components/print-types";
 import type { ProductColorVariant, Material, Product } from "@udo-craft/shared";
+import { Badge } from "@/components/ui/badge";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 

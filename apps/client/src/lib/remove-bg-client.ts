@@ -5,6 +5,7 @@
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let cachedFn: ((input: Blob, config?: any) => Promise<Blob>) | null = null;
+let currentAbortController: AbortController | null = null;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getRemoveBgFn(): Promise<(input: Blob, config?: any) => Promise<Blob>> {
@@ -54,40 +55,53 @@ function isOomError(err: unknown): boolean {
 }
 
 export async function removeBgClient(imageUrl: string): Promise<string> {
+  currentAbortController = new AbortController();
+  const { signal } = currentAbortController;
+
   let fetchUrl = imageUrl;
   if (imageUrl.startsWith("http")) {
     fetchUrl = `/api/proxy-image?url=${encodeURIComponent(imageUrl)}`;
   }
 
-  const res = await fetch(fetchUrl);
+  const res = await fetch(fetchUrl, { signal });
   if (!res.ok) throw new Error(`Failed to fetch image: ${res.status}`);
   const rawBlob = await res.blob();
 
+  if (signal.aborted) throw new Error("Скасовано користувачем");
   await new Promise((r) => setTimeout(r, 50));
+  if (signal.aborted) throw new Error("Скасовано користувачем");
 
   const fn = await getRemoveBgFn();
 
   const blobMedium = await resizeBlob(rawBlob, 1500);
+  if (signal.aborted) throw new Error("Скасовано користувачем");
+
   try {
     const result = await fn(blobMedium, {
+      signal,
       model: "medium",
       proxyToWorker: false,
       output: { format: "image/png", quality: 1 },
     });
     return URL.createObjectURL(result);
   } catch (err) {
+    if (signal.aborted) throw new Error("Скасовано користувачем");
     if (!isOomError(err)) throw err;
   }
 
   const blobSmall = await resizeBlob(rawBlob, 1024);
+  if (signal.aborted) throw new Error("Скасовано користувачем");
+
   try {
     const result = await fn(blobSmall, {
+      signal,
       model: "small",
       proxyToWorker: false,
       output: { format: "image/png", quality: 0.9 },
     });
     return URL.createObjectURL(result);
   } catch (err) {
+    if (signal.aborted) throw new Error("Скасовано користувачем");
     if (isOomError(err)) {
       throw new Error("Недостатньо пам'яті для видалення фону. Спробуйте зменшити зображення або використайте інший пристрій.");
     }
@@ -96,5 +110,9 @@ export async function removeBgClient(imageUrl: string): Promise<string> {
 }
 
 export function cancelRemoveBg(): void {
-  // No-op: background removal in client uses dynamic ESM import without AbortController support
+  if (currentAbortController) {
+    currentAbortController.abort();
+    currentAbortController = null;
+  }
 }
+

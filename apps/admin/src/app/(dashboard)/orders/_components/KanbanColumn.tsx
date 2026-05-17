@@ -2,35 +2,9 @@
 
 import { Inbox } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { EmptyState } from "@/components/empty-state";
 import { OrderCard } from "./OrderCard";
 import type { LeadStatus } from "@/components/status-badge";
-
-interface OrderItem {
-  id: string;
-  quantity: number;
-  size: string;
-  color: string;
-  unit_price_cents?: number;
-  technical_metadata?: { unit_price_cents?: number; item_note?: string };
-}
-
-interface Lead {
-  id: string;
-  status: LeadStatus;
-  customer_data: {
-    name: string;
-    email?: string;
-    phone?: string;
-    company?: string;
-  };
-  tags?: string[];
-  notes?: string;
-  created_at: string;
-  updated_at: string;
-  total_amount_cents: number;
-  order_items?: OrderItem[];
-}
+import type { Lead } from "./useKanbanDrag";
 
 interface KanbanColumnProps {
   status: LeadStatus;
@@ -78,30 +52,30 @@ export function KanbanColumn({
       onDragLeave={onColDragLeave}
       onDrop={(e) => onColDrop(e, status)}
       className={cn(
-        "flex flex-col rounded-3xl border transition-all duration-300 flex-1 min-w-80 overflow-hidden h-full group/col",
+        "flex h-full min-w-80 flex-1 flex-col overflow-hidden rounded-md border transition-colors group/col",
         isOver
-          ? "bg-primary/[0.04] border-primary shadow-[inset_0_2px_10px_rgba(var(--color-primary),0.05)]"
-          : "bg-muted/10 border-border/30 hover:border-border/60"
+          ? "border-primary bg-primary/[0.03]"
+          : "border-border bg-background hover:border-border"
       )}
     >
       {/* Column header */}
-      <div className="flex items-center justify-between px-5 py-4 shrink-0 glass-morphic border-b border-border/40 sticky top-0 z-10">
+      <div className="sticky top-0 z-10 flex h-12 shrink-0 items-center justify-between border-b border-border bg-white px-4">
         <div className="flex items-center gap-2.5">
-          <p className="text-xs font-black uppercase tracking-widest text-foreground/80">{label}</p>
-          <span className="flex items-center justify-center text-[10px] font-black text-primary bg-primary/10 rounded-full px-2 h-5 border border-primary/5">
+          <p className="text-xs font-semibold uppercase tracking-widest text-foreground/80">{label}</p>
+          <span className="flex h-5 items-center justify-center rounded-full border border-primary/10 bg-primary/10 px-2 text-[10px] font-semibold text-primary">
             {orders.length}
           </span>
         </div>
         
         {totalAmount > 0 && (
-          <span className="text-[11px] font-black text-muted-foreground/60 tracking-tight">
+          <span className="text-[11px] font-semibold tracking-tight text-muted-foreground/70">
             ₴{(totalAmount / 100).toLocaleString("uk-UA")}
           </span>
         )}
       </div>
 
       {/* Cards container */}
-      <div className="flex-1 overflow-y-auto p-3.5 space-y-3.5 scrollbar-hide">
+      <div className="flex-1 space-y-3 overflow-y-auto p-3 scrollbar-hide">
         {orders.map((lead) => (
           <OrderCard
             key={lead.id}
@@ -118,14 +92,13 @@ export function KanbanColumn({
         ))}
         {orders.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 px-4 text-center animate-in">
-            <div className="size-16 rounded-3xl bg-muted/10 border border-border/20 flex items-center justify-center mb-4 shadow-sm group-hover/col:scale-110 transition-transform">
+            <div className="mb-4 flex size-14 items-center justify-center rounded-md border border-border bg-muted/30">
               <Inbox className="size-7 text-muted-foreground/20" />
             </div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">Порожньо</p>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Порожньо</p>
           </div>
         )}
       </div>
     </div>
   );
 }
-

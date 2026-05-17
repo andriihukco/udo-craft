@@ -95,7 +95,7 @@ function ProductColorVariantEditor({
           <Label>Колір (Матеріал) *</Label>
           <Select
             value={form.material_id}
-            onValueChange={(value) => setForm((f) => ({ ...f, material_id: value }))}
+            onValueChange={(value) => setForm((f) => ({ ...f, material_id: value || "" }))}
           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="— Оберіть колір —">
