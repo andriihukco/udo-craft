@@ -168,25 +168,29 @@ export default function UsersPage() {
     }
   };
 
+  const subtitleElem = (
+    <span className="flex items-center gap-1">
+      <Users className="size-3.5" /> {users.length} користувачів
+    </span>
+  );
+
+  const actionsElem = (
+    <div className="flex items-center gap-2">
+      <Button variant="outline" size="icon" onClick={load} disabled={loading} aria-label="Оновити">
+        <RefreshCw className={cn("size-4", loading && "animate-spin")} />
+      </Button>
+      <Button onClick={() => { setForm(EMPTY_FORM); setInviteOpen(true); }}>
+        <UserPlus className="size-4 mr-2" />
+        Запросити
+      </Button>
+    </div>
+  );
+
   return (
     <DashboardPage
       title="Користувачі"
-      subtitle={
-        <span className="flex items-center gap-1">
-          <Users className="size-3.5" /> {users.length} користувачів
-        </span>
-      }
-      actions={
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={load} disabled={loading} aria-label="Оновити">
-            <RefreshCw className={cn("size-4", loading && "animate-spin")} />
-          </Button>
-          <Button onClick={() => { setForm(EMPTY_FORM); setInviteOpen(true); }}>
-            <UserPlus className="size-4 mr-2" />
-            Запросити
-          </Button>
-        </div>
-      }
+      subtitle={subtitleElem}
+      actions={actionsElem}
       contentClassName="p-4 md:p-6 space-y-5"
     >
       {/* Table */}
