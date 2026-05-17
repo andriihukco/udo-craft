@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useDebouncedCallback } from "use-debounce";
 import { createClient } from "@/lib/supabase/client";
 import { playNotificationTone } from "@/lib/notifications";
 import { Button } from "@/components/ui/button";
@@ -48,15 +49,20 @@ function OrdersBoard() {
 
   const drag = useKanbanDrag(selectedLead, setSelectedLead, handleStatusChange);
 
-  const fetchLeads = useCallback(async () => {
-    setLoading(true);
+  const fetchLeads = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const r = await fetch("/api/leads");
       if (!r.ok) throw new Error();
       setLeads((await r.json()) || []);
     } catch { toast.error("Помилка при завантаженні замовлень"); setLeads([]); }
-    finally { setLoading(false); }
+    finally { if (showLoading) setLoading(false); }
   }, []);
+
+  const debouncedRealtimeFetch = useDebouncedCallback(() => {
+    playNotificationTone();
+    fetchLeads(false);
+  }, 3000);
 
   useEffect(() => { fetchLeads(); }, [fetchLeads]);
   useEffect(() => {
@@ -74,7 +80,7 @@ function OrdersBoard() {
   useEffect(() => {
     const ch = supabase.channel("admin-orders-realtime")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "leads" }, () => {
-        playNotificationTone(); fetchLeads();
+        debouncedRealtimeFetch();
       })
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload: { new: { sender?: string } }) => {
@@ -84,7 +90,7 @@ function OrdersBoard() {
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [fetchLeads, supabase]);
+  }, [debouncedRealtimeFetch, supabase]);
 
   return (
     <div className="flex flex-1 min-h-0 overflow-hidden selection:bg-primary/10 selection:text-primary">
