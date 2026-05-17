@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const limit = Number(request.nextUrl.searchParams.get("limit")) || 100;
+    const limit = Number(request.nextUrl.searchParams.get("limit")) || 5000;
 
     const { data, error } = await getServiceClient()
       .from("leads")
