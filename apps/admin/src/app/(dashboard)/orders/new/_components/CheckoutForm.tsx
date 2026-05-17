@@ -28,6 +28,9 @@ interface CheckoutFormProps {
   onBack: () => void;
 }
 
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+
 export function CheckoutForm({
   contact, setContact, orderTags, setOrderTags,
   extraFiles, setExtraFiles, cart: _cart, totalCents: _totalCents,
@@ -54,178 +57,230 @@ export function CheckoutForm({
   };
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold">Контактні дані</h2>
+    <div className="space-y-6">
+      <Card className="border-none shadow-none bg-transparent">
+        <CardHeader className="px-0 pt-0">
+          <CardTitle className="text-2xl font-black tracking-tight">Контактні дані</CardTitle>
+          <CardDescription>Заповніть інформацію про клієнта та деталі доставки</CardDescription>
+        </CardHeader>
+      </Card>
 
-      <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <Label className="text-sm font-medium mb-1.5 block">Ім&apos;я та прізвище *</Label>
-            <Input type="text" value={contact.name} onChange={set("name")}
-              placeholder={cipherText}
-              className={`font-mono placeholder:font-mono ${!contact.name && highlightRequired ? "animate-shake" : ""}`} />
-          </div>
-          <div>
-            <Label className="text-sm font-medium mb-1.5 block">Телефон *</Label>
-            <Input type="tel" value={contact.phone} onChange={set("phone")}
-              placeholder="+380 XX XXX XX XX"
-              className={!contact.phone && highlightRequired ? "animate-shake" : ""} />
-          </div>
-          <div>
-            <Label className="text-sm font-medium mb-1.5 block">Email</Label>
-            <Input type="email" value={contact.email} onChange={set("email")} placeholder="hr@company.com" />
-          </div>
-          <div>
-            <Label className="text-sm font-medium mb-1.5 block">Компанія</Label>
-            <Input type="text" value={contact.company} onChange={set("company")} placeholder="ТОВ «Назва»" />
-          </div>
-          <div>
-            <Label className="text-sm font-medium mb-1.5 block">ЄДРПОУ</Label>
-            <Input type="text" value={contact.edrpou} onChange={set("edrpou")} placeholder="12345678" />
-          </div>
-          <div>
-            <Label className="text-sm font-medium mb-1.5 block">Соцмережа</Label>
-            <div className="flex gap-2">
-              <select value={contact.socialNetwork} onChange={set("socialNetwork")}
-                className="h-9 shrink-0 rounded-md border border-input bg-background px-3 text-sm">
-                {["Instagram", "Telegram", "Facebook", "TikTok", "Viber"].map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-              <Input type="text" value={contact.socialHandle} onChange={set("socialHandle")}
-                placeholder="@username" className="flex-1 min-w-0" />
+      <Card variant="glass" className="p-2">
+        <CardContent className="space-y-8 pt-6">
+          {/* Main Info */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Ім&apos;я та прізвище *</Label>
+              <Input type="text" value={contact.name} onChange={set("name")}
+                placeholder={cipherText}
+                className={`h-11 rounded-xl border-border/40 bg-background/50 focus:bg-background transition-all font-mono placeholder:font-mono ${!contact.name && highlightRequired ? "ring-2 ring-destructive/20 border-destructive animate-shake" : ""}`} />
             </div>
-          </div>
-        </div>
-
-        {/* Delivery — card style matching client */}
-        <div>
-          <Label className="text-sm font-medium mb-2 block">Доставка</Label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {DELIVERY_OPTIONS.map((opt) => (
-              <button key={opt.id} type="button"
-                onClick={() => setContact((prev) => ({ ...prev, delivery: opt.id }))}
-                className={`text-left p-3 rounded-xl border transition-colors ${contact.delivery === opt.id ? "border-primary bg-primary/5" : "border-border hover:border-border/80"}`}>
-                <p className="text-sm font-medium">{opt.label}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
-              </button>
-            ))}
-          </div>
-          {contact.delivery === "nova_poshta" && (
-            <div className="mt-2 space-y-1">
-              <Label className="text-xs font-medium">Адреса доставки *</Label>
-              <Input type="text" value={contact.novaPoshtaDetails} onChange={set("novaPoshtaDetails")}
-                placeholder="Місто, відділення або номер поштомату"
-                className={!contact.novaPoshtaDetails.trim() && highlightRequired ? "animate-shake" : ""} />
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Телефон *</Label>
+              <Input type="tel" value={contact.phone} onChange={set("phone")}
+                placeholder="+380 XX XXX XX XX"
+                className={`h-11 rounded-xl border-border/40 bg-background/50 focus:bg-background transition-all ${!contact.phone && highlightRequired ? "ring-2 ring-destructive/20 border-destructive animate-shake" : ""}`} />
             </div>
-          )}
-        </div>
-
-        {/* Tags — admin-specific */}
-        <div>
-          <Label className="text-sm font-medium mb-2 block">Теги</Label>
-          <div className="flex flex-wrap gap-2">
-            {PREDEFINED_TAGS.map((tag) => {
-              const active = orderTags.includes(tag.id);
-              return (
-                <button key={tag.id} type="button" onClick={() => toggleTag(tag.id)}
-                  className="inline-flex items-center gap-1.5 h-7 px-3 rounded-full text-xs font-medium border transition-all duration-150"
-                  style={{ color: active ? tag.color : undefined, backgroundColor: active ? tag.bg : undefined, borderColor: active ? `${tag.color}40` : undefined }}>
-                  <span className="size-1.5 rounded-full shrink-0" style={{ backgroundColor: tag.color, opacity: active ? 1 : 0.35 }} />
-                  {tag.label}
-                </button>
-              );
-            })}
-
-            {/* Custom tags already added */}
-            {orderTags
-              .filter((t) => !PREDEFINED_TAGS.find((p) => p.id === t))
-              .map((tag) => (
-                <span key={tag}
-                  className="inline-flex items-center gap-1.5 h-7 px-3 rounded-full text-xs font-medium border border-border bg-muted/40 text-foreground">
-                  {tag}
-                  <button type="button" onClick={() => toggleTag(tag)} className="opacity-40 hover:opacity-80 transition-opacity">
-                    <X className="size-2.5" />
-                  </button>
-                </span>
-              ))}
-
-            {/* Custom tag input — inline chip style matching orders drawer */}
-            <form className="inline-flex items-center gap-1.5"
-              onSubmit={(e) => {
-                e.preventDefault();
-                const val = customTagInput.trim();
-                if (!val || orderTags.includes(val)) return;
-                setOrderTags((prev) => [...prev, val]);
-                setCustomTagInput("");
-              }}>
-              <input
-                value={customTagInput}
-                onChange={(e) => setCustomTagInput(e.target.value)}
-                placeholder="Свій тег..."
-                className="h-7 text-xs border border-dashed border-border/70 rounded-full px-3 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary bg-transparent placeholder:text-muted-foreground/50 w-24 transition-all focus:w-32"
-              />
-              {customTagInput.trim() && (
-                <button type="submit"
-                  className="h-7 w-7 rounded-full flex items-center justify-center bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0">
-                  <Plus className="size-3" />
-                </button>
-              )}
-            </form>
-          </div>
-        </div>
-
-        {/* Collapsible extra details */}
-        <button type="button" onClick={() => setShowExtraDetails(!showExtraDetails)}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors py-1">
-          <ChevronRight className={`size-4 transition-transform ${showExtraDetails ? "rotate-90" : ""}`} />
-          {showExtraDetails ? "Сховати деталі" : "Додати деталі"}
-        </button>
-
-        {showExtraDetails && (
-          <div className="space-y-4">
-            <div>
-              <Label className="text-sm font-medium mb-1.5 block">Бажаний дедлайн</Label>
-              <Input type="date" value={contact.deadline} onChange={set("deadline")} className="w-full sm:w-48" />
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email</Label>
+              <Input type="email" value={contact.email} onChange={set("email")} placeholder="hr@company.com" 
+                className="h-11 rounded-xl border-border/40 bg-background/50 focus:bg-background transition-all" />
             </div>
-            <div>
-              <Label className="text-sm font-medium mb-1.5 block">Коментар</Label>
-              <textarea value={contact.comment} onChange={set("comment")}
-                placeholder="Додаткові побажання..." rows={3}
-                className="w-full px-3 py-2 border border-input rounded-md text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring bg-background" />
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Компанія / ЄДРПОУ</Label>
+              <div className="flex gap-2">
+                <Input type="text" value={contact.company} onChange={set("company")} placeholder="Назва..." className="h-11 rounded-xl border-border/40 bg-background/50 focus:bg-background transition-all flex-1" />
+                <Input type="text" value={contact.edrpou} onChange={set("edrpou")} placeholder="ЄДРПОУ" className="h-11 rounded-xl border-border/40 bg-background/50 focus:bg-background transition-all w-28" />
+              </div>
             </div>
-            <div>
-              <Label className="text-sm font-medium mb-1.5 block">Додаткові файли</Label>
-              <input type="file" multiple id="extra-files-admin" className="hidden"
-                onChange={(e) => setExtraFiles((prev) => [...prev, ...Array.from(e.target.files ?? [])])} />
-              <label htmlFor="extra-files-admin"
-                className="flex flex-col items-center justify-center w-full p-5 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/40 hover:bg-muted/30 transition-colors">
-                <Upload className="size-5 text-muted-foreground mb-1.5" />
-                <p className="text-sm text-muted-foreground font-medium">Натисніть або перетягніть файли</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Макети, логотипи...</p>
-              </label>
-              {extraFiles.length > 0 && (
-                <div className="mt-2 space-y-1.5">
-                  {extraFiles.map((f, i) => (
-                    <div key={i} className="flex items-center justify-between p-2 bg-muted/50 rounded border border-border">
-                      <span className="text-xs truncate">{f.name}</span>
-                      <button type="button" onClick={() => setExtraFiles((prev) => prev.filter((_, idx) => idx !== i))}>
-                        <X className="size-3.5 text-muted-foreground hover:text-destructive" />
-                      </button>
-                    </div>
+            <div className="sm:col-span-2 space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Соцмережа</Label>
+              <div className="flex gap-2">
+                <select value={contact.socialNetwork} onChange={set("socialNetwork")}
+                  className="h-11 shrink-0 rounded-xl border border-border/40 bg-background/50 px-3 text-sm font-bold focus:bg-background transition-all outline-none">
+                  {["Instagram", "Telegram", "Facebook", "TikTok", "Viber"].map((s) => (
+                    <option key={s} value={s}>{s}</option>
                   ))}
-                </div>
-              )}
+                </select>
+                <Input type="text" value={contact.socialHandle} onChange={set("socialHandle")}
+                  placeholder="@username" className="h-11 rounded-xl border-border/40 bg-background/50 focus:bg-background transition-all flex-1" />
+              </div>
             </div>
           </div>
-        )}
-        <div className="flex gap-2 pt-2">
-          <Button variant="outline" className="flex-1" onClick={onBack}>Назад</Button>
-          <Button className="flex-1" onClick={handleNext} disabled={!canProceed}>
-            Перевірити
-          </Button>
-        </div>
-      </div>
+
+          <div className="h-px bg-border/40 w-full" />
+
+          {/* Delivery */}
+          <div className="space-y-4">
+            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Спосіб доставки</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {DELIVERY_OPTIONS.map((opt) => (
+                <button key={opt.id} type="button"
+                  onClick={() => setContact((prev) => ({ ...prev, delivery: opt.id }))}
+                  className={`text-left p-4 rounded-2xl border transition-all duration-300 ${
+                    contact.delivery === opt.id 
+                      ? "border-primary bg-primary/[0.03] ring-2 ring-primary/20 shadow-md scale-[1.02]" 
+                      : "border-border/40 hover:border-primary/20 hover:bg-background/50"
+                  }`}
+                >
+                  <p className="text-sm font-bold text-foreground">{opt.label}</p>
+                  <p className="text-xs text-muted-foreground/80 mt-1 leading-relaxed">{opt.desc}</p>
+                </button>
+              ))}
+            </div>
+            {contact.delivery === "nova_poshta" && (
+              <div className="animate-in slide-in-from-top-2 fade-in duration-300">
+                <Input type="text" value={contact.novaPoshtaDetails} onChange={set("novaPoshtaDetails")}
+                  placeholder="Місто, відділення або номер поштомату"
+                  className={`h-11 rounded-xl border-border/40 bg-background/50 focus:bg-background transition-all ${!contact.novaPoshtaDetails.trim() && highlightRequired ? "ring-2 ring-destructive/20 border-destructive animate-shake" : ""}`} />
+              </div>
+            )}
+          </div>
+
+          <div className="h-px bg-border/40 w-full" />
+
+          {/* Tags */}
+          <div className="space-y-4">
+            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Теги замовлення</Label>
+            <div className="flex flex-wrap gap-2">
+              {PREDEFINED_TAGS.map((tag) => {
+                const active = orderTags.includes(tag.id);
+                return (
+                  <button 
+                    key={tag.id} 
+                    type="button" 
+                    onClick={() => toggleTag(tag.id)}
+                    className={`inline-flex items-center gap-2 h-9 px-4 rounded-xl text-xs font-bold transition-all duration-300 border ${
+                      active 
+                        ? "shadow-sm scale-105" 
+                        : "bg-background/40 border-border/40 text-muted-foreground hover:border-foreground/20 hover:text-foreground"
+                    }`}
+                    style={{ 
+                      color: active ? tag.color : undefined, 
+                      backgroundColor: active ? `${tag.color}15` : undefined, 
+                      borderColor: active ? `${tag.color}40` : undefined 
+                    }}
+                  >
+                    <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: tag.color, opacity: active ? 1 : 0.4 }} />
+                    {tag.label}
+                  </button>
+                );
+              })}
+
+              {orderTags
+                .filter((t) => !PREDEFINED_TAGS.find((p) => p.id === t))
+                .map((tag) => (
+                  <Badge 
+                    key={tag}
+                    variant="secondary"
+                    className="h-9 px-4 rounded-xl gap-2 bg-muted/40 border-border/40"
+                  >
+                    {tag}
+                    <button type="button" onClick={() => toggleTag(tag)} className="opacity-40 hover:opacity-100 transition-opacity">
+                      <X className="size-3" />
+                    </button>
+                  </Badge>
+                ))}
+
+              <form 
+                className="inline-flex items-center gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const val = customTagInput.trim();
+                  if (!val || orderTags.includes(val)) return;
+                  setOrderTags((prev) => [...prev, val]);
+                  setCustomTagInput("");
+                }}
+              >
+                <input
+                  value={customTagInput}
+                  onChange={(e) => setCustomTagInput(e.target.value)}
+                  placeholder="Свій тег..."
+                  className="h-9 text-xs font-bold border border-dashed border-border/60 rounded-xl px-4 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 bg-transparent placeholder:text-muted-foreground/50 w-28 transition-all focus:w-40"
+                />
+                {customTagInput.trim() && (
+                  <Button type="submit" size="icon" className="size-9 rounded-xl shadow-md">
+                    <Plus className="size-4" />
+                  </Button>
+                )}
+              </form>
+            </div>
+          </div>
+
+          {/* Details Toggle */}
+          <div className="pt-4">
+            <button 
+              type="button" 
+              onClick={() => setShowExtraDetails(!showExtraDetails)}
+              className="group flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-all px-2"
+            >
+              <div className={`size-6 rounded-lg bg-muted flex items-center justify-center transition-all group-hover:bg-primary/10 ${showExtraDetails ? "rotate-90 bg-primary/10 text-primary" : ""}`}>
+                <ChevronRight className="size-3.5" />
+              </div>
+              {showExtraDetails ? "Сховати додаткове" : "Додати коментар та файли"}
+            </button>
+
+            {showExtraDetails && (
+              <div className="mt-6 space-y-6 animate-in slide-in-from-top-4 fade-in duration-500">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Бажаний дедлайн</Label>
+                  <Input type="date" value={contact.deadline} onChange={set("deadline")} className="h-11 rounded-xl border-border/40 bg-background/50 focus:bg-background transition-all w-full sm:w-60" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Коментар до замовлення</Label>
+                  <textarea 
+                    value={contact.comment} 
+                    onChange={set("comment")}
+                    placeholder="Будь-які додаткові побажання..." 
+                    rows={4}
+                    className="w-full px-4 py-3 border border-border/40 rounded-2xl text-sm font-medium bg-background/50 focus:bg-background focus:ring-2 focus:ring-primary/20 outline-none transition-all resize-none" 
+                  />
+                </div>
+                <div className="space-y-4">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Макети та логотипи</Label>
+                  <input type="file" multiple id="extra-files-admin" className="hidden"
+                    onChange={(e) => setExtraFiles((prev) => [...prev, ...Array.from(e.target.files ?? [])])} />
+                  <label 
+                    htmlFor="extra-files-admin"
+                    className="flex flex-col items-center justify-center w-full p-8 border-2 border-dashed border-border/60 rounded-3xl cursor-pointer hover:border-primary/40 hover:bg-primary/[0.02] transition-all group"
+                  >
+                    <div className="size-12 rounded-2xl bg-muted flex items-center justify-center mb-4 group-hover:bg-primary/10 transition-colors">
+                      <Upload className="size-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </div>
+                    <p className="text-sm font-bold text-foreground">Натисніть або перетягніть файли</p>
+                    <p className="text-xs text-muted-foreground mt-1.5 font-medium uppercase tracking-wider opacity-60">AI, PDF, SVG, PNG</p>
+                  </label>
+                  
+                  {extraFiles.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
+                      {extraFiles.map((f, i) => (
+                        <div key={i} className="flex items-center justify-between p-3 bg-background/40 rounded-xl border border-border/40 backdrop-blur-sm shadow-sm group hover:border-primary/20 transition-all">
+                          <span className="text-xs font-bold truncate max-w-[200px]">{f.name}</span>
+                          <button 
+                            type="button" 
+                            onClick={() => setExtraFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                            className="size-6 rounded-lg flex items-center justify-center hover:bg-destructive/10 hover:text-destructive transition-all"
+                          >
+                            <X className="size-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-4 pt-4">
+            <Button variant="outline" size="lg" className="flex-1 font-bold uppercase tracking-widest text-xs" onClick={onBack}>Назад</Button>
+            <Button size="lg" className="flex-1 font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/20" onClick={handleNext} disabled={!canProceed}>
+              Перевірити замовлення
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
+

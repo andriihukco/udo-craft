@@ -76,3 +76,27 @@
   0%   { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
+
+/* Safari specific: hide native video controls and play overlays */
+video::-webkit-media-controls {
+  display: none !important;
+}
+
+video::-webkit-media-controls-start-playback-button {
+  display: none !important;
+  -webkit-appearance: none !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Hide the volume/airplay buttons Safari adds to background videos */
+video::-webkit-media-controls-enclosure {
+  display: none !important;
+}
+
+/* Aggressive global override for Safari play button */
+*::-webkit-media-controls-start-playback-button {
+  display: none !important;
+  -webkit-appearance: none !important;
+}

@@ -1,5 +1,5 @@
 import { CreateLeadSchema } from "@udo-craft/shared";
-import { createServiceClient } from "@/lib/supabase/service";
+import { createClient } from "@/lib/supabase/server";
 import { sendOrderConfirmation, sendContactNotification } from "@/lib/email";
 import { rateLimit } from "@/lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const supabase = createServiceClient();
+    const supabase = await createClient();
 
     const body = await request.json();
     const parsed = CreateLeadSchema.safeParse(body);

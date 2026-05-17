@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { createServiceClient } from "@/lib/supabase/service";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Політика конфіденційності — U:DO CRAFT",
@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 
 async function getContent() {
   try {
-    const service = createServiceClient();
+    const service = await createClient();
     const { data } = await service
       .from("cms_content")
       .select("body")

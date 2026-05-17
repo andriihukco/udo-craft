@@ -16,7 +16,7 @@ interface NavBarProps {
 }
 
 const navLinks = [
-  { href: "#collections", label: "Колекції" },
+  { href: "#catalog", label: "Каталог" },
   { href: "/popup", label: "Popup" },
   { href: "#about", label: "Про нас" },
   { href: "#how", label: "Як це працює" },

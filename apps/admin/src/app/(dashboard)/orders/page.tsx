@@ -7,6 +7,7 @@ import { playNotificationTone } from "@/lib/notifications";
 import { Button } from "@/components/ui/button";
 import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { DashboardHeader } from "@/components/dashboard-header";
 import { KanbanColumn } from "./_components/KanbanColumn";
 import { OrderQuickSheet } from "./_components/OrderQuickSheet";
 import { useKanbanDrag, type Lead } from "./_components/useKanbanDrag";
@@ -86,24 +87,36 @@ function OrdersBoard() {
   }, [fetchLeads, supabase]);
 
   return (
-    <div className="flex flex-1 min-h-0 overflow-hidden">
+    <div className="flex flex-1 min-h-0 overflow-hidden bg-muted/5 selection:bg-primary/10 selection:text-primary">
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="h-12 px-4 border-b border-border shrink-0 flex items-center justify-between sticky top-0 z-30 bg-background">
-          <p className="font-semibold text-base">
-            Замовлення{leads.length > 0 && <span className="text-muted-foreground font-normal text-sm ml-1">({leads.length})</span>}
-          </p>
-          <Button size="sm" className="gap-1.5 cursor-pointer" onClick={() => router.push("/orders/new")}>
-            <Plus className="size-3.5" /><span className="hidden md:inline">Нове замовлення</span>
-          </Button>
-        </div>
+        <DashboardHeader
+          title="Замовлення"
+          subtitle={
+            leads.length > 0 && (
+              <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-primary/10">
+                {leads.length} всього
+              </span>
+            )
+          }
+          actions={
+            <Button
+              size="lg"
+              className="gap-2 shadow-xl shadow-primary/20 hover:shadow-primary/30 transition-all active:scale-[0.98] font-black uppercase tracking-widest text-[10px] rounded-2xl h-12 px-6"
+              onClick={() => router.push("/orders/new")}
+            >
+              <Plus className="size-4" />
+              <span>Нове замовлення</span>
+            </Button>
+          }
+        />
 
         <div className="flex-1 overflow-x-auto overflow-y-hidden">
           {loading ? (
             <div className="flex items-center justify-center h-full">
-              <Loader2 className="size-8 animate-spin text-muted-foreground" />
+              <Loader2 className="size-10 animate-spin text-primary/40" />
             </div>
           ) : (
-            <div className="flex gap-3 h-full px-4 py-4" style={{ width: "max-content", minWidth: "100%" }}>
+            <div className="flex gap-6 h-full px-8 py-8 animate-in" style={{ width: "max-content", minWidth: "100%" }}>
               {STATUSES.map((status) => {
                 const colLeads = leads.filter((l) => l.status === status);
                 return (

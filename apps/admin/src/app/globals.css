@@ -40,10 +40,12 @@
   --color-chart-3: oklch(0.65 0.2 45);
   --color-chart-4: oklch(0.55 0.22 300);
   --color-chart-5: oklch(0.5 0.2 20);
-  --radius: 0.5rem;
+  --radius: 0.75rem;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
 }
 
 @layer base {
@@ -55,7 +57,8 @@
     border-color: var(--color-border);
   }
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground antialiased selection:bg-primary/10 selection:text-primary;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02";
   }
   select {
     @apply rounded-full border border-input bg-background px-3 text-sm transition-colors outline-none;
@@ -63,6 +66,22 @@
     @apply disabled:cursor-not-allowed disabled:opacity-50;
     appearance: auto;
   }
+}
+
+@utility glass {
+  @apply bg-white/70 backdrop-blur-xl border border-white/20 dark:bg-black/70 dark:border-white/10;
+}
+
+@utility glass-morphic {
+  @apply bg-clip-padding backdrop-blur-md bg-white/60 border border-white/20;
+}
+
+@utility shadow-premium {
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1), 0 1px 4px -1px rgba(0, 0, 0, 0.1);
+}
+
+@utility shadow-depth {
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.15);
 }
 
 @keyframes shake {
@@ -83,5 +102,15 @@
   0%   { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
+
+.animate-in {
+  animation: animate-in 0.3s ease-out;
+}
+
+@keyframes animate-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 
 

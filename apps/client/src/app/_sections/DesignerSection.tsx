@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import { HighlightText } from "@/app/_components/HighlightText";
+import { HighlightText, RoughHighlight } from "@/app/_components/HighlightText";
 
 const STEPS = [
   {
@@ -51,8 +51,7 @@ export function DesignerSection() {
               id="designer-heading"
               className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.02]"
             >
-              Немає логотипу?{" "}
-              <HighlightText delay={0.5}>Ми допоможемо</HighlightText>
+              Немає логотипу? Ми допоможемо
             </h2>
           </div>
           <p className="text-muted-foreground text-base leading-relaxed">
@@ -80,31 +79,16 @@ export function DesignerSection() {
           ))}
         </div>
 
-        {/* Pricing + CTA — inline */}
+        {/* CTA */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
-          className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pt-10 border-t border-border"
+          className="flex justify-start mt-4"
         >
-          <div className="flex flex-wrap gap-x-8 gap-y-1.5">
-            <p className="text-muted-foreground text-sm font-semibold w-full sm:w-auto">
-              Орієнтовна вартість:
-            </p>
-            {[
-              ["Адаптація логотипу", "від 800 ₴"],
-              ["Фірмовий стиль", "від 2 400 ₴"],
-              ["Повний брендинг", "від 6 000 ₴"],
-            ].map(([label, price]) => (
-              <span key={label} className="text-sm text-muted-foreground">
-                {label} —{" "}
-                <span className="text-foreground font-semibold">{price}</span>
-              </span>
-            ))}
-          </div>
           <Link
             href="#contact?ref=designer"
-            className="inline-flex items-center gap-2 bg-primary text-white font-semibold text-sm px-6 py-3 rounded-full hover:bg-primary/90 active:scale-[0.97] transition-all duration-200 shrink-0"
+            className="inline-flex items-center gap-2 bg-primary text-white font-semibold text-sm px-8 py-4 rounded-full hover:bg-primary/90 hover:scale-105 active:scale-[0.97] shadow-md shadow-primary/20 transition-all duration-200 shrink-0"
           >
             Обговорити проєкт <ArrowRight className="w-4 h-4" aria-hidden="true" />
           </Link>

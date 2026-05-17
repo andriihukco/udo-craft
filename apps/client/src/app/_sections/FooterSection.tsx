@@ -12,7 +12,7 @@ const NAV = [
     title: "Продукти",
     links: [
       { href: "/order", label: "Конструктор мерчу" },
-      { href: "#collections", label: "Каталог" },
+      { href: "#catalog", label: "Каталог" },
       { href: "/popup", label: "Popup-стенд" },
       { href: "#contact", label: "Box of Touch" },
       { href: "#contact", label: "Найми дизайнера" },

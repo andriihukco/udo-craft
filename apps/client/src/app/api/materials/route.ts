@@ -1,4 +1,4 @@
-import { createServiceClient } from "@/lib/supabase/service";
+import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 // SERVICE ROLE JUSTIFICATION:
@@ -11,7 +11,7 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const supabase = createServiceClient();
+    const supabase = await createClient();
     const { data, error } = await supabase
       .from("materials")
       .select("*")

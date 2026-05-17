@@ -1,5 +1,5 @@
 import { rateLimit } from "@/lib/rate-limit";
-import { createServiceClient } from "@/lib/supabase/service";
+import { createClient } from "@/lib/supabase/server";
 import { validateFile } from "@/lib/validate-file";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const supabase = createServiceClient();
+    const supabase = await createClient();
     const formData = await request.formData();
     const files = formData.getAll("files") as File[];
 

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createServiceClient } from "@/lib/supabase/service";
 import * as Sentry from "@sentry/nextjs";
 
 // SERVICE ROLE JUSTIFICATION:
@@ -23,7 +22,7 @@ export async function POST() {
   }
 
   // 2. Call the atomic upsert RPC via service-role client (bypasses RLS)
-  const serviceSupabase = createServiceClient();
+  const serviceSupabase = await createClient();
 
   const { data, error } = await serviceSupabase.rpc("increment_ai_quota", {
     p_user_id: user.id,

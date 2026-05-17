@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/service";
+import { createClient } from "@/lib/supabase/server";
 
 // Check if an email is already registered in Supabase Auth.
 // Uses the service role client to query auth.users directly via RPC.
@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing email" }, { status: 400 });
     }
 
-    const supabase = createServiceClient();
+    const supabase = await createClient();
 
     // Query auth.users via the admin API — most reliable approach
     const { data, error } = await supabase.auth.admin.listUsers({ perPage: 1000 });

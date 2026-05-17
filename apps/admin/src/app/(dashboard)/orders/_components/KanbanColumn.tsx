@@ -1,6 +1,7 @@
 "use client";
 
 import { Inbox } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/empty-state";
 import { OrderCard } from "./OrderCard";
 import type { LeadStatus } from "@/components/status-badge";
@@ -76,33 +77,31 @@ export function KanbanColumn({
       onDragOver={(e) => onColDragOver(e, status)}
       onDragLeave={onColDragLeave}
       onDrop={(e) => onColDrop(e, status)}
-      className={`flex flex-col rounded-lg p-3 border transition-colors flex-1 min-w-64 overflow-y-auto ${
+      className={cn(
+        "flex flex-col rounded-3xl border transition-all duration-300 flex-1 min-w-80 overflow-hidden h-full group/col",
         isOver
-          ? "bg-primary/5 border-primary"
-          : status === "archived"
-          ? "bg-red-50/60 border-red-200"
-          : status === "completed"
-          ? "bg-emerald-50/60 border-emerald-200"
-          : "bg-muted/40 border-border"
-      }`}
+          ? "bg-primary/[0.04] border-primary shadow-[inset_0_2px_10px_rgba(var(--color-primary),0.05)]"
+          : "bg-muted/10 border-border/30 hover:border-border/60"
+      )}
     >
       {/* Column header */}
-      <div className="flex items-center justify-between mb-3 shrink-0">
-        <p className="text-sm font-semibold">{label}</p>
-        <div className="flex items-center gap-1.5">
-          {totalAmount > 0 && (
-            <span className="text-xs text-muted-foreground">
-              {(totalAmount / 100).toLocaleString("uk-UA")} ₴
-            </span>
-          )}
-          <span className="text-xs text-muted-foreground bg-background border border-border rounded-full px-2 py-0.5">
+      <div className="flex items-center justify-between px-5 py-4 shrink-0 glass-morphic border-b border-border/40 sticky top-0 z-10">
+        <div className="flex items-center gap-2.5">
+          <p className="text-xs font-black uppercase tracking-widest text-foreground/80">{label}</p>
+          <span className="flex items-center justify-center text-[10px] font-black text-primary bg-primary/10 rounded-full px-2 h-5 border border-primary/5">
             {orders.length}
           </span>
         </div>
+        
+        {totalAmount > 0 && (
+          <span className="text-[11px] font-black text-muted-foreground/60 tracking-tight">
+            ₴{(totalAmount / 100).toLocaleString("uk-UA")}
+          </span>
+        )}
       </div>
 
-      {/* Cards */}
-      <div className="space-y-2">
+      {/* Cards container */}
+      <div className="flex-1 overflow-y-auto p-3.5 space-y-3.5 scrollbar-hide">
         {orders.map((lead) => (
           <OrderCard
             key={lead.id}
@@ -118,9 +117,15 @@ export function KanbanColumn({
           />
         ))}
         {orders.length === 0 && (
-          <EmptyState icon={Inbox} title="Порожньо" className="py-8 opacity-50" />
+          <div className="flex flex-col items-center justify-center py-20 px-4 text-center animate-in">
+            <div className="size-16 rounded-3xl bg-muted/10 border border-border/20 flex items-center justify-center mb-4 shadow-sm group-hover/col:scale-110 transition-transform">
+              <Inbox className="size-7 text-muted-foreground/20" />
+            </div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">Порожньо</p>
+          </div>
         )}
       </div>
     </div>
   );
 }
+

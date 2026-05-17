@@ -36,7 +36,7 @@ export function SiteFooter() {
             <nav className="flex flex-col gap-2.5" aria-label="Продукти">
               {[
                 { href: "/order",        label: "Конструктор мерчу" },
-                { href: "/#collections", label: "Каталог" },
+                { href: "/#catalog", label: "Каталог" },
                 { href: "/popup",        label: "Popup-стенд" },
                 { href: "/#contact",     label: "Box of Touch" },
                 { href: "/#contact",     label: "Найми дизайнера" },

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import { HighlightText } from "@/app/_components/HighlightText";
+import { HighlightText, RoughHighlight } from "@/app/_components/HighlightText";
 
 export function FinalCtaSection() {
   const ref = useRef(null);
@@ -40,8 +40,7 @@ export function FinalCtaSection() {
             className="text-white font-black tracking-tight leading-[0.95] mb-8"
             style={{ fontSize: "clamp(2.5rem, 7vw, 6rem)" }}
           >
-            Ваш мерч —{" "}
-            <HighlightText delay={0.4} color="rgba(255,255,255,0.15)">за 14 днів</HighlightText>
+            Ваш мерч — за 14 днів
           </h2>
           <p className="text-white/50 text-base leading-relaxed max-w-md mx-auto mb-10">
             Від ідеї до готового виробу. Онлайн-редактор, особистий менеджер, гарантія якості.

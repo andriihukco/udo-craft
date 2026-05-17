@@ -370,6 +370,10 @@ const QUICK_CHIPS: { key: PresetKey; label: string }[] = [
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
+import { DashboardHeader } from "@/components/dashboard-header";
+
+
+
 export default function AnalyticsPage() {
   const supabase = createClient();
   const [data, setData] = useState<AnalyticsData | null>(null);
@@ -469,7 +473,7 @@ export default function AnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  }, [range]);
+  }, [range, supabase]);
 
   useEffect(() => { fetchAnalytics(); }, [fetchAnalytics]);
 
@@ -479,130 +483,180 @@ export default function AnalyticsPage() {
   };
 
   const skeletonRows = (
-    <div className="space-y-6">
-      <div className="grid grid-cols-4 gap-3">
+    <div className="space-y-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="bg-card border rounded-lg p-4 h-20 animate-pulse" />
+          <div key={i} className="bg-card border border-border/50 rounded-2xl p-6 h-32 animate-pulse shadow-sm" />
         ))}
       </div>
-      <div className="bg-card border rounded-lg h-[300px] animate-pulse" />
+      <div className="bg-card border border-border/50 rounded-2xl h-[400px] animate-pulse shadow-sm" />
     </div>
   );
 
   const d = data;
 
   return (
-    <div className="flex flex-1 h-0 flex-col overflow-hidden">
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-      <PageHeader
+    <div className="flex flex-1 h-0 flex-col overflow-hidden bg-muted/20">
+      <DashboardHeader
         title="Аналітика"
+        subtitle={
+          <div className="flex items-center gap-2">
+            <BarChart2 className="size-4 text-primary" />
+            <span>Звіт за обраний період</span>
+          </div>
+        }
         actions={
           <div className="flex items-center gap-2 flex-wrap">
-            {QUICK_CHIPS.map(chip => (
-              <Button
-                key={chip.key}
-                type="button"
-                variant={range.preset === chip.key ? "default" : "outline"}
-                size="sm"
-                className="h-7 text-xs px-2"
-                onClick={() => applyQuickChip(chip.key)}
-              >
-                {chip.label}
-              </Button>
-            ))}
+            <div className="flex bg-muted/50 p-1 rounded-lg border border-border/50 mr-2">
+              {QUICK_CHIPS.map(chip => (
+                <button
+                  key={chip.key}
+                  onClick={() => applyQuickChip(chip.key)}
+                  className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${
+                    range.preset === chip.key
+                      ? "bg-background text-primary shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
             <DateRangePicker range={range} onChange={r => setRange(r)} />
-            <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={fetchAnalytics} disabled={loading}>
+            <Button variant="outline" size="icon" className="size-8 rounded-lg border-border/50 shadow-sm" onClick={fetchAnalytics} disabled={loading}>
               <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
             </Button>
           </div>
         }
       />
-      {loading && !d ? skeletonRows : d ? (
-        d.sessions === 0 && d.totalOrders === 0 && d.totalRevenue === 0 ? (
-          <EmptyState
-            icon={BarChart2}
-            title="Даних ще немає"
-            description="Аналітика з'явиться після перших відвідувань та замовлень за обраний період"
-            action={
-              <Button variant="outline" size="sm" onClick={() => applyQuickChip("max")}>
-                Показати весь час
-              </Button>
-            }
-          />
-        ) : (
-        <>
-          {/* ── Traffic ── */}
-          <div>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Трафік</p>
-            <div className="grid grid-cols-4 gap-3">
-              <MetricCard label="Унікальні відвідувачі" value={d.uniqueVisitors.toLocaleString()} trend={calcTrend(d.uniqueVisitors, d.uniqueVisitorsPrev)} sub={`${d.uniqueVisitorsPrev} попередній період`} sparkData={[d.uniqueVisitorsPrev, d.uniqueVisitors]} />
-              <MetricCard label="Сеанси" value={d.sessions.toLocaleString()} trend={calcTrend(d.sessions, d.sessionsPrev)} sub={`${d.sessionsPrev} попередній період`} sparkData={[d.sessionsPrev, d.sessions]} />
-              <MetricCard label="Перегляди сторінок" value={d.pageViews.toLocaleString()} trend={calcTrend(d.pageViews, d.pageViewsPrev)} sub={`${d.pageViewsPrev} попередній період`} sparkData={[d.pageViewsPrev, d.pageViews]} />
-              <MetricCard label="Сторінок за сесію" value={d.pagesPerSession.toFixed(1)} sub="Середній показник" sparkData={[d.pageViewsPrev, d.pageViews]} />
-            </div>
-          </div>
 
-          {/* ── Funnel ── */}
-          <div>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Воронка</p>
-            <div className="grid grid-cols-4 gap-3">
-              <MetricCard label="Заявки (форми)" value={d.formSubmissions} trend={calcTrend(d.formSubmissions, d.formSubmissionsPrev)} sub={`${d.formSubmissionsPrev} попередній період`} sparkData={[d.formSubmissionsPrev, d.formSubmissions]} />
-              <MetricCard label="Конверсія" value={`${d.conversionRate.toFixed(1)}%`} trend={calcTrend(d.conversionRate, d.conversionRatePrev)} sub={`${d.conversionRatePrev.toFixed(1)}% попередній`} sparkData={[d.conversionRatePrev, d.conversionRate]} />
-              <MetricCard label="Почали кастомізацію" value={d.customizationStarts} sub="Воронка кастомізації" sparkData={[0, d.customizationStarts]} />
-              <MetricCard label="Завершили кастомізацію" value={d.customizationCompletions} trend={d.customizationStarts > 0 ? Math.round((d.customizationCompletions / d.customizationStarts) * 100) : 0} sub="% завершення" sparkData={[0, d.customizationCompletions]} />
-            </div>
-          </div>
+      <div className="flex-1 overflow-y-auto selection:bg-primary/10">
+        <div className="max-w-7xl mx-auto p-6 space-y-10">
+          {loading && !d ? skeletonRows : d ? (
+            d.sessions === 0 && d.totalOrders === 0 && d.totalRevenue === 0 ? (
+              <EmptyState
+                icon={BarChart2}
+                title="Даних ще немає"
+                description="Аналітика з'явиться після перших відвідувань та замовлень за обраний період"
+                action={
+                  <Button variant="outline" size="sm" onClick={() => applyQuickChip("max")}>
+                    Показати весь час
+                  </Button>
+                }
+              />
+            ) : (
+              <>
+                {/* ── Traffic ── */}
+                <section className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground/60">Трафік та Аудиторія</h2>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <MetricCard label="Унікальні відвідувачі" value={d.uniqueVisitors.toLocaleString()} trend={calcTrend(d.uniqueVisitors, d.uniqueVisitorsPrev)} sub="Порівняно з минулим періодом" sparkData={[d.uniqueVisitorsPrev, d.uniqueVisitors]} />
+                    <MetricCard label="Сеанси" value={d.sessions.toLocaleString()} trend={calcTrend(d.sessions, d.sessionsPrev)} sub="Кількість візитів" sparkData={[d.sessionsPrev, d.sessions]} />
+                    <MetricCard label="Перегляди сторінок" value={d.pageViews.toLocaleString()} trend={calcTrend(d.pageViews, d.pageViewsPrev)} sub="Активність на сайті" sparkData={[d.pageViewsPrev, d.pageViews]} />
+                    <MetricCard label="Сторінок за сесію" value={d.pagesPerSession.toFixed(1)} sub="Глибина перегляду" sparkData={[d.pageViewsPrev, d.pageViews]} />
+                  </div>
+                </section>
 
-          {/* ── Sales ── */}
-          <div>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Продажі</p>
-            <div className="grid grid-cols-4 gap-3">
-              <MetricCard label="Усі замовлення" value={d.totalOrders} trend={calcTrend(d.totalOrders, d.totalOrdersPrev)} sub={`${d.totalOrdersPrev} попередній період`} sparkData={[d.totalOrdersPrev, d.totalOrders]} />
-              <MetricCard label="Загальний дохід" value={fmtCurrency(d.totalRevenue)} trend={calcTrend(d.totalRevenue, d.totalRevenuePrev)} sub={`${fmtCurrency(d.totalRevenuePrev)} попередній`} sparkData={[d.totalRevenuePrev, d.totalRevenue]} />
-              <MetricCard label="Сплачено" value={fmtCurrency(d.paidRevenue)} trend={calcTrend(d.paidRevenue, d.paidRevenuePrev)} sub={`${fmtCurrency(d.paidRevenuePrev)} попередній`} sparkData={[d.paidRevenuePrev, d.paidRevenue]} />
-              <MetricCard label="Середній чек" value={fmtCurrency(d.avgOrderValue)} trend={calcTrend(d.avgOrderValue, d.avgOrderValuePrev)} sub={`${fmtCurrency(d.avgOrderValuePrev)} попередній`} sparkData={[d.avgOrderValuePrev, d.avgOrderValue]} />
-            </div>
-            <div className="grid grid-cols-4 gap-3 mt-3">
-              <MetricCard label="Завершені замовлення" value={d.completedOrders} trend={calcTrend(d.completedOrders, d.completedOrdersPrev)} sub={`${d.completedOrdersPrev} попередній`} sparkData={[d.completedOrdersPrev, d.completedOrders]} />
-              <MetricCard label="Продані товари" value={d.itemsSold} sub="Одиниць за період" sparkData={[0, d.itemsSold]} />
-              <MetricCard label="Клієнти" value={d.totalClients} trend={calcTrend(d.totalClients, d.totalClientsPrev)} sub={`${d.totalClientsPrev} попередній`} sparkData={[d.totalClientsPrev, d.totalClients]} />
-              <MetricCard label="Повернення коштів" value={fmtCurrency(0)} sub="За період" sparkData={[0, 0]} />
-            </div>
-          </div>
+                {/* ── Funnel ── */}
+                <section className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground/60">Ефективність Воронки</h2>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <MetricCard label="Заявки (форми)" value={d.formSubmissions} trend={calcTrend(d.formSubmissions, d.formSubmissionsPrev)} sub="Ліди з сайту" sparkData={[d.formSubmissionsPrev, d.formSubmissions]} />
+                    <MetricCard label="Конверсія" value={`${d.conversionRate.toFixed(1)}%`} trend={calcTrend(d.conversionRate, d.conversionRatePrev)} sub="Сесії у заявки" sparkData={[d.conversionRatePrev, d.conversionRate]} />
+                    <MetricCard label="Старти кастомізації" value={d.customizationStarts} sub="Інтерес до конструктора" sparkData={[0, d.customizationStarts]} />
+                    <MetricCard label="Фініші кастомізації" value={d.customizationCompletions} trend={d.customizationStarts > 0 ? Math.round((d.customizationCompletions / d.customizationStarts) * 100) : 0} sub="% завершення" sparkData={[0, d.customizationCompletions]} />
+                  </div>
+                </section>
 
-          {/* ── Chart ── */}
-          <Card>
-            <CardHeader className="pb-0">
-              <CardTitle className="text-base font-medium">Трафік та дохід за період</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={d.dailyStats}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                    <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                    <YAxis yAxisId="left" tick={{ fontSize: 11 }} />
-                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} />
-                    <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }} />
-                    <Line yAxisId="left" type="monotone" dataKey="sessions" stroke="hsl(var(--muted-foreground))" strokeWidth={2} name="Сесії" dot={false} />
-                    <Line yAxisId="left" type="monotone" dataKey="pageViews" stroke="#10b981" strokeWidth={2} name="Перегляди" dot={false} />
-                    <Line yAxisId="left" type="monotone" dataKey="forms" stroke="#f59e0b" strokeWidth={2} name="Заявки" dot={false} />
-                    <Line yAxisId="right" type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={2} name="Дохід ₴" dot={false} />
-                  </LineChart>
-                </ResponsiveContainer>
+                {/* ── Sales ── */}
+                <section className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground/60">Фінансові показники</h2>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <MetricCard label="Усі замовлення" value={d.totalOrders} trend={calcTrend(d.totalOrders, d.totalOrdersPrev)} sub="Кількість замовлень" sparkData={[d.totalOrdersPrev, d.totalOrders]} />
+                    <MetricCard label="Загальний дохід" value={fmtCurrency(d.totalRevenue)} trend={calcTrend(d.totalRevenue, d.totalRevenuePrev)} sub="Брутто дохід" sparkData={[d.totalRevenuePrev, d.totalRevenue]} />
+                    <MetricCard label="Сплачено" value={fmtCurrency(d.paidRevenue)} trend={calcTrend(d.paidRevenue, d.paidRevenuePrev)} sub="Завершені оплати" sparkData={[d.paidRevenuePrev, d.paidRevenue]} />
+                    <MetricCard label="Середній чек" value={fmtCurrency(d.avgOrderValue)} trend={calcTrend(d.avgOrderValue, d.avgOrderValuePrev)} sub="Дохід на замовлення" sparkData={[d.avgOrderValuePrev, d.avgOrderValue]} />
+                  </div>
+                </section>
+
+                {/* ── Chart ── */}
+                <Card className="rounded-3xl border-border/50 shadow-xl overflow-hidden bg-background/50 backdrop-blur-sm">
+                  <CardHeader className="pb-4 bg-muted/20 border-b border-border/40">
+                    <CardTitle className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Динаміка Трафіку та Доходу</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <div className="h-[400px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={d.dailyStats} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-border/40" vertical={false} />
+                          <XAxis 
+                            dataKey="date" 
+                            tick={{ fontSize: 10, fontWeight: 600 }} 
+                            axisLine={false} 
+                            tickLine={false} 
+                            dy={10}
+                          />
+                          <YAxis 
+                            yAxisId="left" 
+                            tick={{ fontSize: 10, fontWeight: 600 }} 
+                            axisLine={false} 
+                            tickLine={false} 
+                          />
+                          <YAxis 
+                            yAxisId="right" 
+                            orientation="right" 
+                            tick={{ fontSize: 10, fontWeight: 600 }} 
+                            axisLine={false} 
+                            tickLine={false} 
+                          />
+                          <Tooltip 
+                            contentStyle={{ 
+                              backgroundColor: "rgba(255, 255, 255, 0.8)", 
+                              backdropFilter: "blur(12px)",
+                              border: "1px solid rgba(0,0,0,0.1)", 
+                              borderRadius: "16px", 
+                              fontSize: "12px",
+                              boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)"
+                            }} 
+                            itemStyle={{ fontWeight: "bold" }}
+                          />
+                          <Line yAxisId="left" type="monotone" dataKey="sessions" stroke="hsl(var(--muted-foreground))" strokeWidth={3} name="Сесії" dot={false} activeDot={{ r: 6, strokeWidth: 0 }} />
+                          <Line yAxisId="left" type="monotone" dataKey="pageViews" stroke="#10b981" strokeWidth={3} name="Перегляди" dot={false} activeDot={{ r: 6, strokeWidth: 0 }} />
+                          <Line yAxisId="right" type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={4} name="Дохід ₴" dot={{ r: 4, fill: "hsl(var(--primary))", strokeWidth: 0 }} activeDot={{ r: 8, strokeWidth: 0 }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="size-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+                <RefreshCw className="size-8 text-destructive" />
               </div>
-            </CardContent>
-          </Card>
-        </>
-        )
-      ) : (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Не вдалося завантажити аналітику</p>
-          <Button onClick={fetchAnalytics} className="mt-4">Спробувати знову</Button>
+              <h3 className="text-lg font-bold">Не вдалося завантажити дані</h3>
+              <p className="text-muted-foreground mb-6">Перевірте з'єднання або спробуйте пізніше</p>
+              <Button onClick={fetchAnalytics} className="gap-2">
+                <RefreshCw className="size-4" /> Повторити спробу
+              </Button>
+            </div>
+          )}
         </div>
-      )}
       </div>
     </div>
   );
 }
+

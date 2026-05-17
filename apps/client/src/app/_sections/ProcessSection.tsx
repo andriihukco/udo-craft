@@ -3,20 +3,23 @@
 import Link from "next/link";
 import { useRef, useState, useEffect } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
-import { ArrowRight } from "lucide-react";
-import { HighlightText } from "@/app/_components/HighlightText";
+import useEmblaCarousel from "embla-carousel-react";
+import { ArrowRight, Check } from "lucide-react";
+import { HighlightText, RoughHighlight } from "@/app/_components/HighlightText";
 
 const STEPS = [
   {
     number: "1",
+    emoji: "🛒",
     title: "Обери товар",
     body: "Переглядай каталог з реальними цінами. Ціна оновлюється одразу при зміні кількості та типу нанесення. Жодних дзвінків, щоб дізнатись вартість.",
     cta: "Відкрити каталог",
-    href: "#collections",
+    href: "#catalog",
     time: "~5 хв",
   },
   {
     number: "2",
+    emoji: "🎨",
     title: "Кастомуй онлайн",
     body: "Завантаж логотип, постав на виріб, обери зону нанесення. Редактор показує точну вартість кожної зони в реальному часі.",
     cta: "Спробувати редактор",
@@ -25,6 +28,7 @@ const STEPS = [
   },
   {
     number: "3",
+    emoji: "📝",
     title: "Отримай рахунок",
     body: "Заповни форму — менеджер зв'яжеться протягом 2 годин. Фіксована ціна без прихованих доплат. Рахунок-фактура одразу після підтвердження.",
     cta: "Написати нам",
@@ -33,6 +37,7 @@ const STEPS = [
   },
   {
     number: "4",
+    emoji: "📦",
     title: "Отримай мерч",
     body: "Виробництво 7–14 робочих днів. Доставка Новою Поштою по всій Україні. Якщо щось не так — переробляємо безкоштовно.",
     cta: "Читати FAQ",
@@ -42,7 +47,7 @@ const STEPS = [
 ];
 
 // The progress line animates from 0% to the target width over STEP_DURATION ms
-const STEP_DURATION = 3500; // ms per step
+const STEP_DURATION = 7500; // ms per step
 
 function DesktopTimeline({ isInView }: { isInView: boolean }) {
   const [active, setActive] = useState(0);
@@ -99,26 +104,34 @@ function DesktopTimeline({ isInView }: { isInView: boolean }) {
 
   return (
     <div className="hidden lg:block">
+      <style>{`
+        @keyframes progress-stripes {
+          0% { background-position: 1rem 0; }
+          100% { background-position: 0 0; }
+        }
+      `}</style>
       {/* Track + nodes */}
       <div className="relative mb-14" role="tablist" aria-label="Кроки процесу">
         {/* Background track */}
-        <div className="absolute top-5 left-5 right-5 h-[2px] bg-border" aria-hidden="true" />
-
-        {/* Animated fill — correct calc: track width × progress fraction */}
-        <div
-          className="absolute top-5 left-5 h-[2px] bg-primary"
-          style={{
-            width: `calc((100% - 40px) * ${progressPct} / 100)`,
-            transition: "none",
-          }}
-          aria-hidden="true"
-        />
+        <div className="absolute top-[14px] left-5 right-5 h-3 bg-border/50 rounded-full overflow-hidden" aria-hidden="true">
+          <div
+            className="absolute top-0 left-0 h-full bg-primary rounded-full"
+            style={{
+              width: `${progressPct}%`,
+              transition: "none",
+              backgroundImage: "linear-gradient(-45deg, rgba(255, 255, 255, 0.2) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.2) 75%, transparent 75%, transparent)",
+              backgroundSize: "1rem 1rem",
+              animation: "progress-stripes 1s linear infinite"
+            }}
+          />
+        </div>
 
         {/* Step nodes */}
         <div className="relative flex justify-between">
           {STEPS.map((step, i) => {
-            const isDone = i < active || (i === active && progressPct >= (i / (n - 1)) * 100);
+            const isPast = i < active;
             const isCurrent = i === active;
+            const isFuture = i > active;
             return (
               <button key={step.number} role="tab"
                 aria-selected={isCurrent}
@@ -128,19 +141,29 @@ function DesktopTimeline({ isInView }: { isInView: boolean }) {
               >
                 <motion.div
                   animate={{
-                    backgroundColor: isDone ? "var(--color-primary)" : "var(--color-background)",
-                    borderColor: isDone ? "var(--color-primary)" : "var(--color-border)",
-                    scale: isCurrent ? 1.18 : 1,
+                    backgroundColor: isPast || isCurrent ? "var(--color-primary)" : "var(--color-background)",
+                    borderColor: isPast || isCurrent ? "var(--color-primary)" : "var(--color-border)",
+                    scale: isCurrent ? 1.15 : 1,
                   }}
-                  transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                  className="w-10 h-10 rounded-full border-2 flex items-center justify-center relative z-10 bg-background"
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  className={`w-10 h-10 rounded-full border-2 flex items-center justify-center relative z-10 transition-shadow bg-background ${isCurrent ? 'shadow-[0_0_15px_rgba(59,130,246,0.4)]' : ''}`}
                 >
                   <motion.span
-                    animate={{ color: isDone ? "white" : "var(--color-muted-foreground)" }}
-                    className="text-xs font-black tabular-nums"
+                    animate={{ color: isPast || isCurrent ? "white" : "var(--color-muted-foreground)" }}
+                    className="text-sm font-black tabular-nums"
                   >
                     {step.number}
                   </motion.span>
+                  {isPast && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                      className="absolute -top-1.5 -right-1.5 bg-green-500 text-white rounded-full w-4 h-4 flex items-center justify-center border-[1.5px] border-background z-20"
+                    >
+                      <Check className="w-2.5 h-2.5" strokeWidth={4} />
+                    </motion.div>
+                  )}
                 </motion.div>
                 <motion.span
                   animate={{
@@ -158,30 +181,30 @@ function DesktopTimeline({ isInView }: { isInView: boolean }) {
       </div>
 
       {/* Active step detail */}
-      <div style={{ minHeight: 200 }}>
+      <div style={{ minHeight: 220 }} className="mt-8">
         <AnimatePresence mode="wait">
           <motion.div key={active}
-            initial={{ opacity: 0, y: 18 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -18 }}
-            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-            className="grid grid-cols-[1fr_auto] gap-12 items-start"
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="bg-white rounded-[2rem] shadow-xl shadow-black/[0.03] border border-black/[0.04] p-8 sm:p-12 flex flex-col"
             role="tabpanel"
           >
-            <div>
-              <span className="text-[72px] font-black text-border leading-none select-none block mb-4" aria-hidden="true">
-                {STEPS[active].number}
-              </span>
-              <h3 className="text-2xl font-black text-foreground tracking-tight mb-4">{STEPS[active].title}</h3>
-              <p className="text-muted-foreground text-base leading-relaxed max-w-xl">{STEPS[active].body}</p>
+            <div className="flex-1 mb-8">
+              <h3 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight mb-4">{STEPS[active].title}</h3>
+              <p className="text-muted-foreground text-base sm:text-lg leading-relaxed max-w-2xl">{STEPS[active].body}</p>
             </div>
-            <div className="flex flex-col items-end gap-4 pt-2 shrink-0">
-              <div className="text-right">
-                <p className="text-2xl font-black text-foreground">{STEPS[active].time}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">час</p>
+            
+            <div className="w-full h-px bg-border/50 mb-6" aria-hidden="true" />
+            
+            <div className="flex flex-col sm:flex-row-reverse sm:items-center justify-between gap-6">
+              <div className="text-left sm:text-right">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mb-1.5">Орієнтовний час</p>
+                <p className="text-xl font-black text-foreground">{STEPS[active].time}</p>
               </div>
               <Link href={STEPS[active].href}
-                className="inline-flex items-center gap-2 bg-primary text-white font-semibold text-sm px-6 py-3 rounded-full hover:bg-primary/90 active:scale-[0.97] transition-all duration-200 whitespace-nowrap">
+                className="inline-flex items-center justify-center gap-2 bg-primary text-white font-semibold text-sm px-8 py-4 rounded-full hover:bg-primary/90 hover:scale-105 active:scale-[0.97] transition-all duration-200 whitespace-nowrap w-full sm:w-auto shadow-md shadow-primary/20">
                 {STEPS[active].cta} <ArrowRight className="w-4 h-4" aria-hidden="true" />
               </Link>
             </div>
@@ -195,36 +218,130 @@ function DesktopTimeline({ isInView }: { isInView: boolean }) {
 function MobileTimeline() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-60px" });
+  const [active, setActive] = useState(0);
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    align: "center",
+    containScroll: "trimSnaps"
+  });
+
+  const n = STEPS.length;
+  const progressPct = (active / (n - 1)) * 100;
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    const onSelect = () => {
+      setActive(emblaApi.selectedScrollSnap());
+    };
+    emblaApi.on("select", onSelect);
+    emblaApi.on("reInit", onSelect);
+  }, [emblaApi]);
+
+  const handleStepClick = (i: number) => {
+    if (emblaApi) emblaApi.scrollTo(i);
+  };
 
   return (
-    <div ref={ref} className="lg:hidden">
-      {STEPS.map((step, i) => (
-        <motion.div key={step.number}
-          initial={{ opacity: 0, x: -16 }}
-          animate={isInView ? { opacity: 1, x: 0 } : {}}
-          transition={{ duration: 0.6, delay: i * 0.15, ease: [0.22, 1, 0.36, 1] }}
-          className="flex gap-6 pb-12 last:pb-0"
-        >
-          <div className="flex flex-col items-center shrink-0">
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-              <span className="text-white text-xs font-black">{step.number}</span>
+    <motion.div 
+      ref={ref}
+      initial={{ opacity: 0, y: 16 }}
+      animate={isInView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.6, type: "spring", stiffness: 300, damping: 25 }}
+      className="lg:hidden"
+    >
+      <style>{`
+        @keyframes progress-stripes {
+          0% { background-position: 1rem 0; }
+          100% { background-position: 0 0; }
+        }
+      `}</style>
+      
+      {/* Mobile Track + nodes */}
+      <div className="relative mb-10" role="tablist">
+        {/* Background track */}
+        <div className="absolute top-[14px] left-5 right-5 h-3 bg-border/50 rounded-full overflow-hidden" aria-hidden="true">
+          <div
+            className="absolute top-0 left-0 h-full bg-primary rounded-full transition-all duration-300 ease-out"
+            style={{
+              width: `${progressPct}%`,
+              backgroundImage: "linear-gradient(-45deg, rgba(255, 255, 255, 0.2) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.2) 75%, transparent 75%, transparent)",
+              backgroundSize: "1rem 1rem",
+              animation: "progress-stripes 1s linear infinite"
+            }}
+          />
+        </div>
+
+        {/* Step nodes */}
+        <div className="relative flex justify-between">
+          {STEPS.map((step, i) => {
+            const isPast = i < active;
+            const isCurrent = i === active;
+            return (
+              <button key={step.number} role="tab"
+                aria-selected={isCurrent}
+                aria-label={`Крок ${step.number}: ${step.title}`}
+                onClick={() => handleStepClick(i)}
+                className="flex flex-col items-center gap-3 group"
+              >
+                <motion.div
+                  animate={{
+                    backgroundColor: isPast || isCurrent ? "var(--color-primary)" : "var(--color-background)",
+                    borderColor: isPast || isCurrent ? "var(--color-primary)" : "var(--color-border)",
+                    scale: isCurrent ? 1.15 : 1,
+                  }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  className={`w-10 h-10 rounded-full border-2 flex items-center justify-center relative z-10 transition-shadow bg-background ${isCurrent ? 'shadow-[0_0_15px_rgba(59,130,246,0.4)]' : ''}`}
+                >
+                  <motion.span
+                    animate={{ color: isPast || isCurrent ? "white" : "var(--color-muted-foreground)" }}
+                    className="text-sm font-black tabular-nums"
+                  >
+                    {step.number}
+                  </motion.span>
+                  {isPast && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                      className="absolute -top-1.5 -right-1.5 bg-green-500 text-white rounded-full w-4 h-4 flex items-center justify-center border-[1.5px] border-background z-20"
+                    >
+                      <Check className="w-2.5 h-2.5" strokeWidth={4} />
+                    </motion.div>
+                  )}
+                </motion.div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="overflow-visible -mx-5 px-5 sm:-mx-10 sm:px-10" ref={emblaRef}>
+        <div className="flex gap-4" style={{ cursor: "grab" }} onMouseDown={(e) => (e.currentTarget.style.cursor = "grabbing")} onMouseUp={(e) => (e.currentTarget.style.cursor = "grab")} onMouseLeave={(e) => (e.currentTarget.style.cursor = "grab")}>
+          {STEPS.map((step, i) => (
+            <div key={step.number} className="flex-[0_0_90%] sm:flex-[0_0_75%] min-w-0">
+              <div className="bg-white rounded-3xl shadow-lg shadow-black/[0.03] border border-black/[0.04] p-7 flex flex-col h-full">
+                <div className="mb-4 flex-1">
+                   <h3 className="font-bold text-foreground text-xl leading-tight mb-2">{step.title}</h3>
+                   <p className="text-muted-foreground text-sm leading-relaxed">{step.body}</p>
+                </div>
+                
+                <div className="w-full h-px bg-border/50 mb-5" aria-hidden="true" />
+                
+                <div className="flex flex-col gap-4 text-left">
+                   <div>
+                     <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mb-1">Орієнтовний час</p>
+                     <p className="text-lg font-black text-foreground">{step.time}</p>
+                   </div>
+                   <Link href={step.href}
+                     className="flex items-center justify-center gap-2 w-full bg-primary text-white hover:bg-primary/90 font-semibold text-sm px-6 py-3.5 rounded-full transition-all duration-200 shadow-md shadow-primary/20">
+                     {step.cta} <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                   </Link>
+                </div>
+              </div>
             </div>
-            {i < STEPS.length - 1 && <div className="w-px flex-1 bg-border mt-3" aria-hidden="true" />}
-          </div>
-          <div className="pt-1 pb-4">
-            <div className="flex items-center gap-3 mb-3">
-              <h3 className="font-bold text-foreground text-lg">{step.title}</h3>
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{step.time}</span>
-            </div>
-            <p className="text-muted-foreground text-sm leading-relaxed mb-4">{step.body}</p>
-            <Link href={step.href}
-              className="inline-flex items-center gap-1.5 text-primary text-sm font-semibold hover:gap-2.5 transition-all duration-200">
-              {step.cta} <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-            </Link>
-          </div>
-        </motion.div>
-      ))}
-    </div>
+          ))}
+        </div>
+      </div>
+    </motion.div>
   );
 }
 
@@ -233,7 +350,7 @@ export function ProcessSection() {
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
   return (
-    <section id="how" className="bg-background py-24 sm:py-32" aria-labelledby="process-heading">
+    <section id="how" className="bg-muted py-24 sm:py-32" aria-labelledby="process-heading">
       <div className="max-w-4xl mx-auto px-5 sm:px-10 lg:px-8">
         <motion.div ref={ref}
           initial={{ opacity: 0, y: 20 }}
@@ -242,8 +359,7 @@ export function ProcessSection() {
           className="mb-16"
         >
           <h2 id="process-heading" className="text-3xl sm:text-4xl font-black tracking-tight mb-4">
-            Від ідеї до мерчу —{" "}
-            <HighlightText delay={0.5}>за 4 кроки</HighlightText>
+            Від ідеї до мерчу — за 4 кроки
           </h2>
           <p className="text-muted-foreground text-base leading-relaxed max-w-lg">
             Весь процес займає менше 15 хвилин вашого часу. Ціни видно одразу — без дзвінків і переговорів.

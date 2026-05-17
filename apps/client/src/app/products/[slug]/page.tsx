@@ -181,7 +181,7 @@ export default function ProductDetailPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-center px-4">
         <p className="text-2xl font-bold">Товар не знайдено</p>
-        <Link href="/#collections" className="text-primary underline text-sm">← Повернутись до каталогу</Link>
+        <Link href="/#catalog" className="text-primary underline text-sm">← Повернутись до каталогу</Link>
       </div>
     );
   }
@@ -203,7 +203,7 @@ export default function ProductDetailPage() {
           <nav className="flex items-center gap-1.5 text-xs text-muted-foreground" aria-label="Breadcrumb">
             <Link href="/" className="hover:text-foreground transition-colors">Головна</Link>
             <span aria-hidden="true">/</span>
-            <Link href="/#collections" className="hover:text-foreground transition-colors">Каталог</Link>
+            <Link href="/#catalog" className="hover:text-foreground transition-colors">Каталог</Link>
             <span aria-hidden="true">/</span>
             <span className="text-foreground font-medium truncate">{product.name}</span>
           </nav>
@@ -432,7 +432,7 @@ export default function ProductDetailPage() {
               )}
 
               {/* Back link */}
-              <Link href="/#collections"
+              <Link href="/#catalog"
                 className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit">
                 <ArrowLeft className="w-3.5 h-3.5" />
                 Повернутись до каталогу
@@ -464,7 +464,7 @@ export default function ProductDetailPage() {
                 <h2 className="text-2xl font-black tracking-tight">Схожі товари</h2>
                 <p className="text-sm text-muted-foreground mt-1">Вам також може сподобатись</p>
               </div>
-              <Link href="/#collections"
+              <Link href="/#catalog"
                 className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
                 Весь каталог <ArrowRight className="w-3.5 h-3.5" />
               </Link>

@@ -1,18 +1,21 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
 import { motion, useInView } from "framer-motion";
+import useEmblaCarousel from "embla-carousel-react";
 import { Check, X, Minus } from "lucide-react";
 
 const FEATURES = [
-  "Мінімальний тираж",
-  "Онлайн-редактор",
-  "Зразки перед тиражем",
-  "Особистий менеджер",
-  "Фіксована ціна",
-  "Термін виробництва",
-  "Гарантія якості",
-  "Виїзний Popup-стенд",
+  { name: "Мінімальний тираж", desc: "Від якої кількості можна зробити замовлення" },
+  { name: "Онлайн-редактор", desc: "Можливість самостійно створити дизайн 24/7" },
+  { name: "Зразки перед тиражем", desc: "Отримання тестового зразка до запуску партії" },
+  { name: "Особистий менеджер", desc: "Прямий зв'язок для швидкого вирішення питань" },
+  { name: "Фіксована ціна", desc: "Відсутність прихованих платежів після узгодження" },
+  { name: "Термін виробництва", desc: "Час від погодження макету до відправки мерчу" },
+  { name: "Гарантія якості", desc: "Безкоштовна заміна у разі виявлення браку" },
+  { name: "Виїзний Popup-стенд", desc: "Організація офлайн-точки на вашому івенті" },
+  { name: "Допомога дизайнера", desc: "Адаптація логотипу та макетів під друк" },
+  { name: "Логістика", desc: "Фасування та доставка кожному працівнику окремо" },
 ];
 
 type CellValue = "check" | "cross" | "partial" | string;
@@ -21,17 +24,17 @@ const COLUMNS = [
   {
     name: "Типовий постачальник",
     highlight: false,
-    values: ["500+ шт", "cross", "cross", "cross", "cross", "30+ днів", "partial", "cross"],
-  },
-  {
-    name: "Друкарня",
-    highlight: false,
-    values: ["100+ шт", "cross", "partial", "cross", "partial", "14–21 днів", "partial", "cross"],
+    values: ["500+ шт", "cross", "cross", "cross", "cross", "30+ днів", "partial", "cross", "partial", "cross"],
   },
   {
     name: "U:DO Craft",
     highlight: true,
-    values: ["від 10 шт", "check", "check", "check", "check", "7–14 днів", "check", "check"],
+    values: ["від 10 шт", "check", "check", "check", "check", "7–14 днів", "check", "check", "check", "check"],
+  },
+  {
+    name: "Друкарня",
+    highlight: false,
+    values: ["100+ шт", "cross", "partial", "cross", "partial", "14–21 днів", "partial", "cross", "partial", "cross"],
   },
 ];
 
@@ -39,22 +42,22 @@ function Cell({ value, highlight }: { value: CellValue; highlight: boolean }) {
   if (value === "check")
     return (
       <span className="inline-flex items-center justify-center" aria-label="Так">
-        <Check className={`w-5 h-5 ${highlight ? "text-white" : "text-green-600"}`} />
+        <Check className={`w-6 h-6 ${highlight ? "text-white" : "text-green-500"}`} strokeWidth={3} />
       </span>
     );
   if (value === "cross")
     return (
       <span className="inline-flex items-center justify-center" aria-label="Ні">
-        <X className="w-5 h-5 text-red-600" />
+        <X className={`w-5 h-5 ${highlight ? "text-white/40" : "text-red-500/60"}`} strokeWidth={2.5} />
       </span>
     );
   if (value === "partial")
     return (
       <span className="inline-flex items-center justify-center" aria-label="Частково">
-        <Minus className="w-5 h-5 text-amber-600" />
+        <Minus className={`w-5 h-5 ${highlight ? "text-white/80" : "text-amber-500"}`} strokeWidth={3} />
       </span>
     );
-  return <span className="text-sm font-semibold">{value}</span>;
+  return <span className={`text-sm font-bold ${highlight ? "text-white" : "text-foreground"}`}>{value}</span>;
 }
 
 // ── Section ───────────────────────────────────────────────────────────────
@@ -63,18 +66,36 @@ export function ComparisonSection() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
 
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    align: "center",
+    startIndex: 1, // Start on U:DO Craft
+    containScroll: "trimSnaps"
+  });
+
+  const [selectedIndex, setSelectedIndex] = useState(1);
+  const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    setScrollSnaps(emblaApi.scrollSnapList());
+    const onSelect = () => setSelectedIndex(emblaApi.selectedScrollSnap());
+    emblaApi.on("select", onSelect);
+    emblaApi.on("reInit", onSelect);
+    onSelect();
+  }, [emblaApi]);
+
   return (
     <section
-      className="bg-background py-20 sm:py-28"
+      className="bg-muted py-24 sm:py-32"
       aria-labelledby="comparison-heading"
     >
-      <div className="max-w-7xl mx-auto px-5 sm:px-10 lg:px-20">
+      <div className="max-w-5xl mx-auto px-5 sm:px-10 lg:px-8">
         <motion.div
           ref={ref}
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-12"
+          className="mb-16 text-center"
         >
           <h2
             id="comparison-heading"
@@ -82,27 +103,76 @@ export function ComparisonSection() {
           >
             U:DO проти решти ринку
           </h2>
-          <p className="text-muted-foreground text-base max-w-lg leading-relaxed">
+          <p className="text-muted-foreground text-base max-w-xl mx-auto leading-relaxed">
             Порівняй умови — і зрозумій, чому 500+ команд обирають нас.
           </p>
         </motion.div>
 
-        {/* Responsive Table */}
+        {/* Mobile Carousel */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-          className="overflow-x-auto"
+          className="block lg:hidden overflow-visible -mx-5 px-5 sm:-mx-10 sm:px-10" 
+          ref={emblaRef}
+        >
+          <div className="flex gap-4" style={{ cursor: "grab" }}>
+            {COLUMNS.map((col) => (
+              <div key={col.name} className="flex-[0_0_85%] sm:flex-[0_0_60%] min-w-0">
+                <div className={`rounded-3xl p-6 flex flex-col h-full border ${col.highlight ? 'bg-primary text-white border-primary shadow-xl shadow-primary/20' : 'bg-white border-black/[0.04] shadow-lg shadow-black/[0.03]'}`}>
+                  <h3 className="font-black text-2xl text-center mb-6">{col.name}</h3>
+                  <div className="flex flex-col gap-0">
+                    {FEATURES.map((feature, fi) => (
+                      <div key={feature.name} className={`flex justify-between items-center py-4 border-b ${col.highlight ? 'border-white/10' : 'border-border/60'} last:border-0`}>
+                        <div className="flex flex-col pr-4">
+                          <span className={`text-sm font-bold ${col.highlight ? 'text-white' : 'text-foreground'}`}>{feature.name}</span>
+                          <span className={`text-[11px] leading-tight mt-1 ${col.highlight ? 'text-white/60' : 'text-muted-foreground'}`}>{feature.desc}</span>
+                        </div>
+                        <div className="shrink-0 flex items-center justify-end min-w-[70px]">
+                          <Cell value={col.values[fi]} highlight={col.highlight} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Mobile Pagination Dots */}
+        <div className="flex lg:hidden justify-center gap-3 mt-8 mb-4" role="tablist" aria-label="Вибір постачальника">
+          {scrollSnaps.map((_, index) => (
+            <button
+              key={index}
+              role="tab"
+              onClick={() => emblaApi?.scrollTo(index)}
+              aria-label={`Перейти до: ${COLUMNS[index].name}`}
+              aria-selected={index === selectedIndex}
+              className={`h-3 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                index === selectedIndex ? "bg-primary w-10" : "bg-black/15 hover:bg-black/25 w-3"
+              }`}
+            />
+          ))}
+        </div>
+
+        {/* Desktop Table */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+          className="hidden lg:block overflow-x-auto bg-white rounded-[2rem] shadow-xl shadow-black/[0.03] border border-black/[0.04]"
         >
           <table
-            className="w-full border-collapse"
+            className="w-full text-left"
+            style={{ borderCollapse: "separate", borderSpacing: 0 }}
             role="table"
             aria-label="Порівняння постачальників мерчу"
           >
             <thead>
-              <tr className="border-b-2 border-border">
+              <tr>
                 <th
-                  className="text-left py-4 px-3 sm:px-6 text-sm font-semibold text-muted-foreground"
+                  className="py-6 px-4 sm:px-8 text-sm font-semibold text-muted-foreground border-b border-border/60 w-1/3"
                   scope="col"
                 >
                   Характеристика
@@ -111,45 +181,46 @@ export function ComparisonSection() {
                   <th
                     key={col.name}
                     scope="col"
-                    className={`py-4 px-3 sm:px-6 text-center text-sm font-bold ${
+                    className={`py-6 px-4 sm:px-8 text-center align-bottom border-b border-border/60 w-[22%] ${
                       col.highlight
                         ? "bg-primary text-white"
                         : "text-foreground"
                     }`}
                   >
                     {col.highlight && (
-                      <span className="block text-xs font-semibold opacity-75 mb-1">
-                        ⭐ Рекомендовано
+                      <span className="block text-[10px] uppercase tracking-widest font-bold opacity-80 mb-2">
+                        Ваш вибір
                       </span>
                     )}
-                    <span className="block">{col.name}</span>
+                    <span className="block text-base font-black">{col.name}</span>
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {FEATURES.map((feature, fi) => (
+              {FEATURES.map((feature, fi) => {
+                const isLast = fi === FEATURES.length - 1;
+                return (
                 <tr
-                  key={feature}
-                  className={`border-b border-border ${
-                    fi % 2 === 0 ? "bg-muted/30" : ""
-                  }`}
+                  key={feature.name}
+                  className="group transition-colors hover:bg-muted/30"
                 >
-                  <td className="py-4 px-3 sm:px-6 text-sm font-medium text-foreground">
-                    {feature}
+                  <td className={`py-5 px-4 sm:px-8 ${isLast ? '' : 'border-b border-border/60'}`}>
+                    <span className="block text-sm font-bold text-foreground">{feature.name}</span>
+                    <span className="block text-xs text-muted-foreground mt-0.5">{feature.desc}</span>
                   </td>
                   {COLUMNS.map((col) => (
                     <td
                       key={col.name}
-                      className={`py-4 px-3 sm:px-6 text-center ${
-                        col.highlight ? "bg-primary/5" : ""
-                      }`}
+                      className={`py-5 px-4 sm:px-8 text-center transition-colors ${
+                        col.highlight ? "bg-primary text-white" : ""
+                      } ${isLast && !col.highlight ? '' : 'border-b border-border/60'} ${isLast && col.highlight ? 'border-none' : ''}`}
                     >
                       <Cell value={col.values[fi]} highlight={col.highlight} />
                     </td>
                   ))}
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         </motion.div>

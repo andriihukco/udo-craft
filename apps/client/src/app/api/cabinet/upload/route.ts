@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { createServiceClient } from "@/lib/supabase/service";
 import { validateFile } from "@/lib/validate-file";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -19,7 +18,7 @@ export async function POST(request: NextRequest) {
   if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    const service = createServiceClient();
+    const service = await createClient();
 
     const formData = await request.formData();
     const files = formData.getAll("files") as File[];

@@ -50,18 +50,17 @@ export function CollectionsSection({ products, categories, materials, colorVaria
   const pageItems = activeItems.slice(collPage * collPerPage, (collPage + 1) * collPerPage);
 
   return (
-    <section id="collections" className="bg-background">
+    <section id="catalog" className="bg-background">
       {/* Section header */}
       <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border">
-        <div className="max-w-6xl mx-auto px-5 sm:px-8 lg:px-16">
+        <div className="w-full px-5 sm:px-8 lg:px-16">
           <div className="flex items-center justify-between py-5">
             <div className="flex items-center gap-4">
-              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">02</span>
-              <h2 className="text-xl font-black tracking-tight">Колекції</h2>
+              <h2 className="text-xl font-black tracking-tight">Каталог</h2>
             </div>
-            <Link href="/order" className="group flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors duration-200">
+            <Link href="/order" className="group flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors duration-200 underline underline-offset-4">
               Всі товари
-              <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
             </Link>
           </div>
 
@@ -97,7 +96,7 @@ export function CollectionsSection({ products, categories, materials, colorVaria
       </div>
 
       {/* Product grid */}
-      <div className="max-w-6xl mx-auto px-5 sm:px-8 lg:px-16 py-10">
+      <div className="w-full px-5 sm:px-8 lg:px-16 py-10">
         <AnimatePresence mode="wait">
           {hasCatalog ? (
             activeItems.length === 0 ? (

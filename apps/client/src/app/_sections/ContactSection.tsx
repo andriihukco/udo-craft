@@ -68,22 +68,7 @@ export function ContactSection({
               ))}
             </div>
 
-            {/* Working hours — simple */}
-            <div>
-              <p className="text-white/30 text-[10px] font-bold uppercase tracking-[0.2em] mb-4">Графік роботи</p>
-              <div className="space-y-2">
-                {[
-                  ["Пн–Пт", "09:00 – 18:00"],
-                  ["Сб", "10:00 – 15:00"],
-                  ["Нд", "Вихідний"],
-                ].map(([days, hours]) => (
-                  <div key={days} className="flex justify-between text-sm max-w-[200px]">
-                    <span className="text-white/40">{days}</span>
-                    <span className="text-white/70">{hours}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+           
 
             {/* Social — minimal */}
             <div className="flex gap-3">

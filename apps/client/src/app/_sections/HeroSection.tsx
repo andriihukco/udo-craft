@@ -1,8 +1,11 @@
 "use client";
 
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Play, X } from "lucide-react";
+import { RoughHighlight } from "@/app/_components/HighlightText";
+import { sound } from "@/lib/sound";
 
 interface HeroSectionProps {
   cinemaMode: boolean;
@@ -13,9 +16,6 @@ interface HeroSectionProps {
   ctaPrimaryText: string;
   ctaPrimaryUrl: string;
   ctaSecondaryText: string;
-  badge1: string;
-  badge2: string;
-  badge3: string;
 }
 
 function AnimatedHeadline({ text }: { text: string }) {
@@ -47,18 +47,46 @@ export function HeroSection({
   onCinemaEnter,
   onCinemaExit,
   heading,
+  subheading,
   ctaPrimaryText,
   ctaPrimaryUrl,
   ctaSecondaryText,
 }: HeroSectionProps) {
+  const bgVideoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const playVideo = () => {
+      if (bgVideoRef.current) {
+        bgVideoRef.current.play().catch(() => {});
+      }
+    };
+
+    playVideo();
+    // Safari/iOS require a user gesture if Low Power Mode is on
+    window.addEventListener("touchstart", playVideo, { once: true });
+    window.addEventListener("mousedown", playVideo, { once: true });
+    window.addEventListener("scroll", playVideo, { once: true });
+
+    return () => {
+      window.removeEventListener("touchstart", playVideo);
+      window.removeEventListener("mousedown", playVideo);
+      window.removeEventListener("scroll", playVideo);
+    };
+  }, []);
+
   return (
     <section
       className="relative min-h-[100svh] bg-[#0a0d1a] overflow-hidden flex flex-col"
+      style={{
+        backgroundImage: 'url("/hero-poster.jpg")',
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
       aria-label="Головна секція"
     >
       {/* Skip link */}
       <a
-        href="#collections"
+        href="#catalog"
         className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:bg-primary focus:text-white focus:px-4 focus:py-2 focus:rounded-full focus:text-sm focus:font-semibold"
       >
         Перейти до каталогу
@@ -66,18 +94,21 @@ export function HeroSection({
 
       {/* Video */}
       <video
-        className="absolute inset-0 w-full h-full object-cover opacity-0 transition-[opacity] duration-[2s]"
-        onCanPlay={(e) => {
+        ref={bgVideoRef}
+        className="absolute inset-0 w-full h-full object-cover opacity-0 transition-[opacity] duration-[2s] pointer-events-none"
+        onPlaying={(e) => {
           if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
             (e.target as HTMLVideoElement).style.opacity = "0.3";
           }
         }}
         src="/hero-video.mp4"
-        poster="/hero-poster.jpg"
         autoPlay
         loop
         muted
         playsInline
+        controls={false}
+        disablePictureInPicture
+        disableRemotePlayback
         preload="auto"
         aria-hidden="true"
       />
@@ -117,6 +148,9 @@ export function HeroSection({
               src="/hero-video.mp4"
               loop
               playsInline
+              controls={false}
+              disablePictureInPicture
+              disableRemotePlayback
               aria-hidden="true"
             />
             {/* Close is handled by the bottom-right circle button */}
@@ -134,11 +168,20 @@ export function HeroSection({
       >
         {/* Headline — clamped so it never overflows or touches nav */}
         <h1
-          className="text-white font-black leading-[0.92] tracking-[-0.025em] mb-10 max-w-4xl"
+          className="text-white font-black leading-[0.92] tracking-[-0.025em] mb-6 max-w-4xl"
           style={{ fontSize: "clamp(2.2rem, 6.5vw, 6rem)" }}
         >
           <AnimatedHeadline text={heading} />
         </h1>
+
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 1.6, ease: [0.22, 1, 0.36, 1] }}
+          className="text-white/70 text-base sm:text-lg max-w-2xl mb-10 leading-relaxed"
+        >
+          {subheading}
+        </motion.p>
 
         {/* CTAs */}
         <motion.div
@@ -149,17 +192,20 @@ export function HeroSection({
         >
           <Link
             href={ctaPrimaryUrl}
+            onClick={() => sound.button()}
             className="inline-flex items-center justify-center gap-2 bg-white text-[#06060e] font-bold text-sm px-7 py-3.5 rounded-full hover:bg-white/90 active:scale-[0.97] transition-all duration-200 w-full sm:w-auto"
           >
             {ctaPrimaryText}
           </Link>
           <Link
             href="#contact"
+            onClick={() => sound.button()}
             className="inline-flex items-center justify-center gap-2 border border-white/20 text-white/70 font-semibold text-sm px-7 py-3.5 rounded-full hover:border-white/40 hover:text-white active:scale-[0.97] transition-all duration-200 w-full sm:w-auto"
           >
             {ctaSecondaryText}
           </Link>
         </motion.div>
+
       </motion.div>
 
       {/* Video reel button — fixed 44×44 circle, icon toggles Play ↔ X */}
@@ -208,7 +254,7 @@ export function HeroSection({
         className="absolute bottom-8 left-1/2 -translate-x-1/2"
         aria-hidden="true"
       >
-        <a href="#collections" tabIndex={-1} aria-hidden="true">
+        <a href="#catalog" tabIndex={-1} aria-hidden="true">
           <motion.div
             animate={{ y: [0, 7, 0] }}
             transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}

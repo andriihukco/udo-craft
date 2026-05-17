@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/service";
+import { createClient } from "@/lib/supabase/server";
 
 // SERVICE ROLE JUSTIFICATION:
 // This is a public endpoint that serves CMS content (e.g. landing page copy) to
@@ -12,7 +12,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 // GET /api/cms?slug=... — public read of CMS content
 export async function GET(req: NextRequest) {
   const slug = req.nextUrl.searchParams.get("slug");
-  const service = createServiceClient();
+  const service = await createClient();
 
   if (slug) {
     const { data, error } = await service

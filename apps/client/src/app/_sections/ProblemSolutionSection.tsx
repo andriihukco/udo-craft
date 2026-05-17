@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { ArrowRight, X, Check } from "lucide-react";
-import { HighlightText } from "@/app/_components/HighlightText";
 
 const PROBLEMS = [
   "Мінімальний тираж 500+ одиниць",
@@ -25,20 +24,18 @@ export function ProblemSolutionSection() {
   const isInView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
-    <section className="bg-background py-20 sm:py-28" aria-labelledby="problem-heading">
-      <div className="max-w-6xl mx-auto px-5 sm:px-10 lg:px-20">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+    <section className="bg-background overflow-hidden" aria-labelledby="problem-heading">
+      <div className="grid lg:grid-cols-2">
 
-          {/* Left */}
-          <motion.div ref={ref}
-            initial={{ opacity: 0, x: -24 }}
-            animate={isInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground mb-5">Проблема</p>
+        {/* Left */}
+        <motion.div ref={ref}
+          initial={{ opacity: 0, x: -24 }}
+          animate={isInView ? { opacity: 1, x: 0 } : {}}
+          transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+          className="flex flex-col justify-center px-8 sm:px-12 lg:pl-[max(3rem,calc((100vw-72rem)/2+3rem))] lg:pr-16 py-16 lg:py-28"
+        >
             <h2 id="problem-heading" className="text-3xl sm:text-4xl font-black tracking-tight leading-[1.05] mb-8">
-              Ринок перенасичений дешевим мерчем,{" "}
-              <HighlightText delay={0.4} color="rgba(239,68,68,0.12)">який ніхто не носить</HighlightText>
+              Ринок перенасичений дешевим мерчем, який ніхто не носить
             </h2>
             <ul className="space-y-3" aria-label="Типові проблеми">
               {PROBLEMS.map((p, i) => (
@@ -62,9 +59,8 @@ export function ProblemSolutionSection() {
             initial={{ opacity: 0, x: 24 }}
             animate={isInView ? { opacity: 1, x: 0 } : {}}
             transition={{ duration: 0.75, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-            className="bg-[#0a0d1a] rounded-3xl p-8 sm:p-10"
+            className="bg-[#0a0d1a] px-8 sm:px-12 lg:pr-[max(3rem,calc((100vw-72rem)/2+3rem))] lg:pl-16 py-16 lg:py-28 flex flex-col justify-center"
           >
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-primary mb-5">Рішення U:DO</p>
             <h3 className="text-white text-2xl sm:text-3xl font-black tracking-tight leading-tight mb-8">
               Мерч, який стає частиною бренду
             </h3>
@@ -83,12 +79,11 @@ export function ProblemSolutionSection() {
                 </motion.li>
               ))}
             </ul>
-            <Link href="#collections"
-              className="inline-flex items-center gap-2 bg-primary text-white font-semibold text-sm px-6 py-3 rounded-full hover:bg-primary/90 active:scale-[0.97] transition-all duration-200">
+            <Link href="#catalog"
+              className="inline-flex w-fit items-center gap-2 bg-primary text-white font-semibold text-sm px-6 py-3 rounded-full hover:bg-primary/90 active:scale-[0.97] transition-all duration-200">
               Переглянути каталог <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </Link>
           </motion.div>
-        </div>
       </div>
     </section>
   );

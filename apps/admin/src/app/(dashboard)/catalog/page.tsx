@@ -13,12 +13,14 @@ import SizesTab from "./_components/SizesTab";
 
 type CatalogTab = "products" | "categories" | "colors" | "sizes";
 
-const TABS: { key: CatalogTab; icon: React.ElementType; label: string }[] = [
-  { key: "products",   icon: Shirt,      label: "Товари" },
-  { key: "categories", icon: FolderTree, label: "Категорії" },
-  { key: "colors",     icon: Palette,    label: "Кольори" },
-  { key: "sizes",      icon: Layers,     label: "Розміри" },
-];
+import { DashboardHeader } from "@/components/dashboard-header";
+
+const TABS = [
+  { key: "products", label: "Товари", icon: Shirt },
+  { key: "categories", label: "Категорії", icon: FolderTree },
+  { key: "colors", label: "Кольори", icon: Palette },
+  { key: "sizes", label: "Розміри", icon: Layers },
+] as const;
 
 export default function CatalogPage() {
   const searchParams = useSearchParams();
@@ -37,55 +39,75 @@ export default function CatalogPage() {
   };
 
   return (
-    <div className="flex flex-1 h-0 flex-col overflow-hidden">
-      <div className="px-4 pt-4 pb-2 shrink-0">
-        <PageHeader
-          title="Каталог"
-          actions={
-            tab === "products" ? (
-              <Button size="sm" onClick={() => router.push("/products/new")}>
-                <Plus className="w-3.5 h-3.5 mr-1" /> Додати товар
-              </Button>
-            ) : undefined
-          }
-        />
-      </div>
-
-      <div className="h-10 px-4 border-b border-border shrink-0 flex items-center gap-1">
-        <nav className="flex h-full">
-          {TABS.map(({ key, icon: Icon, label }) => (
-            <a
-              key={key}
-              href={`/catalog?tab=${key}`}
-              className={`flex items-center gap-1.5 px-3 h-full text-sm font-medium border-b-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset ${
-                tab === key
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
+    <div className="flex flex-1 h-0 flex-col overflow-hidden bg-muted/20">
+      <DashboardHeader
+        title="Каталог"
+        subtitle={
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-1">
+              <Shirt className="size-3.5" /> {products.length} товарів
+            </span>
+            <span className="flex items-center gap-1 text-muted-foreground/60">
+              <FolderTree className="size-3.5" /> {categories.length} категорій
+            </span>
+          </div>
+        }
+        actions={
+          tab === "products" ? (
+            <Button
+              size="sm"
+              className="gap-1.5 shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
+              onClick={() => router.push("/products/new")}
             >
-              <Icon className="w-3.5 h-3.5" />
-              {label}
-            </a>
-          ))}
+              <Plus className="size-4" />
+              <span>Додати товар</span>
+            </Button>
+          ) : undefined
+        }
+      />
+
+      {/* Modern Tabs */}
+      <div className="h-14 px-6 border-b border-border/40 shrink-0 flex items-center bg-background/30 backdrop-blur-md">
+        <nav className="flex gap-1 bg-muted/50 p-1 rounded-xl border border-border/50">
+          {TABS.map(({ key, icon: Icon, label }) => {
+            const isActive = tab === key;
+            return (
+              <button
+                key={key}
+                onClick={() => router.push(`/catalog?tab=${key}`)}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                  isActive
+                    ? "bg-background text-primary shadow-sm border border-border/50"
+                    : "text-muted-foreground hover:text-foreground hover:bg-background/40"
+                }`}
+              >
+                <Icon className={`size-3.5 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
+                {label}
+              </button>
+            );
+          })}
         </nav>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        {tab === "products" && (
-          <ProductsTab
-            products={products}
-            categories={categories}
-            loading={loading}
-            onRefresh={refreshProducts}
-            onToggleActive={handleToggleActive}
-          />
-        )}
-        {tab === "categories" && (
-          <CategoriesTab categories={categories} onRefresh={refresh} loading={loading} />
-        )}
-        {tab === "colors" && <ColorsTab />}
-        {tab === "sizes" && <SizesTab />}
+      <div className="flex-1 overflow-y-auto selection:bg-primary/10">
+        <div className="mx-auto max-w-full">
+          {tab === "products" && (
+            <ProductsTab
+              products={products}
+              categories={categories}
+              loading={loading}
+              onRefresh={refreshProducts}
+              onToggleActive={handleToggleActive}
+            />
+          )}
+          {tab === "categories" && (
+            <CategoriesTab categories={categories} onRefresh={refresh} loading={loading} />
+          )}
+          {tab === "colors" && <ColorsTab />}
+          {tab === "sizes" && <SizesTab />}
+        </div>
       </div>
     </div>
   );
 }
+

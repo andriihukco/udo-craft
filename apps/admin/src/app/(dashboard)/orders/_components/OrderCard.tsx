@@ -3,6 +3,8 @@
 import { GripVertical } from "lucide-react";
 import { PREDEFINED_TAGS } from "@udo-craft/shared";
 import type { LeadStatus } from "@/components/status-badge";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface OrderItem {
   id: string;
@@ -77,70 +79,84 @@ export function OrderCard({
       role="button"
       aria-label={`Замовлення від ${order.customer_data?.name}`}
       aria-pressed={isSelected}
-      className={`bg-card rounded-lg border p-3 cursor-pointer select-none transition-all hover:shadow-sm focus-visible:ring-2 focus-visible:ring-primary outline-none touch-none ${
-        isDragging ? "opacity-40 scale-95" : ""
-      } ${isSelected ? "ring-2 ring-primary border-primary" : "border-border"}`}
+      className={cn(
+        "group relative bg-card rounded-xl border p-4 cursor-pointer select-none transition-all duration-300 animate-in",
+        "hover:shadow-premium hover:border-primary/30 focus-visible:ring-2 focus-visible:ring-primary outline-none touch-none",
+        isDragging ? "opacity-40 scale-[0.98] rotate-1" : "shadow-sm",
+        isSelected ? "ring-2 ring-primary border-transparent bg-primary/[0.03] shadow-depth" : "border-border"
+      )}
     >
-      {/* Client name + subtitle */}
-      <div className="flex items-start gap-2 mb-2">
-        <GripVertical className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5 cursor-grab" />
-        <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm truncate">{order.customer_data?.name}</p>
-          {subtitle && (
-            <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
-          )}
-        </div>
+      <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+        <GripVertical className="w-4 h-4 text-muted-foreground/50 cursor-grab active:cursor-grabbing" />
       </div>
 
-      {/* Amount + item count */}
-      <div className="flex items-center gap-2">
-        {itemCount > 0 && (
-          <span className="text-xs text-muted-foreground">{itemCount} шт.</span>
-        )}
-        {order.total_amount_cents > 0 && (
-          <span className="text-xs font-medium ml-auto">
-            {(order.total_amount_cents / 100).toLocaleString("uk-UA")} ₴
-          </span>
+      {/* Client name + subtitle */}
+      <div className="flex flex-col gap-0.5 mb-3">
+        <p className="font-bold text-sm tracking-tight text-foreground group-hover:text-primary transition-colors">
+          {order.customer_data?.name}
+        </p>
+        {subtitle && (
+          <p className="text-xs text-muted-foreground truncate max-w-[90%] font-medium">
+            {subtitle}
+          </p>
         )}
       </div>
 
       {/* Tags */}
       {(order.tags ?? []).length > 0 && (
-        <div className="flex flex-wrap gap-1 mt-1.5">
+        <div className="flex flex-wrap gap-1.5 mb-4">
           {(order.tags ?? []).map((tagId) => {
             const tag = PREDEFINED_TAGS.find((t) => t.id === tagId);
             return tag ? (
-              <span
+              <Badge
                 key={tagId}
-                className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border"
+                variant="outline"
+                className="gap-1.5 px-2 py-0 h-6 border-primary/10 bg-primary/5 text-foreground hover:bg-primary/10 transition-colors"
                 style={{
                   color: tag.color,
-                  backgroundColor: tag.bg,
-                  borderColor: `${tag.color}30`,
+                  backgroundColor: `${tag.bg}30`,
+                  borderColor: `${tag.color}20`,
                 }}
               >
                 <span
-                  className="size-1 rounded-full shrink-0"
+                  className="size-1.5 rounded-full shrink-0"
                   style={{ backgroundColor: tag.color }}
                 />
                 {tag.label}
-              </span>
+              </Badge>
             ) : (
-              <span
+              <Badge
                 key={tagId}
-                className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full border border-border bg-muted/50 text-foreground"
+                variant="secondary"
+                className="h-6 px-2 text-[9px] font-bold"
               >
                 {tagId}
-              </span>
+              </Badge>
             );
           })}
         </div>
       )}
 
-      {/* Date */}
-      <p className="text-[10px] text-muted-foreground mt-1.5">
-        {formatDate(order.created_at)}
-      </p>
+      {/* Amount + item count + Date */}
+      <div className="flex items-center justify-between mt-auto pt-3 border-t border-border/40">
+        <div className="flex items-center gap-3">
+          {itemCount > 0 && (
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-semibold bg-muted/50 px-2 py-0.5 rounded-full">
+              <span className="text-foreground">{itemCount}</span> шт.
+            </div>
+          )}
+          <span className="text-[10px] text-muted-foreground/70 font-medium">
+            {formatDate(order.created_at)}
+          </span>
+        </div>
+        
+        {order.total_amount_cents > 0 && (
+          <span className="text-sm font-bold tracking-tight text-primary">
+            {(order.total_amount_cents / 100).toLocaleString("uk-UA")} ₴
+          </span>
+        )}
+      </div>
     </div>
   );
 }
+

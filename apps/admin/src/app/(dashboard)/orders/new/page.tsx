@@ -17,6 +17,7 @@ import { ProductCardInline } from "./_components/ProductCardInline";
 import { CheckoutForm, type ContactData } from "./_components/CheckoutForm";
 import { StepHeader } from "./_components/StepHeader";
 import { getDiscount } from "./_lib/constants";
+import { ProductQuickSearch } from "./_components/ProductQuickSearch";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -236,7 +237,7 @@ export default function NewOrderPage() {
   }
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
+    <div className="flex flex-1 flex-col min-h-0 bg-muted/10">
       {customizerProduct && (
         <Customizer
           product={customizerProduct}
@@ -257,70 +258,101 @@ export default function NewOrderPage() {
 
       {/* Body */}
       <div className="flex-1 min-h-0 flex overflow-hidden">
-        <div className="flex-1 overflow-y-auto lg:pr-80">
-          <div className="mx-auto px-4 py-6 space-y-6 max-w-full">
+        <div className="flex-1 overflow-y-auto lg:pr-96 selection:bg-primary/10">
+          <div className="mx-auto px-6 py-8 space-y-10 max-w-7xl">
 
             {step === "catalog" && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-xl font-bold mb-1">Виберіть товари</h2>
-                  <p className="text-sm text-muted-foreground">Натисніть на товар, щоб налаштувати та додати до замовлення</p>
+              <div className="space-y-10">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                  <div className="space-y-1.5">
+                    <h2 className="text-2xl font-black tracking-tight text-foreground">Виберіть товари</h2>
+                    <p className="text-sm font-medium text-muted-foreground/80">Оберіть основу для замовлення та налаштуйте принт</p>
+                  </div>
+                  
+                  <ProductQuickSearch 
+                    products={products} 
+                    onSelect={(p) => openCustomizer(p as ProductWithConfig, null)} 
+                  />
                 </div>
 
-                {categories.length > 0 && (
-                  <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-                    <button onClick={() => setActiveCategory(null)}
-                      className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-semibold border transition-all shrink-0 ${activeCategory === null ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-foreground/40"}`}>
-                      Всі
-                    </button>
-                    {categories.map((cat) => (
-                      <button key={cat.id} onClick={() => setActiveCategory(cat.id)}
-                        className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-semibold border transition-all shrink-0 ${activeCategory === cat.id ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-foreground/40"}`}>
-                        {cat.name}
+                <div className="space-y-6">
+                  {categories.length > 0 && (
+                    <div className="flex gap-1.5 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+                      <button 
+                        onClick={() => setActiveCategory(null)}
+                        className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border ${
+                          activeCategory === null 
+                            ? "bg-primary text-primary-foreground border-primary shadow-sm" 
+                            : "bg-background text-muted-foreground border-border/40 hover:border-primary/20 hover:text-foreground"
+                        }`}
+                      >
+                        Всі товари
                       </button>
-                    ))}
-                  </div>
-                )}
+                      {categories.map((cat) => (
+                        <button 
+                          key={cat.id} 
+                          onClick={() => setActiveCategory(cat.id)}
+                          className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border ${
+                            activeCategory === cat.id 
+                              ? "bg-primary text-primary-foreground border-primary shadow-sm" 
+                              : "bg-background text-muted-foreground border-border/40 hover:border-primary/20 hover:text-foreground"
+                          }`}
+                        >
+                          {cat.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                  {products
-                    .filter((p) => !activeCategory || (p as ProductWithConfig & { category_id?: string }).category_id === activeCategory)
-                    .map((product) => (
-                      <ProductCardInline key={product.id} product={product}
-                        variants={variants.filter((v) => v.product_id === product.id)}
-                        materials={materials}
-                        onOpen={(variant: ProductColorVariant | null, size?: string | null) => openCustomizer(product, variant, size)}
-                        onAddWithoutPrint={(variant: ProductColorVariant | null, size?: string | null) => handleAddWithoutPrint(product, variant, size)} />
-                    ))}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
+                    {products
+                      .filter((p) => !activeCategory || (p as ProductWithConfig & { category_id?: string }).category_id === activeCategory)
+                      .map((product) => (
+                        <ProductCardInline 
+                          key={product.id} 
+                          product={product}
+                          variants={variants.filter((v) => v.product_id === product.id)}
+                          materials={materials}
+                          onOpen={(variant: ProductColorVariant | null, size?: string | null) => openCustomizer(product, variant, size)}
+                          onAddWithoutPrint={(variant: ProductColorVariant | null, size?: string | null) => handleAddWithoutPrint(product, variant, size)} 
+                        />
+                      ))}
+                  </div>
                 </div>
               </div>
             )}
 
             {step === "checkout" && (
-              <CheckoutForm contact={contact} setContact={setContact}
-                orderTags={orderTags} setOrderTags={setOrderTags}
-                extraFiles={extraFiles} setExtraFiles={setExtraFiles}
-                cart={cart} totalCents={totalCents}
-                onBack={() => setStep("catalog")}
-                onReview={() => setStep("review")} />
+              <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <CheckoutForm contact={contact} setContact={setContact}
+                  orderTags={orderTags} setOrderTags={setOrderTags}
+                  extraFiles={extraFiles} setExtraFiles={setExtraFiles}
+                  cart={cart} totalCents={totalCents}
+                  onBack={() => setStep("catalog")}
+                  onReview={() => setStep("review")} />
+              </div>
             )}
 
             {step === "review" && (
-              <ReviewStep cart={cart} totalCents={totalCents} contact={contact}
-                orderTags={orderTags} extraFiles={extraFiles}
-                generatingPdf={generatingPdf} submitting={submitting}
-                onBack={() => setStep("checkout")}
-                onSubmit={() => void handleSubmitOrder()}
-                onDownloadInvoice={handleDownloadInvoice} />
+              <div className="max-w-4xl mx-auto animate-in fade-in zoom-in-95 duration-500">
+                <ReviewStep cart={cart} totalCents={totalCents} contact={contact}
+                  orderTags={orderTags} extraFiles={extraFiles}
+                  generatingPdf={generatingPdf} submitting={submitting}
+                  onBack={() => setStep("checkout")}
+                  onSubmit={() => void handleSubmitOrder()}
+                  onDownloadInvoice={handleDownloadInvoice} />
+              </div>
             )}
           </div>
         </div>
 
         {/* Desktop cart side panel */}
-        <DesktopCartPanel cart={cart} totalCents={totalCents} products={products}
-          variants={variants} materials={materials} onEdit={handleEditCartItem}
-          onRemove={(i) => setCart((prev) => prev.filter((_, idx) => idx !== i))}
-          onCheckout={() => setStep("checkout")} />
+        <div className="hidden lg:block w-96 border-l border-border/40 bg-background/50 backdrop-blur-xl sticky top-16 h-[calc(100vh-4rem)] overflow-hidden">
+          <DesktopCartPanel cart={cart} totalCents={totalCents} products={products}
+            variants={variants} materials={materials} onEdit={handleEditCartItem}
+            onRemove={(i) => setCart((prev) => prev.filter((_, idx) => idx !== i))}
+            onCheckout={() => setStep("checkout")} />
+        </div>
       </div>
 
       {/* Mobile cart bar */}

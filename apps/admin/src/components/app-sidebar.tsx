@@ -6,13 +6,14 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   BarChart2, Users, MessagesSquare, ShoppingBag, Box,
   Settings, ChevronRight, UserCog,
-  LayoutDashboard, FileEdit, Palette,
+  LayoutDashboard, FileEdit, Palette, Search,
 } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { NavUser } from "@/components/nav-user";
 import { createClient } from "@/lib/supabase/client";
 import { playNotificationTone } from "@/lib/notifications";
 import { toast } from "sonner";
+import { CommandMenu } from "@/components/command-menu";
 import {
   Sidebar,
   SidebarContent,
@@ -61,40 +62,43 @@ interface NavItem {
   children?: NavSubItem[];
 }
 
-const MAIN_NAV: NavItem[] = [
-  { title: "Продажі",      url: "/orders",    icon: ShoppingBag,    badgeKey: "orders" },
+const SALES_NAV: NavItem[] = [
+  { title: "Замовлення",   url: "/orders",    icon: ShoppingBag,    badgeKey: "orders" },
   { title: "Клієнти",      url: "/clients",   icon: Users },
   { title: "Повідомлення", url: "/messages",  icon: MessagesSquare, badgeKey: "messages" },
-  { title: "Аналітика",    url: "/analytics", icon: BarChart2 },
 ];
 
-const CATALOG_NAV: NavItem[] = [
+const INVENTORY_NAV: NavItem[] = [
   {
-    title: "Каталог",
+    title: "Каталог товарів",
     url: "/catalog",
     icon: Palette,
     children: [
-      { title: "Товари",     url: "/catalog?tab=products" },
-      { title: "Категорії",  url: "/catalog?tab=categories" },
-      { title: "Кольори",    url: "/catalog?tab=colors" },
-      { title: "Розміри",    url: "/catalog?tab=sizes" },
+      { title: "Всі товари",     url: "/catalog?tab=products" },
+      { title: "Категорії",      url: "/catalog?tab=categories" },
+      { title: "Кольори та матеріали",    url: "/catalog?tab=colors" },
+      { title: "Розмірна сітка",    url: "/catalog?tab=sizes" },
     ],
   },
   {
-    title: "Принти",
+    title: "Принти та Друк",
     url: "/prints",
     icon: Box,
     children: [
-      { title: "Принти",        url: "/prints?tab=prints" },
-      { title: "Типи друку",    url: "/prints?tab=types" },
-      { title: "Розміри друку", url: "/prints?tab=sizes" },
+      { title: "Бібліотека принтів", url: "/prints?tab=prints" },
+      { title: "Технології друку",    url: "/prints?tab=types" },
+      { title: "Формати друку",      url: "/prints?tab=sizes" },
     ],
   },
+];
+
+const INSIGHTS_NAV: NavItem[] = [
+  { title: "Аналітика",    url: "/analytics", icon: BarChart2 },
 ];
 
 const SYSTEM_NAV: NavItem[] = [
   {
-    title: "CMS",
+    title: "Контент (CMS)",
     url: "/cms",
     icon: FileEdit,
     children: [
@@ -103,16 +107,8 @@ const SYSTEM_NAV: NavItem[] = [
       { title: "Конфіденційність", url: "/cms/privacy" },
     ],
   },
-  {
-    title: "Користувачі",
-    url: "/users",
-    icon: UserCog,
-  },
-  {
-    title: "Налаштування",
-    url: "/settings",
-    icon: Settings,
-  },
+  { title: "Користувачі",  url: "/users",     icon: UserCog },
+  { title: "Налаштування", url: "/settings",  icon: Settings },
 ];
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -133,7 +129,6 @@ export function AppSidebar({ user }: AppSidebarProps) {
 
   // Track which collapsibles are open
   const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>({
-    "/products": pathname.startsWith("/products"),
     "/catalog": pathname.startsWith("/catalog"),
     "/prints": pathname.startsWith("/prints"),
     "/cms": pathname.startsWith("/cms"),
@@ -222,12 +217,13 @@ export function AppSidebar({ user }: AppSidebarProps) {
             const ok = handleNavClick(item.url, isActive);
             if (!ok) e.preventDefault();
           }}
+          className="transition-all duration-200 hover:bg-accent/50 active:scale-[0.98]"
         >
-          <item.icon aria-hidden="true" />
-          <span>{item.title}</span>
+          <item.icon className={`transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`} />
+          <span className={isActive ? "font-medium text-foreground" : "text-muted-foreground"}>{item.title}</span>
         </SidebarMenuButton>
         {showBadge && (
-          <SidebarMenuBadge className="bg-destructive/10 text-destructive rounded-full text-[10px] font-semibold">
+          <SidebarMenuBadge className="bg-primary text-primary-foreground rounded-full text-[10px] font-bold px-1.5 min-w-[1.25rem] h-5 border-2 border-background">
             {count > 99 ? "99+" : count}
           </SidebarMenuBadge>
         )}
@@ -253,16 +249,17 @@ export function AppSidebar({ user }: AppSidebarProps) {
             aria-current={isGroupActive ? "page" : undefined}
             aria-expanded={isOpen}
             onClick={() => setOpenGroups((prev) => ({ ...prev, [item.url]: !isOpen }))}
+            className="transition-all duration-200 hover:bg-accent/50 active:scale-[0.98]"
           >
-            <item.icon aria-hidden="true" />
-            <span>{item.title}</span>
-            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+            <item.icon className={`transition-colors ${isGroupActive ? "text-primary" : "text-muted-foreground"}`} />
+            <span className={isGroupActive ? "font-medium text-foreground" : "text-muted-foreground"}>{item.title}</span>
+            <ChevronRight className="ml-auto size-3.5 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 text-muted-foreground" />
           </SidebarMenuButton>
-          <CollapsibleContent>
-            <SidebarMenuSub>
+          <CollapsibleContent className="data-[state=closed]:animate-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1">
+            <SidebarMenuSub className="ml-4 border-l border-border/50 pl-2 mt-1 space-y-0.5">
               {item.children?.map((child) => {
                 const childActive = child.url.includes("?")
-                  ? pathname === child.url.split("?")[0]
+                  ? pathname === child.url.split("?")[0] && (new URLSearchParams(child.url.split("?")[1])).get("tab") === (new URLSearchParams(window.location.search)).get("tab")
                   : pathname === child.url || pathname.startsWith(child.url + "/");
                 return (
                   <SidebarMenuSubItem key={child.title}>
@@ -273,6 +270,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
                         const ok = handleNavClick(child.url, childActive);
                         if (!ok) e.preventDefault();
                       }}
+                      className={`text-xs transition-colors py-1.5 ${childActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}`}
                     >
                       {child.title}
                     </SidebarMenuSubButton>
@@ -288,45 +286,74 @@ export function AppSidebar({ user }: AppSidebarProps) {
 
   return (
     <>
-    <Sidebar collapsible="icon">
-      <SidebarHeader>
-        <div className={`flex items-center py-1 px-2 ${isCollapsed ? "justify-center" : "justify-between"}`}>
+    <Sidebar collapsible="icon" className="border-r border-border/40 bg-sidebar/40 backdrop-blur-xl">
+      <SidebarHeader className="h-16 flex items-center px-4 border-b border-border/40">
+        <div className={`flex items-center w-full ${isCollapsed ? "justify-center" : "justify-between"}`}>
           {!isCollapsed && (
             <Link
               href="/"
-              className="flex items-center hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+              className="flex items-center hover:opacity-80 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded active:scale-95"
               aria-label="U:DO CRAFT"
             >
-              <BrandLogo />
+              <BrandLogo className="h-6 w-auto" />
             </Link>
           )}
-          <SidebarTrigger />
+          <SidebarTrigger className="-mr-2 hover:bg-accent/40 transition-colors" />
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
-        {/* Main */}
+      <SidebarContent className="px-3 py-6 gap-8">
+        {/* Search */}
         <SidebarGroup>
-          <SidebarGroupLabel>Головне</SidebarGroupLabel>
           <SidebarMenu>
-            {MAIN_NAV.map(renderSimpleItem)}
+            <SidebarMenuItem>
+              <CommandMenu
+                trigger={
+                  <SidebarMenuButton tooltip="Швидкий пошук (⌘K)" className="bg-muted/30 hover:bg-accent/40 transition-all border border-border/30 h-10 shadow-sm group">
+                    <Search className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                    <span className="text-muted-foreground font-medium text-xs">Швидкий пошук...</span>
+                    {!isCollapsed && (
+                      <kbd className="ml-auto pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-background/50 px-1.5 font-mono text-[9px] font-bold opacity-70 md:flex">
+                        <span className="text-[10px]">⌘</span>K
+                      </kbd>
+                    )}
+                  </SidebarMenuButton>
+                }
+              />
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
 
-        {/* Catalog */}
+        {/* Sales */}
         <SidebarGroup>
-          <SidebarGroupLabel>Каталог</SidebarGroupLabel>
-          <SidebarMenu>
-            {CATALOG_NAV.map((item) =>
+          <SidebarGroupLabel className="px-2 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 mb-3">Продажі та CRM</SidebarGroupLabel>
+          <SidebarMenu className="gap-1">
+            {SALES_NAV.map(renderSimpleItem)}
+          </SidebarMenu>
+        </SidebarGroup>
+
+        {/* Inventory */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="px-2 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 mb-3">Інвентар</SidebarGroupLabel>
+          <SidebarMenu className="gap-1">
+            {INVENTORY_NAV.map((item) =>
               item.children ? renderCollapsibleItem(item) : renderSimpleItem(item)
             )}
           </SidebarMenu>
         </SidebarGroup>
 
+        {/* Insights */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="px-2 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 mb-3">Аналітика</SidebarGroupLabel>
+          <SidebarMenu className="gap-1">
+            {INSIGHTS_NAV.map(renderSimpleItem)}
+          </SidebarMenu>
+        </SidebarGroup>
+
         {/* System */}
         <SidebarGroup>
-          <SidebarGroupLabel>Система</SidebarGroupLabel>
-          <SidebarMenu>
+          <SidebarGroupLabel className="px-2 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 mb-3">Керування</SidebarGroupLabel>
+          <SidebarMenu className="gap-1">
             {SYSTEM_NAV.map((item) =>
               item.children ? renderCollapsibleItem(item) : renderSimpleItem(item)
             )}
@@ -334,7 +361,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="p-3 border-t border-border/40">
         <SidebarMenu>
           <SidebarMenuItem>
             <NavUser user={user} />

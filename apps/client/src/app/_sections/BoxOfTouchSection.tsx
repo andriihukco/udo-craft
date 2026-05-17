@@ -96,11 +96,6 @@ export function BoxOfTouchSection() {
               preload="auto"
               aria-hidden="true"
             />
-            {/* Left fade blends into content column */}
-            <div
-              className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-transparent lg:block hidden"
-              aria-hidden="true"
-            />
           </motion.div>
         </div>
     </section>

@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
-import { HighlightText } from "@/app/_components/HighlightText";
+import { HighlightText, RoughHighlight } from "@/app/_components/HighlightText";
 
 const GUARANTEES = [
   {
@@ -45,8 +45,7 @@ export function TrustSection() {
           className="mb-16"
         >
           <h2 id="trust-heading" className="text-white text-3xl sm:text-4xl font-black tracking-tight mb-4">
-            Чому нам{" "}
-            <HighlightText delay={0.4} color="rgba(255,255,255,0.12)">довіряють</HighlightText>
+            Чому нам довіряють
           </h2>
           <p className="text-white/55 text-base max-w-lg leading-relaxed">
             Не просто слова — конкретні гарантії, які ми дотримуємось щодня.

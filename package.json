@@ -27,6 +27,7 @@
     "@tiptap/pm": "^2.11.5",
     "husky": "^9.0.0",
     "lint-staged": "^15.0.0",
+    "playwright": "^1.60.0",
     "turbo": "^2.0.0"
   }
 }

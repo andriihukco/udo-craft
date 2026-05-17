@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useRef, useState } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import { Plus, Minus } from "lucide-react";
@@ -107,7 +109,7 @@ export function FaqSection() {
               Часті запитання
             </h2>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              Не знайшли відповідь? Напишіть нам — відповімо протягом години.
+              Не знайшли відповідь? <Link href="#contact" className="text-primary font-medium hover:underline hover:text-primary/80 transition-colors">Напишіть нам</Link> — відповімо протягом години.
             </p>
           </motion.div>
 
