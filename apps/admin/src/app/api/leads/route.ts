@@ -23,9 +23,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const limit = Number(request.nextUrl.searchParams.get("limit")) || 5000;
+    const limit = Number(request.nextUrl.searchParams.get("limit")) || 300;
 
-    const { data, error } = await getServiceClient()
+    const serviceClient = getServiceClient();
+
+    const { count, error: countError } = await serviceClient
+      .from("leads")
+      .select("*", { count: "exact", head: true });
+
+    if (countError) {
+      console.error("Count error:", countError);
+    }
+
+    const { data, error } = await serviceClient
       .from("leads")
       .select("*, order_items!order_items_lead_id_fkey(*)")
       .order("created_at", { ascending: false })
@@ -36,7 +46,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json({ leads: data, totalCount: count || (data ? data.length : 0) });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("API error:", message);

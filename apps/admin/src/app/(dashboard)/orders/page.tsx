@@ -30,6 +30,7 @@ function OrdersBoard() {
   const supabase = createClient();
 
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
@@ -54,8 +55,10 @@ function OrdersBoard() {
     try {
       const r = await fetch("/api/leads");
       if (!r.ok) throw new Error();
-      setLeads((await r.json()) || []);
-    } catch { toast.error("Помилка при завантаженні замовлень"); setLeads([]); }
+      const res = await r.json();
+      setLeads(Array.isArray(res) ? res : res.leads || []);
+      setTotalCount(Array.isArray(res) ? res.length : res.totalCount || 0);
+    } catch { toast.error("Помилка при завантаженні замовлень"); setLeads([]); setTotalCount(0); }
     finally { if (showLoading) setLoading(false); }
   }, []);
 
@@ -98,9 +101,9 @@ function OrdersBoard() {
         <DashboardHeader
           title="Замовлення"
           subtitle={
-            leads.length > 0 && (
+            totalCount > 0 && (
               <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-primary/10">
-                {leads.length} всього
+                {totalCount} всього
               </span>
             )
           }
