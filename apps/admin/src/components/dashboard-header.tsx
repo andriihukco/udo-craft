@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 
 interface DashboardHeaderProps {
   title: string;
+  titleAccessory?: React.ReactNode;
   eyebrow?: string;
   subtitle?: React.ReactNode;
   description?: React.ReactNode;
@@ -15,6 +16,7 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({
   title,
+  titleAccessory,
   eyebrow,
   subtitle,
   description,
@@ -38,7 +40,10 @@ export function DashboardHeader({
             {eyebrow}
           </p>
         )}
-        <h1 className="truncate text-lg font-semibold leading-tight tracking-tight text-foreground md:text-xl">{title}</h1>
+        <div className="flex min-w-0 items-center gap-3">
+          <h1 className="truncate text-lg font-semibold leading-tight tracking-tight text-foreground md:text-xl">{title}</h1>
+          {titleAccessory && <div className="shrink-0">{titleAccessory}</div>}
+        </div>
         {supportingText && (
           <div className="mt-0.5 flex min-h-4 items-center gap-2 text-xs text-muted-foreground md:text-sm">
             {supportingText}

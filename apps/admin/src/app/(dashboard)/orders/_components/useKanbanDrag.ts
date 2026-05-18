@@ -4,7 +4,25 @@ import { useState, useRef } from "react";
 
 export interface Lead {
   id: string;
-  customer_data: { name: string; email?: string; phone?: string; company?: string };
+  customer_data: {
+    name: string;
+    email?: string;
+    phone?: string;
+    company?: string;
+    keycrm_id?: number | string;
+    keycrm_source_id?: number | string;
+    keycrm_source_uuid?: string;
+    keycrm_global_source_uuid?: string;
+    keycrm_manager_name?: string;
+    keycrm_manager_username?: string;
+    keycrm_payment_status?: string;
+    keycrm_recipient_name?: string;
+    keycrm_recipient_phone?: string;
+    keycrm_tracking_code?: string;
+    keycrm_shipping_status?: string;
+    delivery?: string;
+    delivery_details?: string;
+  };
   status: "draft" | "new" | "in_progress" | "production" | "completed" | "archived";
   tags?: string[];
   created_at: string;
@@ -14,7 +32,12 @@ export interface Lead {
   order_items?: {
     id: string; product_id: string; quantity: number; size: string; color: string;
     unit_price_cents?: number;
-    technical_metadata?: { unit_price_cents?: number; item_note?: string };
+    technical_metadata?: {
+      unit_price_cents?: number;
+      item_note?: string;
+      keycrm_product_name?: string;
+      keycrm_sku?: string | null;
+    };
   }[];
 }
 

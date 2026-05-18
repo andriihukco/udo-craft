@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/status-badge";
 import { Badge } from "@/components/ui/badge";
-import { Columns3, Filter, List, Loader2, Plus, RefreshCw, Search, SlidersHorizontal, X } from "lucide-react";
+import { CalendarClock, Columns3, CreditCard, Filter, Hash, List, Loader2, Package, Plus, RefreshCw, Search, Truck, UserRound, X } from "lucide-react";
 import { toast } from "sonner";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { KanbanColumn } from "./_components/KanbanColumn";
@@ -112,6 +112,46 @@ function getItemCount(lead: Lead) {
   return lead.order_items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
 }
 
+function formatOrderTime(dateStr: string) {
+  const date = new Date(dateStr);
+  const today = new Date();
+  const isToday = date.toDateString() === today.toDateString();
+  return `${isToday ? "Сьогодні" : formatOrderDate(dateStr)} ${date.toLocaleTimeString("uk-UA", {
+    hour: "2-digit",
+    minute: "2-digit",
+  })}`;
+}
+
+function getOrderNumber(lead: Lead) {
+  return lead.customer_data?.keycrm_id ? String(lead.customer_data.keycrm_id) : lead.id.slice(0, 8);
+}
+
+function getSourceLabel(lead: Lead) {
+  const data = lead.customer_data;
+  if (data.keycrm_global_source_uuid || data.keycrm_source_uuid || data.keycrm_source_id) return "KeyCRM";
+  if (data.company) return data.company;
+  return "U:Do Craft";
+}
+
+function getPaymentLabel(status?: string) {
+  if (!status) return "—";
+  if (status === "paid") return "Оплачено";
+  if (status === "part_paid") return "Частково";
+  if (status === "not_paid") return "Не сплачено";
+  return status;
+}
+
+function getPrimaryItemLabel(lead: Lead) {
+  const items = lead.order_items ?? [];
+  if (items.length === 0) return "Товари відсутні";
+  const first = items[0];
+  const name = first.technical_metadata?.keycrm_product_name || first.technical_metadata?.item_note || "Позиція";
+  const details = [first.size, first.color].filter(Boolean).join(", ");
+  const suffix = details ? `, ${details}` : "";
+  const more = items.length > 1 ? ` +${items.length - 1}` : "";
+  return `${name}${suffix} (${first.quantity} шт.)${more}`;
+}
+
 function OrdersBoard() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -126,7 +166,6 @@ function OrdersBoard() {
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
   const [amountFilter, setAmountFilter] = useState<AmountFilter>("all");
   const [sortFilter, setSortFilter] = useState<SortFilter>("newest");
-  const [showEmptyColumns, setShowEmptyColumns] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
   const [syncingKeycrm, setSyncingKeycrm] = useState(false);
 
@@ -242,9 +281,16 @@ function OrdersBoard() {
   }, [amountFilter, dateFilter, leads, search, sortFilter, statusFilter, tagFilter]);
 
   const visibleStatuses = useMemo(() => {
-    if (showEmptyColumns) return STATUSES;
-    return STATUSES.filter((status) => filteredLeads.some((lead) => lead.status === status));
-  }, [filteredLeads, showEmptyColumns]);
+    if (statusFilter !== "all") return STATUSES.filter((status) => status === statusFilter);
+    return STATUSES;
+  }, [statusFilter]);
+
+  const statusCounts = useMemo(() => {
+    return STATUSES.reduce<Record<(typeof STATUSES)[number], number>>((acc, status) => {
+      acc[status] = leads.filter((lead) => lead.status === status).length;
+      return acc;
+    }, {} as Record<(typeof STATUSES)[number], number>);
+  }, [leads]);
 
   const hasFilters =
     search.trim() ||
@@ -252,8 +298,7 @@ function OrdersBoard() {
     tagFilter !== "all" ||
     dateFilter !== "all" ||
     amountFilter !== "all" ||
-    sortFilter !== "newest" ||
-    !showEmptyColumns;
+    sortFilter !== "newest";
 
   const resetFilters = useCallback(() => {
     setSearch("");
@@ -262,7 +307,6 @@ function OrdersBoard() {
     setDateFilter("all");
     setAmountFilter("all");
     setSortFilter("newest");
-    setShowEmptyColumns(true);
   }, []);
 
   return (
@@ -270,19 +314,28 @@ function OrdersBoard() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <DashboardHeader
           title="Замовлення"
-          subtitle={
-            leads.length > 0 && (
-              <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-primary/10">
-                {filteredLeads.length} з {leads.length}
-              </span>
-            )
+          titleAccessory={
+            <div className="flex h-9 items-center rounded-full border border-border bg-muted/30 p-1">
+              <ViewModeButton
+                active={viewMode === "kanban"}
+                icon={Columns3}
+                label="Канбан"
+                onClick={() => setViewMode("kanban")}
+              />
+              <ViewModeButton
+                active={viewMode === "list"}
+                icon={List}
+                label="Список"
+                onClick={() => setViewMode("list")}
+              />
+            </div>
           }
           actions={
             <>
               <Button
                 variant="outline"
                 size="lg"
-                className="h-10 gap-2 px-4 text-xs font-semibold uppercase tracking-widest"
+                className="h-10 rounded-full gap-2 px-4 text-xs font-semibold uppercase tracking-widest"
                 onClick={handleKeycrmSync}
                 disabled={syncingKeycrm}
               >
@@ -302,6 +355,24 @@ function OrdersBoard() {
         />
 
         <div className="border-b border-border bg-background px-6 py-3">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <StatusFilterChip
+              active={statusFilter === "all"}
+              label="Всі"
+              count={leads.length}
+              onClick={() => setStatusFilter("all")}
+            />
+            {STATUSES.map((status) => (
+              <StatusFilterChip
+                key={status}
+                active={statusFilter === status}
+                label={STATUS_LABELS[status]}
+                count={statusCounts[status]}
+                onClick={() => setStatusFilter(status)}
+              />
+            ))}
+          </div>
+
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative min-w-56 flex-1 sm:max-w-xs">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -322,35 +393,6 @@ function OrdersBoard() {
                 </button>
               )}
             </div>
-
-            <div className="flex h-9 items-center rounded-md border border-border bg-muted/30 p-1">
-              <ViewModeButton
-                active={viewMode === "kanban"}
-                icon={Columns3}
-                label="Канбан"
-                onClick={() => setViewMode("kanban")}
-              />
-              <ViewModeButton
-                active={viewMode === "list"}
-                icon={List}
-                label="Список"
-                onClick={() => setViewMode("list")}
-              />
-            </div>
-
-            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as StatusFilter)}>
-              <SelectTrigger className="h-9 w-[150px] rounded-md text-xs">
-                <SelectValue>
-                  {statusFilter === "all" ? "Всі статуси" : STATUS_LABELS[statusFilter]}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Всі статуси</SelectItem>
-                {STATUSES.map((status) => (
-                  <SelectItem key={status} value={status}>{STATUS_LABELS[status]}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
 
             <Select value={tagFilter} onValueChange={(value) => setTagFilter(value as TagFilter)}>
               <SelectTrigger className="h-9 w-[164px] rounded-md text-xs">
@@ -402,16 +444,6 @@ function OrdersBoard() {
               </SelectContent>
             </Select>
 
-            {viewMode === "kanban" && (
-              <label className="ml-auto flex h-9 items-center gap-2 rounded-md border border-border px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50">
-                <Checkbox
-                  checked={showEmptyColumns}
-                  onCheckedChange={(checked) => setShowEmptyColumns(checked === true)}
-                />
-                Порожні колонки
-              </label>
-            )}
-
             {hasFilters && (
               <Button
                 type="button"
@@ -426,20 +458,17 @@ function OrdersBoard() {
             )}
           </div>
 
-          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
-            <span className="inline-flex items-center gap-1 rounded border border-transparent px-1.5 py-1 font-medium">
-              <SlidersHorizontal className="size-3.5" />
-              {filteredLeads.length} замовлень у {viewMode === "kanban" ? "дошці" : "списку"}
-            </span>
-            {statusFilter !== "all" && <FilterChip>{STATUS_LABELS[statusFilter]}</FilterChip>}
-            {tagFilter !== "all" && <FilterChip>{getTagFilterLabel(tagFilter)}</FilterChip>}
-            {dateFilter !== "all" && (
-              <FilterChip>{DATE_FILTER_LABELS[dateFilter]}</FilterChip>
-            )}
-            {amountFilter !== "all" && <FilterChip>{AMOUNT_FILTER_LABELS[amountFilter]}</FilterChip>}
-            {sortFilter !== "newest" && <FilterChip>{SORT_FILTER_LABELS[sortFilter]}</FilterChip>}
-            {!showEmptyColumns && <FilterChip>Тільки заповнені колонки</FilterChip>}
-          </div>
+          {hasFilters && (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+              {statusFilter !== "all" && <FilterChip>{STATUS_LABELS[statusFilter]}</FilterChip>}
+              {tagFilter !== "all" && <FilterChip>{getTagFilterLabel(tagFilter)}</FilterChip>}
+              {dateFilter !== "all" && (
+                <FilterChip>{DATE_FILTER_LABELS[dateFilter]}</FilterChip>
+              )}
+              {amountFilter !== "all" && <FilterChip>{AMOUNT_FILTER_LABELS[amountFilter]}</FilterChip>}
+              {sortFilter !== "newest" && <FilterChip>{SORT_FILTER_LABELS[sortFilter]}</FilterChip>}
+            </div>
+          )}
         </div>
 
         <div className={cn("flex-1", viewMode === "kanban" ? "overflow-x-auto overflow-y-hidden" : "overflow-auto")}>
@@ -523,6 +552,37 @@ function FilterChip({ children }: { children: React.ReactNode }) {
   );
 }
 
+function StatusFilterChip({
+  active,
+  label,
+  count,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  count: number;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={cn(
+        "inline-flex h-9 items-center gap-2 rounded-full border px-3 text-xs font-bold transition-colors",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        active
+          ? "border-primary/25 bg-primary/10 text-primary"
+          : "border-border bg-background text-muted-foreground hover:border-primary/20 hover:bg-muted/50 hover:text-foreground"
+      )}
+    >
+      <span className={cn("size-2 rounded-full", active ? "bg-primary" : "bg-muted-foreground/40")} />
+      <span className="uppercase tracking-wide">{label}</span>
+      <span className={cn("text-[11px]", active ? "text-primary/80" : "text-muted-foreground/70")}>{count}</span>
+    </button>
+  );
+}
+
 function ViewModeButton({
   active,
   icon: Icon,
@@ -540,7 +600,7 @@ function ViewModeButton({
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        "inline-flex h-7 items-center gap-1.5 rounded px-2 text-xs font-semibold transition-colors",
+        "inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold transition-colors",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         active
           ? "bg-background text-foreground shadow-sm"
@@ -564,22 +624,67 @@ function OrdersListView({
 }) {
   return (
     <div className="px-6 py-5 animate-in">
-      <div className="overflow-hidden rounded-md border border-border bg-background">
-        <Table className="min-w-[920px] table-fixed">
+      <div className="overflow-hidden rounded-md border border-border bg-background shadow-sm">
+        <Table className="min-w-[1280px] table-fixed">
           <TableHeader>
-            <TableRow className="h-10 hover:bg-transparent">
-              <TableHead className="w-[30%]">Клієнт</TableHead>
-              <TableHead className="w-[14%]">Статус</TableHead>
-              <TableHead className="w-[24%]">Теги</TableHead>
-              <TableHead className="w-[10%]">Позиції</TableHead>
-              <TableHead className="w-[12%]">Дата</TableHead>
-              <TableHead className="w-[10%] text-right">Сума</TableHead>
+            <TableRow className="h-11 bg-muted/30 hover:bg-muted/30">
+              <TableHead className="w-[46px] px-3">
+                <Checkbox aria-label="Вибрати всі замовлення" />
+              </TableHead>
+              <TableHead className="w-[124px]">
+                <span className="inline-flex items-center gap-1.5 leading-tight">
+                  <Hash className="size-3.5 text-muted-foreground" />
+                  <span className="flex flex-col">
+                    <span>№</span>
+                    <span>замовлення</span>
+                  </span>
+                </span>
+              </TableHead>
+              <TableHead className="w-[116px]">Джерело</TableHead>
+              <TableHead className="w-[136px]">
+                <span className="inline-flex items-center gap-1.5">
+                  <CalendarClock className="size-3.5 text-muted-foreground" />
+                  Час створення
+                </span>
+              </TableHead>
+              <TableHead className="w-[132px]">Статус</TableHead>
+              <TableHead className="w-[148px]">
+                <span className="inline-flex items-center gap-1.5">
+                  <UserRound className="size-3.5 text-muted-foreground" />
+                  Менеджер
+                </span>
+              </TableHead>
+              <TableHead className="w-[190px]">Покупець</TableHead>
+              <TableHead className="w-[188px]">
+                <span className="inline-flex items-center gap-1.5">
+                  <Truck className="size-3.5 text-muted-foreground" />
+                  Доставка
+                </span>
+              </TableHead>
+              <TableHead className="w-[250px]">
+                <span className="inline-flex items-center gap-1.5">
+                  <Package className="size-3.5 text-muted-foreground" />
+                  Товари
+                </span>
+              </TableHead>
+              <TableHead className="w-[118px]">
+                <span className="inline-flex items-center gap-1.5">
+                  <CreditCard className="size-3.5 text-muted-foreground" />
+                  Оплата
+                </span>
+              </TableHead>
+              <TableHead className="w-[110px] text-right">Сума</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {orders.map((lead) => {
-              const subtitle = lead.customer_data?.company || lead.customer_data?.email || lead.customer_data?.phone;
+              const customer = lead.customer_data ?? {};
               const tags = lead.tags ?? [];
+              const manager = customer.keycrm_manager_name || customer.keycrm_manager_username || "—";
+              const deliveryLine = [
+                customer.delivery || customer.keycrm_shipping_status,
+                customer.keycrm_tracking_code && `ТТН ${customer.keycrm_tracking_code}`,
+              ].filter(Boolean).join(" · ");
 
               return (
                 <TableRow
@@ -590,36 +695,48 @@ function OrdersListView({
                   data-state={selectedOrderId === lead.id ? "selected" : undefined}
                   onClick={() => onOrderClick(lead)}
                   onKeyDown={(event) => event.key === "Enter" && onOrderClick(lead)}
-                  className="h-14 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="h-[74px] cursor-pointer align-top outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
+                  <TableCell className="px-3" onClick={(event) => event.stopPropagation()}>
+                    <Checkbox aria-label={`Вибрати замовлення ${getOrderNumber(lead)}`} />
+                  </TableCell>
                   <TableCell>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-foreground">
-                        {lead.customer_data?.name || "Без імені"}
-                      </p>
-                      {subtitle && (
-                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                          {subtitle}
-                        </p>
-                      )}
-                    </div>
+                    <span className="text-sm font-semibold text-foreground">{getOrderNumber(lead)}</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm font-medium text-primary">{getSourceLabel(lead)}</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-muted-foreground">{formatOrderTime(lead.created_at)}</span>
                   </TableCell>
                   <TableCell>
                     <StatusBadge status={lead.status} />
                   </TableCell>
                   <TableCell>
-                    <div className="flex max-w-64 flex-wrap gap-1">
-                      {tags.length === 0 ? (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      ) : (
-                        <>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                        <UserRound className="size-4" />
+                      </div>
+                      <span className="truncate text-sm text-foreground">{manager}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="min-w-0 space-y-1">
+                      <p className="truncate text-sm font-semibold text-foreground">
+                        {customer.name || "Без імені"}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {customer.phone || customer.email || customer.company || "Контактів немає"}
+                      </p>
+                      {tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
                           {tags.slice(0, 2).map((tagId) => {
                             const tag = PREDEFINED_TAGS.find((item) => item.id === tagId);
                             return (
                               <Badge
                                 key={tagId}
                                 variant="outline"
-                                className="h-6 normal-case tracking-normal"
+                                className="h-5 px-1.5 text-[10px] normal-case tracking-normal"
                                 style={tag ? {
                                   color: tag.color,
                                   backgroundColor: `${tag.bg}40`,
@@ -631,19 +748,41 @@ function OrdersListView({
                             );
                           })}
                           {tags.length > 2 && (
-                            <Badge variant="secondary" className="h-6 normal-case tracking-normal">
+                            <Badge variant="secondary" className="h-5 px-1.5 text-[10px] normal-case tracking-normal">
                               +{tags.length - 2}
                             </Badge>
                           )}
-                        </>
+                        </div>
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {getItemCount(lead)} шт.
+                  <TableCell>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm text-foreground">
+                        {customer.keycrm_recipient_name || customer.delivery_details || "—"}
+                      </p>
+                      {deliveryLine && (
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground">{deliveryLine}</p>
+                      )}
+                    </div>
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {formatOrderDate(lead.created_at)}
+                  <TableCell>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm text-foreground">{getPrimaryItemLabel(lead)}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">{getItemCount(lead)} шт.</p>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className={cn(
+                      "inline-flex min-h-7 items-center rounded-md px-2 text-xs font-semibold",
+                      customer.keycrm_payment_status === "paid"
+                        ? "bg-emerald-50 text-emerald-700"
+                        : customer.keycrm_payment_status === "not_paid"
+                          ? "bg-red-50 text-red-700"
+                          : "bg-muted text-muted-foreground"
+                    )}>
+                      {getPaymentLabel(customer.keycrm_payment_status)}
+                    </span>
                   </TableCell>
                   <TableCell className="text-right text-sm font-semibold text-primary">
                     {lead.total_amount_cents > 0
