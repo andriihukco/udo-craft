@@ -33,7 +33,7 @@ export function useLayerHandlers({
               const fillColor = patch.svgFillColor ?? layer.svgFillColor ?? "currentColor";
               const strokeColor = patch.svgStrokeColor ?? layer.svgStrokeColor ?? "";
               // Inject fill/stroke on the root <svg> element
-              let modified = svgText
+              const modified = svgText
                 .replace(/(<svg[^>]*?)(\s+fill="[^"]*")?(\s+stroke="[^"]*")?(\s*>)/,
                   (_, open, _fill, _stroke, close) => {
                     const fillAttr = fillColor && fillColor !== "transparent" ? ` fill="${fillColor}"` : ` fill="none"`;

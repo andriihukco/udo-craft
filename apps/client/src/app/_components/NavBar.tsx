@@ -88,7 +88,7 @@ export function NavBar({ isLoggedIn, cartCount, onCartOpen, cinemaMode, onAuthOp
         } md:h-12 h-14 md:px-3 px-4`}
       >
         {/* Logo — inverted on dark, normal on light */}
-        <Link href="/" aria-label="U:DO CRAFT" className="shrink-0 pl-1 pr-1">
+        <Link href="/" aria-label="U:DO CRAFT — на головну" className="shrink-0 pl-1 pr-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg">
           {isLight ? (
             <BrandLogoFull className="h-8 w-auto" color="var(--color-primary)" />
           ) : (
@@ -104,7 +104,7 @@ export function NavBar({ isLoggedIn, cartCount, onCartOpen, cinemaMode, onAuthOp
             <Link
               key={l.href}
               href={l.href}
-              className={`px-3 py-1.5 text-sm font-medium rounded-full transition-all duration-200 whitespace-nowrap ${
+              className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                 isLight
                   ? "text-muted-foreground hover:text-foreground hover:bg-muted"
                   : "text-white/60 hover:text-white hover:bg-white/10"
@@ -117,50 +117,50 @@ export function NavBar({ isLoggedIn, cartCount, onCartOpen, cinemaMode, onAuthOp
         </div>
 
         {/* Actions — always visible */}
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-1">
           {/* User icon — opens auth modal if not logged in, navigates to cabinet if logged in */}
           {isLoggedIn ? (
             <Link
               href="/cabinet"
-              aria-label="Кабінет"
-              className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 ${
+              aria-label="Перейти до кабінету"
+              className={`flex items-center justify-center w-11 h-11 rounded-full transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                 isLight
                   ? "text-muted-foreground hover:text-foreground hover:bg-muted"
                   : "text-white/60 hover:text-white hover:bg-white/10"
               }`}
             >
-              <User className="w-4 h-4" strokeWidth={2} />
+              <User className="w-5 h-5" strokeWidth={2} />
             </Link>
           ) : (
             <button
               onClick={() => { sound.tap(); onAuthOpen?.(); }}
-              aria-label="Увійти"
-              className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 ${
+              aria-label="Увійти до системи"
+              className={`flex items-center justify-center w-11 h-11 rounded-full transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                 isLight
                   ? "text-muted-foreground hover:text-foreground hover:bg-muted"
                   : "text-white/60 hover:text-white hover:bg-white/10"
               }`}
             >
-              <User className="w-4 h-4" strokeWidth={2} />
+              <User className="w-5 h-5" strokeWidth={2} />
             </button>
           )}
 
           <button
             onClick={() => { sound.open(); onCartOpen(); }}
-            aria-label="Кошик"
-            className={`relative flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 ${
+            aria-label={`Кошик — ${cartCount} товарів`}
+            className={`relative flex items-center justify-center w-11 h-11 rounded-full transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
               isLight
                 ? "text-muted-foreground hover:text-foreground hover:bg-muted"
                 : "text-white/60 hover:text-white hover:bg-white/10"
             }`}
           >
-            <ShoppingBag className="w-4 h-4" strokeWidth={2} />
+            <ShoppingBag className="w-5 h-5" strokeWidth={2} />
             {cartCount > 0 && (
               <motion.span
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: "spring", stiffness: 500, damping: 20 }}
-                className="absolute -top-0.5 -right-0.5 bg-primary text-white text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center leading-none"
+                className="absolute top-1.5 right-1.5 bg-primary text-white text-[10px] font-black rounded-full w-4.5 h-4.5 flex items-center justify-center leading-none ring-2 ring-background"
               >
                 {cartCount}
               </motion.span>
@@ -170,24 +170,24 @@ export function NavBar({ isLoggedIn, cartCount, onCartOpen, cinemaMode, onAuthOp
           {/* CTA — always visible */}
           <Link
             href="/order"
-            className={`hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-full active:scale-95 transition-all duration-200 whitespace-nowrap ml-1 ${
+            className={`hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold px-5 py-2.5 rounded-full active:scale-95 transition-all duration-200 whitespace-nowrap ml-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
               scrolled
                 ? "bg-primary text-white hover:bg-primary/90"
                 : "border border-primary text-primary hover:bg-primary hover:text-white"
             }`}
           >
-            Почати проєкт <ArrowRight className="w-3 h-3" aria-hidden="true" />
+            Почати проєкт <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
           </Link>
 
           <button
             onClick={() => { sound.toggle(!menuOpen); setMenuOpen(!menuOpen); }}
-            aria-label={menuOpen ? "Закрити меню" : "Відкрити меню"}
+            aria-label={menuOpen ? "Закрити головне меню" : "Відкрити головне меню"}
             aria-expanded={menuOpen}
-            className={`md:hidden flex items-center justify-center w-9 h-9 rounded-full transition-colors duration-200 ml-0.5 ${
+            className={`md:hidden flex items-center justify-center w-11 h-11 rounded-full transition-colors duration-200 ml-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
               isLight ? "hover:bg-muted text-foreground" : "hover:bg-white/10 text-white/70"
             }`}
           >
-            {menuOpen ? <X className="w-5 h-5" strokeWidth={2} /> : <Menu className="w-5 h-5" strokeWidth={2} />}
+            {menuOpen ? <X className="w-6 h-6" strokeWidth={2} /> : <Menu className="w-6 h-6" strokeWidth={2} />}
           </button>
         </div>
       </div>

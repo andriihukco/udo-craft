@@ -180,9 +180,9 @@ export function ProductCardDetailed({
         </div>
 
         {/* Sizes + Colors */}
-        <div className="flex flex-col gap-2 min-h-[28px]">
+        <div className="flex flex-col gap-3 min-h-[40px]">
           {sizes.length > 0 && (
-            <div className="flex items-center gap-1 flex-wrap">
+            <div className="flex items-center gap-1.5 flex-wrap">
               {sizes.map((size) => (
                 <button
                   key={size}
@@ -190,7 +190,7 @@ export function ProductCardDetailed({
                   aria-pressed={selectedSize === size}
                   aria-label={`Розмір ${size}`}
                   onClick={(e) => { e.stopPropagation(); setSelectedSize(selectedSize === size ? null : size); }}
-                  className={`min-w-[32px] text-[11px] font-semibold px-2 py-1.5 rounded-lg border transition-all duration-150 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
+                  className={`min-w-[44px] h-10 text-[11px] font-semibold px-3 py-2 rounded-lg border transition-all duration-150 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
                     selectedSize === size
                       ? "bg-foreground text-background border-foreground"
                       : "bg-background text-muted-foreground border-border hover:border-foreground/40 hover:text-foreground"
@@ -201,7 +201,7 @@ export function ProductCardDetailed({
               ))}
             </div>
           )}
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
             {colorDots.map((c) => (
               <button
                 key={c.id}
@@ -215,8 +215,8 @@ export function ProductCardDetailed({
                 }}
                 onMouseEnter={() => hasVariants && setHoveredVariantId(c.id)}
                 onMouseLeave={() => setHoveredVariantId(null)}
-                className={`w-6 h-6 rounded-full shrink-0 touch-manipulation transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${c.border ? "ring-1 ring-border" : ""} ${
-                  hasVariants && displayVariantId === c.id ? "ring-2 ring-offset-1 ring-foreground scale-110" : ""
+                className={`w-8 h-8 rounded-full shrink-0 touch-manipulation transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${c.border ? "ring-1 ring-border" : ""} ${
+                  hasVariants && displayVariantId === c.id ? "ring-2 ring-offset-2 ring-foreground scale-110" : ""
                 }`}
                 style={{ backgroundColor: c.hex }}
               />

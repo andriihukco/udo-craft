@@ -29,8 +29,8 @@ function AnimatedHeadline({ text }: { text: string }) {
             initial={{ y: "110%", opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{
-              duration: 0.8,
-              delay: 1.0 + i * 0.06,
+              duration: 0.6,
+              delay: 0.2 + i * 0.04,
               ease: [0.22, 1, 0.36, 1],
             }}
           >
@@ -76,18 +76,13 @@ export function HeroSection({
 
   return (
     <section
-      className="relative min-h-[100svh] bg-[#0a0d1a] overflow-hidden flex flex-col"
-      style={{
-        backgroundImage: 'url("/hero-poster.jpg")',
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
+      className="relative min-h-[100svh] bg-[#060812] overflow-hidden flex flex-col"
       aria-label="Головна секція"
     >
       {/* Skip link */}
       <a
         href="#catalog"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:bg-primary focus:text-white focus:px-4 focus:py-2 focus:rounded-full focus:text-sm focus:font-semibold"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:bg-primary focus:text-white focus:px-6 focus:py-3 focus:rounded-full focus:text-sm focus:font-semibold"
       >
         Перейти до каталогу
       </a>
@@ -109,13 +104,13 @@ export function HeroSection({
         controls={false}
         disablePictureInPicture
         disableRemotePlayback
-        preload="auto"
+        preload="metadata"
         aria-hidden="true"
       />
 
       {/* Bottom fade only — video fully visible */}
       <div
-        className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#0a0d1a]/50 pointer-events-none"
+        className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#060812]/80 pointer-events-none"
         aria-hidden="true"
       />
 
@@ -129,6 +124,7 @@ export function HeroSection({
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[9998] bg-black"
             role="dialog"
+            aria-modal="true"
             aria-label="Відео у повноекранному режимі"
           >
             <video
@@ -177,7 +173,7 @@ export function HeroSection({
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 1.6, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.6, delay: 0.8, ease: [0.22, 1, 0.36, 1] }}
           className="text-white/70 text-base sm:text-lg max-w-2xl mb-10 leading-relaxed"
         >
           {subheading}
@@ -187,8 +183,8 @@ export function HeroSection({
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 1.9, ease: [0.22, 1, 0.36, 1] }}
-          className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-center gap-3 w-full sm:w-auto"
+          transition={{ duration: 0.55, delay: 1.1, ease: [0.22, 1, 0.36, 1] }}
+          className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-center gap-4 w-full sm:w-auto"
         >
           <a
             href={ctaPrimaryUrl}
@@ -199,7 +195,7 @@ export function HeroSection({
                 document.querySelector(ctaPrimaryUrl)?.scrollIntoView({ behavior: "smooth" });
               }
             }}
-            className="inline-flex items-center justify-center gap-2 bg-white text-[#06060e] font-bold text-sm px-7 py-3.5 rounded-full hover:bg-white/90 active:scale-[0.97] transition-all duration-200 w-full sm:w-auto"
+            className="inline-flex items-center justify-center gap-2 bg-white text-[#06060e] font-bold text-sm px-8 py-4 rounded-full hover:bg-white/90 active:scale-[0.97] transition-all duration-200 w-full sm:w-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
             {ctaPrimaryText}
           </a>
@@ -210,7 +206,7 @@ export function HeroSection({
               e.preventDefault();
               document.querySelector("#contact")?.scrollIntoView({ behavior: "smooth" });
             }}
-            className="inline-flex items-center justify-center gap-2 border border-white/20 text-white/70 font-semibold text-sm px-7 py-3.5 rounded-full hover:border-white/40 hover:text-white active:scale-[0.97] transition-all duration-200 w-full sm:w-auto"
+            className="inline-flex items-center justify-center gap-2 border border-white/20 text-white/70 font-semibold text-sm px-8 py-4 rounded-full hover:border-white/40 hover:text-white active:scale-[0.97] transition-all duration-200 w-full sm:w-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
           >
             {ctaSecondaryText}
           </a>
@@ -218,14 +214,14 @@ export function HeroSection({
 
       </motion.div>
 
-      {/* Video reel button — fixed 44×44 circle, icon toggles Play ↔ X */}
+      {/* Video reel button — fixed circle, icon toggles Play ↔ X */}
       <motion.button
         onClick={cinemaMode ? onCinemaExit : onCinemaEnter}
         aria-label={cinemaMode ? "Закрити відео" : "Дивитись відео"}
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4, delay: 1.5, ease: [0.22, 1, 0.36, 1] }}
-        className={`z-[9999] w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/15 text-white transition-colors duration-200 ${
+        transition={{ duration: 0.4, delay: 0.8, ease: [0.22, 1, 0.36, 1] }}
+        className={`z-[9999] w-12 h-12 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/15 text-white transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${
           cinemaMode
             ? "fixed bottom-8 right-6 sm:right-8"
             : "absolute bottom-8 right-6 sm:right-8"

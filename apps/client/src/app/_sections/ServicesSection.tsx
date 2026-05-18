@@ -32,7 +32,14 @@ function PopupCarousel() {
       <div className="relative overflow-hidden rounded-xl aspect-[4/3]"
         onPointerDown={(e) => { dragStartX.current = e.clientX; isDragging.current = true; setDragX(0); }}
         onPointerMove={(e) => { if (!isDragging.current) return; setDragX(e.clientX - dragStartX.current); }}
-        onPointerUp={() => { if (Math.abs(dragX) > 40) dragX < 0 ? next() : prev(); setDragX(0); isDragging.current = false; }}
+        onPointerUp={() => {
+          if (Math.abs(dragX) > 40) {
+            if (dragX < 0) next();
+            else prev();
+          }
+          setDragX(0);
+          isDragging.current = false;
+        }}
         onPointerLeave={() => { setDragX(0); isDragging.current = false; }}
         style={{ cursor: "grab" }}>
         <AnimatePresence initial={false} custom={direction} mode="popLayout">

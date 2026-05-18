@@ -63,7 +63,10 @@ function PopupStepCarousel() {
     setDragX(e.clientX - dragStartX.current);
   };
   const onPointerUp = () => {
-    if (Math.abs(dragX) > 40) dragX < 0 ? next() : prev();
+    if (Math.abs(dragX) > 40) {
+      if (dragX < 0) next();
+      else prev();
+    }
     setDragX(0);
     isDragging.current = false;
   };

@@ -80,13 +80,13 @@ export function CollectionsSection({ products, categories, materials, colorVaria
                 <button
                   key={cat.id}
                   onClick={() => { setActiveCategory(cat.id); setCollPage(0); }}
-                  className={`flex items-center gap-1.5 whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 border ${
+                  className={`flex items-center gap-1.5 whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                     activeCategory === cat.id
                       ? "bg-foreground text-background border-foreground"
                       : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
                   }`}
                 >
-                  {cat.image_url && <img src={cat.image_url} alt="" className="w-3.5 h-3.5 rounded-full object-cover" />}
+                  {cat.image_url && <img src={cat.image_url} alt={cat.name} className="w-3.5 h-3.5 rounded-full object-cover" />}
                   {cat.name}
                 </button>
               ))}

@@ -19,6 +19,9 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://u-do-craft.store"),
   title: "U:DO CRAFT — Корпоративний мерч, який носять",
   description: "B2B мерч-автоматизація. Ми створюємо одяг, який стає частиною вашої корпоративної ДНК.",
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     title: "U:DO CRAFT — Корпоративний мерч, який носять",
     description: "B2B мерч-автоматизація. Ми створюємо одяг, який стає частиною вашої корпоративної ДНК.",

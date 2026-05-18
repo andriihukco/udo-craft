@@ -71,52 +71,55 @@ export function HomeClient({
         onAuthSuccess={() => { setIsLoggedIn(true); setAuthOpen(false); }}
       />
 
-      <HeroSection
-        cinemaMode={cinemaMode}
-        onCinemaEnter={() => setCinemaMode(true)}
-        onCinemaExit={() => setCinemaMode(false)}
-        heading={get("home_hero", "heading", "Одяг, який стає частиною вашої корпоративної ДНК")}
-        subheading={get("home_hero", "subheading", "Ми створюємо речі, які стають улюбленими в гардеробі.")}
-        ctaPrimaryText={get("home_hero", "cta_primary_text", "Переглянути каталог")}
-        ctaPrimaryUrl={get("home_hero", "cta_primary_url", "#catalog")}
-        ctaSecondaryText={get("home_hero", "cta_secondary_text", "Дивитись відео")}
-      />
-      <SocialProofBar />
-      <ProblemSolutionSection />
-      <StatsSection
-        stat1Value={Number(get("home_stats", "stat1_value", "500"))}
-        stat1Suffix={get("home_stats", "stat1_suffix", "+")}
-        stat1Label={get("home_stats", "stat1_label", "Задоволених клієнтів")}
-        stat2Value={Number(get("home_stats", "stat2_value", "15"))}
-        stat2Suffix={get("home_stats", "stat2_suffix", "%")}
-        stat2Label={get("home_stats", "stat2_label", "Знижка від 100 шт")}
-        stat3Value={Number(get("home_stats", "stat3_value", "14"))}
-        stat3Suffix={get("home_stats", "stat3_suffix", " дн")}
-        stat3Label={get("home_stats", "stat3_label", "Середній термін")}
-        stat4Value={Number(get("home_stats", "stat4_value", "100"))}
-        stat4Suffix={get("home_stats", "stat4_suffix", "%")}
-        stat4Label={get("home_stats", "stat4_label", "Контроль якості")}
-      />
-      <CollectionsSection products={products} categories={categories} materials={materials} colorVariants={colorVariants} />
-      <ProcessSection />
-      <BoxOfTouchSection />
-      <PopupStandSection />
-      <SubscriptionSection />
-      <DesignerSection />
-      <TrustSection />
-      <ComparisonSection />
-      <TestimonialsSection />
-      <FaqSection />
-      <FinalCtaSection />
-      <ContactSection
-        heading={get("home_contact", "heading", "Зв'яжіться з нами")}
-        subtext={get("home_contact", "subtext", "Розкажіть про ваш проєкт — надішлемо пропозицію протягом 24 годин.")}
-        email={get("home_contact", "email", "info@udocraft.com")}
-        phone={get("home_contact", "phone", "+380 63 070 33 072")}
-        address={get("home_contact", "address", "м. Львів, вул. Джерельна, 69")}
-        instagram={get("home_contact", "instagram", "https://www.instagram.com/u.do.craft/")}
-        telegram={get("home_contact", "telegram", "https://t.me/udostore")}
-      />
+      <main>
+        <HeroSection
+          cinemaMode={cinemaMode}
+          onCinemaEnter={() => setCinemaMode(true)}
+          onCinemaExit={() => setCinemaMode(false)}
+          heading={get("home_hero", "heading", "Одяг, який стає частиною вашої корпоративної ДНК")}
+          subheading={get("home_hero", "subheading", "Ми створюємо речі, які стають улюбленими в гардеробі.")}
+          ctaPrimaryText={get("home_hero", "cta_primary_text", "Переглянути каталог")}
+          ctaPrimaryUrl={get("home_hero", "cta_primary_url", "#catalog")}
+          ctaSecondaryText={get("home_hero", "cta_secondary_text", "Дивитись відео")}
+        />
+        <SocialProofBar />
+        <ProblemSolutionSection />
+        <StatsSection
+          stat1Value={Number(get("home_stats", "stat1_value", "500"))}
+          stat1Suffix={get("home_stats", "stat1_suffix", "+")}
+          stat1Label={get("home_stats", "stat1_label", "Задоволених клієнтів")}
+          stat2Value={Number(get("home_stats", "stat2_value", "15"))}
+          stat2Suffix={get("home_stats", "stat2_suffix", "%")}
+          stat2Label={get("home_stats", "stat2_label", "Знижка від 100 шт")}
+          stat3Value={Number(get("home_stats", "stat3_value", "14"))}
+          stat3Suffix={get("home_stats", "stat3_suffix", " дн")}
+          stat3Label={get("home_stats", "stat3_label", "Середній термін")}
+          stat4Value={Number(get("home_stats", "stat4_value", "100"))}
+          stat4Suffix={get("home_stats", "stat4_suffix", "%")}
+          stat4Label={get("home_stats", "stat4_label", "Контроль якості")}
+        />
+        <CollectionsSection products={products} categories={categories} materials={materials} colorVariants={colorVariants} />
+        <ProcessSection />
+        <BoxOfTouchSection />
+        <PopupStandSection />
+        <SubscriptionSection />
+        <DesignerSection />
+        <TrustSection />
+        <ComparisonSection />
+        <TestimonialsSection />
+        <FaqSection />
+        <FinalCtaSection />
+        <ContactSection
+          heading={get("home_contact", "heading", "Зв'яжіться з нами")}
+          subtext={get("home_contact", "subtext", "Розкажіть про ваш проєкт — надішлемо пропозицію протягом 24 годин.")}
+          email={get("home_contact", "email", "info@udocraft.com")}
+          phone={get("home_contact", "phone", "+380 63 070 33 072")}
+          address={get("home_contact", "address", "м. Львів, вул. Джерельна, 69")}
+          instagram={get("home_contact", "instagram", "https://www.instagram.com/u.do.craft/")}
+          telegram={get("home_contact", "telegram", "https://t.me/udostore")}
+        />
+      </main>
+
       <FooterSection
         tagline={get("footer", "tagline", "B2B мерч-платформа для команд, брендів та подій.")}
         copyright={get("footer", "copyright", "U:DO CRAFT. Всі права захищені.")}
