@@ -87,14 +87,9 @@ export function NavBar({ isLoggedIn, cartCount, onCartOpen, cinemaMode, onAuthOp
             : "bg-white/8 backdrop-blur-xl border-white/12 shadow-lg shadow-black/20"
         } md:h-12 h-14 md:px-3 px-4`}
       >
-        {/* Logo — inverted on dark, normal on light */}
+        {/* Logo — always using BrandLogoFull (SVG) */}
         <Link href="/" aria-label="U:DO CRAFT — на головну" className="shrink-0 pl-1 pr-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg">
-          {isLight ? (
-            <BrandLogoFull className="h-8 w-auto" color="var(--color-primary)" />
-          ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src="/logo-inverted.png" alt="U:DO CRAFT" className="h-8 w-auto object-contain" />
-          )}
+          <BrandLogoFull className="h-8 w-auto" color="var(--color-primary)" />
         </Link>
 
         {/* Nav links — always visible on desktop */}

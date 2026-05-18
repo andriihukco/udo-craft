@@ -28,13 +28,20 @@ async function fetchAll(): Promise<CmsMap> {
 }
 
 /** Returns a flat map of all CMS slugs → body objects. */
-export function useCms() {
-  const [cms, setCms] = useState<CmsMap>(cache ?? {});
+export function useCms(initialData?: CmsMap) {
+  const [cms, setCms] = useState<CmsMap>(() => {
+    if (initialData) {
+      cache = initialData;
+      return initialData;
+    }
+    return cache ?? {};
+  });
 
   useEffect(() => {
+    if (initialData) return; // already have it
     if (cache) { setCms(cache); return; }
     fetchAll().then(setCms);
-  }, []);
+  }, [initialData]);
 
   /** Get a field value with a fallback. */
   function get(slug: string, key: string, fallback = ""): string {

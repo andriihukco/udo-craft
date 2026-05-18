@@ -11,17 +11,17 @@ const SLIDES = [
   {
     title: "Обери пакет",
     desc: "Стікер-паки або пакети принтів — підбери під формат заходу",
-    img: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=900&q=85",
+    img: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=900&q=75",
   },
   {
     title: "Обери товар",
     desc: "Футболки, худі, аксесуари — гості обирають на місці",
-    img: "https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=900&q=85",
+    img: "https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=900&q=75",
   },
   {
     title: "Ми приїжджаємо",
     desc: "Привозимо обладнання та наносимо принти прямо на заході",
-    img: "https://images.unsplash.com/photo-1562157873-818bc0726f68?w=900&q=85",
+    img: "https://images.unsplash.com/photo-1562157873-818bc0726f68?w=900&q=75",
   },
 ];
 

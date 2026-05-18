@@ -1,5 +1,3 @@
-import { jsPDF } from "jspdf";
-
 export interface InvoiceItem {
   productName: string;
   productImage?: string;
@@ -101,6 +99,8 @@ function logoToPng(fillColor: string, width: number, height: number): Promise<st
 
 // ── Main export ────────────────────────────────────────────────────────────
 export async function generateInvoicePDF(data: InvoiceData): Promise<void> {
+  const { jsPDF } = await import("jspdf");
+
   // Load Cousine fonts (served from /public/fonts/)
   const [fontRegular, fontBold] = await Promise.all([
     loadFontAsBase64("/fonts/cousine-regular.ttf"),

@@ -1,7 +1,7 @@
 "use client";
 
+import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { HighlightText } from "@/app/_components/HighlightText";
@@ -15,10 +15,29 @@ const CONTENTS = [
 
 export function BoxOfTouchSection() {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-80px" });
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const isInView = useInView(ref, { once: false, margin: "200px" });
+  const [shouldLoad, setShouldLoad] = useState(false);
+
+  useEffect(() => {
+    if (isInView && !shouldLoad) {
+      setShouldLoad(true);
+    }
+  }, [isInView, shouldLoad]);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      if (isInView) {
+        videoRef.current.play().catch(() => {});
+      } else {
+        videoRef.current.pause();
+      }
+    }
+  }, [isInView]);
 
   return (
     <section
+      ref={ref}
       className="border-t border-border overflow-hidden"
       style={{ backgroundColor: "#0a0d1a" }}
       aria-labelledby="box-heading"
@@ -28,7 +47,6 @@ export function BoxOfTouchSection() {
 
         {/* Left — content with max-width padding */}
         <motion.div
-          ref={ref}
           initial={{ opacity: 0, x: -24 }}
           animate={isInView ? { opacity: 1, x: 0 } : {}}
           transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
@@ -84,20 +102,26 @@ export function BoxOfTouchSection() {
             initial={{ opacity: 0, scale: 1.02 }}
             animate={isInView ? { opacity: 1, scale: 1 } : {}}
             transition={{ duration: 0.9, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-            className="relative min-h-[360px] lg:min-h-0 overflow-hidden"
+            className="relative min-h-[360px] lg:min-h-0 overflow-hidden bg-white/5"
           >
-            <video
-              className="absolute inset-0 w-full h-full object-cover"
-              src="/bot-video.mp4"
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="auto"
-              aria-hidden="true"
-            />
+            {shouldLoad ? (
+              <video
+                ref={videoRef}
+                className="absolute inset-0 w-full h-full object-cover"
+                src="/bot-video.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="metadata"
+                aria-hidden="true"
+              />
+            ) : (
+              <div className="absolute inset-0 bg-white/5 animate-pulse" />
+            )}
           </motion.div>
         </div>
     </section>
   );
 }
+

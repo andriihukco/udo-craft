@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { Product, Material, ProductColorVariant } from "@udo-craft/shared";
 import { createClient } from "@/lib/supabase/client";
 import { useCms } from "@/hooks/useCms";
@@ -11,23 +12,26 @@ import { NavBar } from "@/app/_components/NavBar";
 import { CartSidebar } from "@/app/_components/CartSidebar";
 import { AuthModal } from "@/components/AuthModal";
 
+// Above the fold
 import { HeroSection } from "@/app/_sections/HeroSection";
-import { SocialProofBar } from "@/app/_sections/SocialProofBar";
-import { ProblemSolutionSection } from "@/app/_sections/ProblemSolutionSection";
-import { StatsSection } from "@/app/_sections/StatsSection";
-import { CollectionsSection } from "@/app/_sections/CollectionsSection";
-import { ProcessSection } from "@/app/_sections/ProcessSection";
-import { BoxOfTouchSection } from "@/app/_sections/BoxOfTouchSection";
-import { PopupStandSection } from "@/app/_sections/PopupStandSection";
-import { SubscriptionSection } from "@/app/_sections/SubscriptionSection";
-import { DesignerSection } from "@/app/_sections/DesignerSection";
-import { TrustSection } from "@/app/_sections/TrustSection";
-import { ComparisonSection } from "@/app/_sections/ComparisonSection";
-import { TestimonialsSection } from "@/app/_sections/TestimonialsSection";
-import { FaqSection } from "@/app/_sections/FaqSection";
-import { FinalCtaSection } from "@/app/_sections/FinalCtaSection";
-import { ContactSection } from "@/app/_sections/ContactSection";
-import { FooterSection } from "@/app/_sections/FooterSection";
+
+// Lazy loaded below the fold
+const SocialProofBar = dynamic(() => import("@/app/_sections/SocialProofBar").then(m => m.SocialProofBar), { ssr: true });
+const ProblemSolutionSection = dynamic(() => import("@/app/_sections/ProblemSolutionSection").then(m => m.ProblemSolutionSection), { ssr: true });
+const StatsSection = dynamic(() => import("@/app/_sections/StatsSection").then(m => m.StatsSection), { ssr: true });
+const CollectionsSection = dynamic(() => import("@/app/_sections/CollectionsSection").then(m => m.CollectionsSection), { ssr: true });
+const ProcessSection = dynamic(() => import("@/app/_sections/ProcessSection").then(m => m.ProcessSection), { ssr: true });
+const BoxOfTouchSection = dynamic(() => import("@/app/_sections/BoxOfTouchSection").then(m => m.BoxOfTouchSection), { ssr: true });
+const PopupStandSection = dynamic(() => import("@/app/_sections/PopupStandSection").then(m => m.PopupStandSection), { ssr: true });
+const SubscriptionSection = dynamic(() => import("@/app/_sections/SubscriptionSection").then(m => m.SubscriptionSection), { ssr: true });
+const DesignerSection = dynamic(() => import("@/app/_sections/DesignerSection").then(m => m.DesignerSection), { ssr: true });
+const TrustSection = dynamic(() => import("@/app/_sections/TrustSection").then(m => m.TrustSection), { ssr: true });
+const ComparisonSection = dynamic(() => import("@/app/_sections/ComparisonSection").then(m => m.ComparisonSection), { ssr: true });
+const TestimonialsSection = dynamic(() => import("@/app/_sections/TestimonialsSection").then(m => m.TestimonialsSection), { ssr: true });
+const FaqSection = dynamic(() => import("@/app/_sections/FaqSection").then(m => m.FaqSection), { ssr: true });
+const FinalCtaSection = dynamic(() => import("@/app/_sections/FinalCtaSection").then(m => m.FinalCtaSection), { ssr: true });
+const ContactSection = dynamic(() => import("@/app/_sections/ContactSection").then(m => m.ContactSection), { ssr: true });
+const FooterSection = dynamic(() => import("@/app/_sections/FooterSection").then(m => m.FooterSection), { ssr: true });
 
 interface Category {
   id: string; name: string; slug: string;
@@ -40,13 +44,15 @@ export function HomeClient({
   categories,
   materials,
   colorVariants,
+  cmsData,
 }: {
   products: ProductWithCategory[];
   categories: Category[];
   materials: Material[];
   colorVariants: ProductColorVariant[];
+  cmsData: any;
 }) {
-  const { get } = useCms();
+  const { get } = useCms(cmsData);
   const supabase = createClient();
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -129,3 +135,4 @@ export function HomeClient({
     </div>
   );
 }
+

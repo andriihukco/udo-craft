@@ -17,12 +17,18 @@ export const metadata: Metadata = {
 export default async function HomePage() {
   const supabase = await createClient();
 
-  const [prodRes, catRes, matRes, varRes] = await Promise.all([
+  const [prodRes, catRes, matRes, varRes, cmsRes] = await Promise.all([
     supabase.from("products").select("*").order("created_at", { ascending: true }),
     supabase.from("categories").select("*").eq("is_active", true).order("sort_order", { ascending: true }),
     supabase.from("materials").select("*").eq("is_active", true),
     supabase.from("product_color_variants").select("*").eq("is_active", true).order("sort_order", { ascending: true }),
+    supabase.from("cms_published").select("slug, body").eq("is_active", true),
   ]);
+
+  const cmsData = (cmsRes.data || []).reduce((acc, item) => {
+    acc[item.slug] = (item.body as any) || {};
+    return acc;
+  }, {} as Record<string, any>);
 
   return (
     <HomeClient
@@ -30,6 +36,7 @@ export default async function HomePage() {
       categories={catRes.data || []}
       materials={matRes.data || []}
       colorVariants={varRes.data || []}
+      cmsData={cmsData}
     />
   );
 }
