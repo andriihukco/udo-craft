@@ -52,7 +52,7 @@ export function KanbanColumn({
       onDragLeave={onColDragLeave}
       onDrop={(e) => onColDrop(e, status)}
       className={cn(
-        "flex h-full min-w-80 flex-1 flex-col overflow-hidden rounded-md border transition-colors group/col",
+        "flex h-full w-80 shrink-0 flex-col overflow-hidden rounded-md border transition-colors group/col",
         isOver
           ? "border-primary bg-primary/[0.03]"
           : "border-border bg-background hover:border-border"

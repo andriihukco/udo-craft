@@ -7,10 +7,15 @@ dotenv.config({ path: path.resolve(__dirname, "../apps/admin/.env") });
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const KEYCRM_API_KEY = "YzNlMDRmYjhhMDUxYmUzMTI1NTMzZDcwOTk5NDRlNDhmNDQ3MGI0NA";
+const KEYCRM_API_KEY = process.env.KEYCRM_API_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
   console.error("❌ Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in apps/admin/.env");
+  process.exit(1);
+}
+
+if (!KEYCRM_API_KEY) {
+  console.error("❌ Missing KEYCRM_API_KEY in apps/admin/.env");
   process.exit(1);
 }
 

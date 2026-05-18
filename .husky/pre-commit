@@ -1,7 +1,7 @@
 #!/bin/sh
 # Prevent .env files from being committed
 
-env_files=$(git diff --cached --name-only | grep -E '(^|/)\.env(\.|$)')
+env_files=$(git diff --cached --name-only | grep -E '(^|/)\.env(\.|$)' || true)
 
 if [ -n "$env_files" ]; then
   echo ""

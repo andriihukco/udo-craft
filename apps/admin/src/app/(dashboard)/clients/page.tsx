@@ -7,22 +7,36 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Search, Mail, ExternalLink, Loader2, X, MessageCircle, Phone, Calendar, UserPlus, Trash2, Users } from "lucide-react";
+import { Search, Mail, ExternalLink, Loader2, X, MessageCircle, Phone, Calendar, UserPlus, Trash2, Users, CreditCard, Database, Building2, RefreshCw } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { StatusBadge, type LeadStatus } from "@/components/status-badge";
 import { fmtMoney, fmtDate } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
+import { Badge } from "@/components/ui/badge";
 
 interface Lead {
   id: string;
   status: LeadStatus;
-  customer_data: { name: string; email: string; phone?: string; company?: string; social_channel?: string };
+  customer_data: {
+    name: string;
+    email: string;
+    phone?: string;
+    company?: string;
+    social_channel?: string;
+    keycrm_id?: number | string;
+    keycrm_client_id?: number | string;
+    keycrm_payment_status?: string;
+    keycrm_payments_total_cents?: number;
+    keycrm_manager_name?: string;
+    keycrm_recipient_name?: string;
+  };
   total_amount_cents: number;
   created_at: string;
 }
@@ -36,14 +50,39 @@ interface ClientRecord {
   social_channel?: string;
   leads: Lead[];
   totalSpent: number;
+  paidTotal: number;
   ordersCount: number;
+  keycrmOrders: number;
   lastOrderAt: string;
+  lastManager?: string;
 }
 
 const DRAWER_MIN = 280;
 const DRAWER_MAX = 600;
+type SourceFilter = "all" | "keycrm" | "manual";
+type SortFilter = "spent" | "recent" | "orders";
 
 const EMPTY_FORM = { name: "", email: "", phone: "", company: "", social_channel: "" };
+
+function ClientStat({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-lg bg-muted/60 px-3 py-2">
+      <div className="mb-1 flex items-center justify-center gap-1 text-[10px] text-muted-foreground">
+        <Icon className="size-3" />
+        {label}
+      </div>
+      <p className="truncate text-center text-sm font-bold">{value}</p>
+    </div>
+  );
+}
 
 export default function ClientsPage() {
   const router = useRouter();
@@ -51,7 +90,10 @@ export default function ClientsPage() {
   const [clients, setClients] = useState<ClientRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
+  const [sortFilter, setSortFilter] = useState<SortFilter>("spent");
   const [selected, setSelected] = useState<ClientRecord | null>(null);
+  const [syncingKeycrm, setSyncingKeycrm] = useState(false);
   const [drawerWidth, setDrawerWidth] = useState(360);
   const [isDragging, setIsDragging] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
@@ -72,32 +114,81 @@ export default function ClientsPage() {
     for (const lead of (data || []) as Lead[]) {
       // Use lead id as fallback key so orders without email aren't merged
       const email = lead.customer_data?.email?.trim() || "";
-      const key = email || `__noemail__${lead.id}`;
+      const keycrmClientId = lead.customer_data?.keycrm_client_id;
+      const key = keycrmClientId ? `keycrm:${keycrmClientId}` : email || `__noemail__${lead.id}`;
       if (!map.has(key)) {
-        map.set(key, { key, email, name: lead.customer_data?.name || email || "Невідомий", phone: lead.customer_data?.phone, company: lead.customer_data?.company, social_channel: lead.customer_data?.social_channel, leads: [], totalSpent: 0, ordersCount: 0, lastOrderAt: lead.created_at });
+        map.set(key, {
+          key,
+          email,
+          name: lead.customer_data?.name || email || "Невідомий",
+          phone: lead.customer_data?.phone,
+          company: lead.customer_data?.company,
+          social_channel: lead.customer_data?.social_channel,
+          leads: [],
+          totalSpent: 0,
+          paidTotal: 0,
+          ordersCount: 0,
+          keycrmOrders: 0,
+          lastOrderAt: lead.created_at,
+          lastManager: lead.customer_data?.keycrm_manager_name,
+        });
       }
       const rec = map.get(key)!;
       rec.leads.push(lead);
       rec.totalSpent += lead.total_amount_cents;
+      rec.paidTotal += lead.customer_data?.keycrm_payments_total_cents ?? 0;
       rec.ordersCount += 1;
+      if (lead.customer_data?.keycrm_id) rec.keycrmOrders += 1;
+      if (lead.customer_data?.keycrm_manager_name) rec.lastManager = lead.customer_data.keycrm_manager_name;
       if (lead.created_at > rec.lastOrderAt) rec.lastOrderAt = lead.created_at;
     }
-    setClients(Array.from(map.values()).sort((a, b) => b.totalSpent - a.totalSpent));
+    setClients(Array.from(map.values()));
     setLoading(false);
   }, []);
 
   useEffect(() => { fetchClients(); }, [fetchClients]);
+
+  const handleKeycrmSync = useCallback(async () => {
+    setSyncingKeycrm(true);
+    try {
+      const response = await fetch("/api/keycrm/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pages: 2 }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+      toast.success(`KeyCRM: ${data.created ?? 0} нових, ${data.updated ?? 0} оновлено`);
+      await fetchClients();
+    } catch (error) {
+      toast.error(`KeyCRM sync failed: ${error instanceof Error ? error.message : "невідома помилка"}`);
+    } finally {
+      setSyncingKeycrm(false);
+    }
+  }, [fetchClients]);
 
   useEffect(() => {
     const initialSearch = searchParams.get("search");
     if (initialSearch) setSearch(initialSearch);
   }, [searchParams]);
 
-  const filtered = clients.filter(
-    (c) => c.name.toLowerCase().includes(search.toLowerCase()) ||
-           c.email.toLowerCase().includes(search.toLowerCase()) ||
-           (c.phone ?? "").includes(search)
-  );
+  const filtered = clients
+    .filter((c) =>
+      c.name.toLowerCase().includes(search.toLowerCase()) ||
+      c.email.toLowerCase().includes(search.toLowerCase()) ||
+      (c.phone ?? "").includes(search) ||
+      (c.company ?? "").toLowerCase().includes(search.toLowerCase())
+    )
+    .filter((c) => {
+      if (sourceFilter === "all") return true;
+      if (sourceFilter === "keycrm") return c.keycrmOrders > 0;
+      return c.keycrmOrders === 0;
+    })
+    .sort((a, b) => {
+      if (sortFilter === "recent") return b.lastOrderAt.localeCompare(a.lastOrderAt);
+      if (sortFilter === "orders") return b.ordersCount - a.ordersCount;
+      return b.totalSpent - a.totalSpent;
+    });
 
   const handleDeleteClient = async (client: ClientRecord) => {
     if (!confirm(`Видалити клієнта "${client.name}" та всі його записи? Це незворотно.`)) return;
@@ -186,6 +277,40 @@ export default function ClientsPage() {
                   className="pl-8 h-8 text-sm"
                 />
               </div>
+              <Select value={sourceFilter} onValueChange={(value) => setSourceFilter(value as SourceFilter)}>
+                <SelectTrigger className="h-8 w-[130px] rounded-md text-xs">
+                  <SelectValue>
+                    {sourceFilter === "all" ? "Всі джерела" : sourceFilter === "keycrm" ? "KeyCRM" : "Вручну"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Всі джерела</SelectItem>
+                  <SelectItem value="keycrm">KeyCRM</SelectItem>
+                  <SelectItem value="manual">Вручну</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={sortFilter} onValueChange={(value) => setSortFilter(value as SortFilter)}>
+                <SelectTrigger className="h-8 w-[142px] rounded-md text-xs">
+                  <SelectValue>
+                    {sortFilter === "spent" ? "За сумою" : sortFilter === "recent" ? "Останні" : "За кількістю"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="spent">За сумою</SelectItem>
+                  <SelectItem value="recent">Останні</SelectItem>
+                  <SelectItem value="orders">За кількістю</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 shrink-0"
+                onClick={handleKeycrmSync}
+                disabled={syncingKeycrm}
+              >
+                {syncingKeycrm ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
+                Sync KeyCRM
+              </Button>
               <Button size="sm" className="gap-1.5 shrink-0" onClick={() => setAddOpen(true)}>
                 <UserPlus className="size-3.5" /> Додати клієнта
               </Button>
@@ -222,8 +347,10 @@ export default function ClientsPage() {
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead>Клієнт</TableHead>
+                  <TableHead>Джерело</TableHead>
                   <TableHead>Замовлень</TableHead>
                   <TableHead>Загальна сума</TableHead>
+                  <TableHead>Оплачено</TableHead>
                   <TableHead>Останнє замовлення</TableHead>
                   <TableHead className="w-10"><span className="sr-only">Дії</span></TableHead>
                 </TableRow>
@@ -237,10 +364,16 @@ export default function ClientsPage() {
                   >
                     <TableCell>
                       <p className="font-medium text-sm">{client.name}</p>
-                      <p className="text-xs text-muted-foreground">{client.email}</p>
+                      <p className="text-xs text-muted-foreground">{client.email || client.phone || "Без контактів"}</p>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={client.keycrmOrders > 0 ? "info" : "outline"} className="normal-case tracking-normal">
+                        {client.keycrmOrders > 0 ? "KeyCRM" : "Вручну"}
+                      </Badge>
                     </TableCell>
                     <TableCell><span className="text-sm">{client.ordersCount}</span></TableCell>
                     <TableCell><span className="text-sm font-medium">{fmtMoney(client.totalSpent)}</span></TableCell>
+                    <TableCell><span className="text-sm text-muted-foreground">{fmtMoney(client.paidTotal)}</span></TableCell>
                     <TableCell><span className="text-sm text-muted-foreground">{fmtDate(client.lastOrderAt)}</span></TableCell>
                     <TableCell>
                       <button
@@ -289,7 +422,7 @@ export default function ClientsPage() {
                 <span className="text-xl font-bold text-primary">{selected.name[0]?.toUpperCase()}</span>
               </div>
               <p className="font-semibold text-base text-center">{selected.name}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{selected.email}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{selected.email || selected.phone || "Без контактів"}</p>
               {selected.company && <p className="text-xs text-muted-foreground">{selected.company}</p>}
               <div className="flex gap-3 mt-3 w-full">
                 <div className="flex-1 rounded-lg bg-muted/60 px-3 py-2 text-center">
@@ -300,6 +433,10 @@ export default function ClientsPage() {
                   <p className="text-base font-bold">{fmtMoney(selected.totalSpent)}</p>
                   <p className="text-[10px] text-muted-foreground">витрачено</p>
                 </div>
+              </div>
+              <div className="mt-2 grid w-full grid-cols-2 gap-2">
+                <ClientStat icon={Database} label="KeyCRM" value={`${selected.keycrmOrders}/${selected.ordersCount}`} />
+                <ClientStat icon={CreditCard} label="Оплачено" value={fmtMoney(selected.paidTotal)} />
               </div>
             </div>
 
@@ -323,10 +460,32 @@ export default function ClientsPage() {
                   </div>
                 </div>
               )}
+              {selected.company && (
+                <div className="flex items-start gap-3">
+                  <Building2 className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm">{selected.company}</p>
+                    <p className="text-xs text-muted-foreground">Компанія</p>
+                  </div>
+                </div>
+              )}
+              {selected.lastManager && (
+                <div className="flex items-start gap-3">
+                  <Users className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm">{selected.lastManager}</p>
+                    <p className="text-xs text-muted-foreground">Менеджер KeyCRM</p>
+                  </div>
+                </div>
+              )}
               <div className="flex items-start gap-3">
                 <Mail className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                 <div>
-                  <a href={`mailto:${selected.email}`} className="text-sm hover:underline break-all">{selected.email}</a>
+                  {selected.email ? (
+                    <a href={`mailto:${selected.email}`} className="text-sm hover:underline break-all">{selected.email}</a>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Не вказано</p>
+                  )}
                   <p className="text-xs text-muted-foreground">Email</p>
                 </div>
               </div>
@@ -359,7 +518,10 @@ export default function ClientsPage() {
                 >
                   <div>
                     <p className="text-sm font-medium">{fmtMoney(lead.total_amount_cents)}</p>
-                    <p className="text-xs text-muted-foreground">{fmtDate(lead.created_at)}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {fmtDate(lead.created_at)}
+                      {lead.customer_data?.keycrm_id ? ` · KeyCRM #${lead.customer_data.keycrm_id}` : ""}
+                    </p>
                   </div>
                   <StatusBadge status={lead.status} />
                 </div>
