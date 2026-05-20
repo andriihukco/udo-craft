@@ -60,6 +60,11 @@ interface Lead {
   id: string;
   status: "draft" | "new" | "in_progress" | "production" | "completed" | "archived";
   customer_data: CustomerData;
+  payment_status?: "unpaid" | "partial" | "paid" | "refunded";
+  payment_amount_cents?: number;
+  buyer_requisites?: Record<string, unknown>;
+  nova_poshta_data?: Record<string, unknown>;
+  fiscal_data?: Record<string, unknown>;
   tags?: string[];
   notes?: string;
   total_amount_cents: number;
@@ -104,6 +109,7 @@ export default function OrderDetailPage() {
   const [notes, setNotes] = useState("");
   const [savingTags, setSavingTags] = useState(false);
   const [customTagInput, setCustomTagInput] = useState("");
+  const [erpSaving, setErpSaving] = useState(false);
 
   // Messages
   const [messages, setMessages] = useState<Message[]>([]);
@@ -183,6 +189,47 @@ export default function OrderDetailPage() {
       toast.error("Помилка збереження");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const saveErpOrderData = async (patch?: Partial<Lead>) => {
+    const current = patch ? { ...lead, ...patch } : lead;
+    if (!current) return;
+    setErpSaving(true);
+    try {
+      const r = await fetch(`/api/erp/orders/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          payment_status: current.payment_status ?? "unpaid",
+          payment_amount_cents: current.payment_amount_cents ?? 0,
+          buyer_requisites: current.buyer_requisites ?? {},
+          nova_poshta_data: current.nova_poshta_data ?? {},
+          fiscal_data: current.fiscal_data ?? {},
+        }),
+      });
+      if (!r.ok) throw new Error((await r.json()).error || "Помилка збереження ERP даних");
+      const updated: Lead = await r.json();
+      setLead(updated);
+      toast.success("ERP дані замовлення збережено");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Помилка збереження ERP даних");
+    } finally {
+      setErpSaving(false);
+    }
+  };
+
+  const runOrderAction = async (action: "nova-poshta-waybill" | "fiscal-check") => {
+    setErpSaving(true);
+    try {
+      const r = await fetch(`/api/erp/orders/${id}/${action}`, { method: "POST" });
+      if (!r.ok) throw new Error((await r.json()).error || "Дія недоступна");
+      await fetchLead();
+      toast.success(action === "fiscal-check" ? "Дані фіскального чека підготовлено" : "Дані ТТН підготовлено");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Дія недоступна");
+    } finally {
+      setErpSaving(false);
     }
   };
 
@@ -518,6 +565,68 @@ export default function OrderDetailPage() {
                   </div>
                 )}
               </div>
+            </CardContent>
+          </Card>
+
+          {/* ERP order data */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Оплата, доставка, документи</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-1.5">
+                <Label>Оплата покупця</Label>
+                <Select
+                  value={lead.payment_status ?? "unpaid"}
+                  onValueChange={(v) => setLead((l) => l ? { ...l, payment_status: v as Lead["payment_status"] } : l)}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unpaid">Не оплачено</SelectItem>
+                    <SelectItem value="partial">Частково</SelectItem>
+                    <SelectItem value="paid">Оплачено</SelectItem>
+                    <SelectItem value="refunded">Повернення</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Сума оплати, ₴</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={(lead.payment_amount_cents ?? 0) / 100}
+                  onChange={(e) => setLead((l) => l ? { ...l, payment_amount_cents: Math.round(Number(e.target.value) * 100) } : l)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Реквізити оптовика</Label>
+                <Textarea
+                  rows={3}
+                  value={String((lead.buyer_requisites?.text as string | undefined) ?? "")}
+                  onChange={(e) => setLead((l) => l ? { ...l, buyer_requisites: { ...(l.buyer_requisites ?? {}), text: e.target.value } } : l)}
+                  placeholder="ТОВ, ЄДРПОУ, ІПН, адреса, договір..."
+                  className="resize-none"
+                />
+              </div>
+              <div className="grid grid-cols-1 gap-2">
+                <Button variant="outline" size="sm" onClick={() => saveErpOrderData()} disabled={erpSaving}>
+                  {erpSaving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+                  Зберегти оплату і реквізити
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => runOrderAction("nova-poshta-waybill")} disabled={erpSaving}>
+                  Створити ТТН Нової Пошти
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => runOrderAction("fiscal-check")} disabled={erpSaving}>
+                  Фіскалізувати Checkbox
+                </Button>
+              </div>
+              {(Boolean(lead.nova_poshta_data?.waybill) || Boolean(lead.fiscal_data?.status)) && (
+                <div className="rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
+                  {lead.nova_poshta_data?.waybill ? <p>НП: {String((lead.nova_poshta_data.waybill as Record<string, unknown>).status ?? "підготовлено")}</p> : null}
+                  {lead.fiscal_data?.status ? <p>Checkbox: {String(lead.fiscal_data.status)}</p> : null}
+                </div>
+              )}
             </CardContent>
           </Card>
 

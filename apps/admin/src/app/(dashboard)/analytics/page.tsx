@@ -355,6 +355,10 @@ interface AnalyticsData {
   itemsSold: number;
   totalClients: number; totalClientsPrev: number;
   completedOrders: number; completedOrdersPrev: number;
+  warehouseItems: number;
+  warehouseStockValue: number;
+  warehouseReservedValue: number;
+  warehouseLowStock: number;
   dailyStats: Array<{ date: string; sessions: number; pageViews: number; forms: number; revenue: number }>;
 }
 
@@ -504,6 +508,19 @@ export default function AnalyticsPage() {
                     <MetricCard label="Загальний дохід" value={fmtCurrency(d.totalRevenue)} trend={calcTrend(d.totalRevenue, d.totalRevenuePrev)} sub="Брутто дохід" sparkData={[d.totalRevenuePrev, d.totalRevenue]} />
                     <MetricCard label="Сплачено" value={fmtCurrency(d.paidRevenue)} trend={calcTrend(d.paidRevenue, d.paidRevenuePrev)} sub="Завершені оплати" sparkData={[d.paidRevenuePrev, d.paidRevenue]} />
                     <MetricCard label="Середній чек" value={fmtCurrency(d.avgOrderValue)} trend={calcTrend(d.avgOrderValue, d.avgOrderValuePrev)} sub="Дохід на замовлення" sparkData={[d.avgOrderValuePrev, d.avgOrderValue]} />
+                  </div>
+                </section>
+
+                {/* ── Warehouse ── */}
+                <section className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground/60">Склад</h2>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <MetricCard label="Номенклатура" value={d.warehouseItems ?? 0} sub="Позицій складу" sparkData={[0, d.warehouseItems ?? 0]} />
+                    <MetricCard label="Вартість складу" value={fmtCurrency(Math.round(d.warehouseStockValue ?? 0))} sub="Оцінка за собівартістю" sparkData={[0, d.warehouseStockValue ?? 0]} />
+                    <MetricCard label="Резерв під замовлення" value={fmtCurrency(Math.round(d.warehouseReservedValue ?? 0))} sub="Зарезервовані матеріали" sparkData={[0, d.warehouseReservedValue ?? 0]} />
+                    <MetricCard label="Потрібно докупити" value={d.warehouseLowStock ?? 0} sub="Позицій нижче мінімуму" sparkData={[0, d.warehouseLowStock ?? 0]} />
                   </div>
                 </section>
 

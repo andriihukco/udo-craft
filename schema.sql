@@ -622,6 +622,312 @@ ON CONFLICT (print_type, size_label) DO UPDATE SET
   updated_at = NOW();
 
 -- ─────────────────────────────────────────────
+-- ERP GOODS MOVEMENT EXTENSIONS
+-- ─────────────────────────────────────────────
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'erp_document_status') THEN
+    CREATE TYPE erp_document_status AS ENUM ('draft', 'posted', 'cancelled');
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'erp_payment_status') THEN
+    CREATE TYPE erp_payment_status AS ENUM ('unpaid', 'partial', 'paid', 'refunded');
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'erp_stock_movement_type') THEN
+    ALTER TYPE erp_stock_movement_type ADD VALUE IF NOT EXISTS 'transfer_out';
+    ALTER TYPE erp_stock_movement_type ADD VALUE IF NOT EXISTS 'transfer_in';
+  END IF;
+END $$;
+
+CREATE TABLE IF NOT EXISTS erp_suppliers (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  phone TEXT,
+  email TEXT,
+  tax_id TEXT,
+  notes TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS erp_warehouses (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL UNIQUE,
+  code TEXT UNIQUE,
+  address TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO erp_warehouses (name, code, sort_order)
+VALUES ('Основний склад', 'MAIN', 10), ('Виробництво', 'PROD', 20), ('Готова продукція', 'READY', 30)
+ON CONFLICT (name) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS erp_goods_receipts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  document_no TEXT NOT NULL DEFAULT ('REC-' || to_char(now(), 'YYYYMMDD-HH24MISS')),
+  supplier_id UUID REFERENCES erp_suppliers(id) ON DELETE SET NULL,
+  warehouse_id UUID REFERENCES erp_warehouses(id) ON DELETE SET NULL,
+  status erp_document_status NOT NULL DEFAULT 'draft',
+  comment TEXT,
+  total_cents INTEGER NOT NULL DEFAULT 0,
+  posted_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS erp_goods_receipt_lines (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  receipt_id UUID NOT NULL REFERENCES erp_goods_receipts(id) ON DELETE CASCADE,
+  erp_material_id UUID NOT NULL REFERENCES erp_materials(id) ON DELETE RESTRICT,
+  unit TEXT NOT NULL DEFAULT 'шт.',
+  quantity NUMERIC(14,3) NOT NULL CHECK (quantity > 0),
+  unit_cost_cents INTEGER NOT NULL DEFAULT 0 CHECK (unit_cost_cents >= 0),
+  total_cents INTEGER NOT NULL DEFAULT 0,
+  comment TEXT,
+  sort_order INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS product_variant_skus (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  color_variant_id UUID REFERENCES product_color_variants(id) ON DELETE CASCADE,
+  color_name TEXT,
+  size TEXT NOT NULL,
+  sku TEXT NOT NULL UNIQUE,
+  sewing_cost_cents INTEGER NOT NULL DEFAULT 0 CHECK (sewing_cost_cents >= 0),
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (product_id, color_variant_id, size)
+);
+
+CREATE TABLE IF NOT EXISTS product_variant_recipe_lines (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  variant_sku_id UUID NOT NULL REFERENCES product_variant_skus(id) ON DELETE CASCADE,
+  erp_material_id UUID NOT NULL REFERENCES erp_materials(id) ON DELETE RESTRICT,
+  role TEXT NOT NULL DEFAULT 'material',
+  quantity NUMERIC(14,4) NOT NULL CHECK (quantity > 0),
+  production_step TEXT,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS erp_production_order_lines (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  production_order_id UUID NOT NULL REFERENCES erp_production_orders(id) ON DELETE CASCADE,
+  variant_sku_id UUID REFERENCES product_variant_skus(id) ON DELETE SET NULL,
+  product_id UUID REFERENCES products(id) ON DELETE SET NULL,
+  quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
+  due_date DATE,
+  comment TEXT,
+  material_requirements JSONB NOT NULL DEFAULT '[]',
+  sort_order INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS erp_processing_acts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  document_no TEXT NOT NULL DEFAULT ('ACT-' || to_char(now(), 'YYYYMMDD-HH24MISS')),
+  production_order_id UUID REFERENCES erp_production_orders(id) ON DELETE SET NULL,
+  warehouse_id UUID REFERENCES erp_warehouses(id) ON DELETE SET NULL,
+  status erp_document_status NOT NULL DEFAULT 'draft',
+  comment TEXT,
+  posted_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS erp_finished_goods (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  variant_sku_id UUID NOT NULL REFERENCES product_variant_skus(id) ON DELETE CASCADE,
+  warehouse_id UUID REFERENCES erp_warehouses(id) ON DELETE SET NULL,
+  quantity INTEGER NOT NULL DEFAULT 0 CHECK (quantity >= 0),
+  reserved_quantity INTEGER NOT NULL DEFAULT 0 CHECK (reserved_quantity >= 0),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (variant_sku_id, warehouse_id)
+);
+
+CREATE TABLE IF NOT EXISTS erp_stock_transfers (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  document_no TEXT NOT NULL DEFAULT ('TRN-' || to_char(now(), 'YYYYMMDD-HH24MISS')),
+  from_warehouse_id UUID REFERENCES erp_warehouses(id) ON DELETE SET NULL,
+  to_warehouse_id UUID REFERENCES erp_warehouses(id) ON DELETE SET NULL,
+  status erp_document_status NOT NULL DEFAULT 'draft',
+  comment TEXT,
+  posted_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS erp_stock_transfer_lines (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  transfer_id UUID NOT NULL REFERENCES erp_stock_transfers(id) ON DELETE CASCADE,
+  erp_material_id UUID NOT NULL REFERENCES erp_materials(id) ON DELETE RESTRICT,
+  quantity NUMERIC(14,3) NOT NULL CHECK (quantity > 0),
+  unit TEXT NOT NULL DEFAULT 'шт.',
+  comment TEXT,
+  sort_order INTEGER NOT NULL DEFAULT 0
+);
+
+ALTER TABLE erp_stock_movements
+  ADD COLUMN IF NOT EXISTS warehouse_id UUID REFERENCES erp_warehouses(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS receipt_id UUID REFERENCES erp_goods_receipts(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS transfer_id UUID REFERENCES erp_stock_transfers(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS processing_act_id UUID REFERENCES erp_processing_acts(id) ON DELETE SET NULL;
+
+ALTER TABLE leads
+  ADD COLUMN IF NOT EXISTS payment_status erp_payment_status NOT NULL DEFAULT 'unpaid',
+  ADD COLUMN IF NOT EXISTS payment_amount_cents INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS buyer_requisites JSONB NOT NULL DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS nova_poshta_data JSONB NOT NULL DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS fiscal_data JSONB NOT NULL DEFAULT '{}';
+
+-- ─────────────────────────────────────────────
+-- ERP CORE: materials, product recipes, production, stock movements
+-- ─────────────────────────────────────────────
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'erp_material_kind') THEN
+    CREATE TYPE erp_material_kind AS ENUM ('garment', 'fabric', 'print_supply', 'hardware', 'thread', 'packaging', 'service', 'labor', 'other');
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'erp_stock_movement_type') THEN
+    CREATE TYPE erp_stock_movement_type AS ENUM ('receipt', 'reservation', 'production_consume', 'production_output', 'adjustment', 'write_off');
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'erp_production_status') THEN
+    CREATE TYPE erp_production_status AS ENUM ('draft', 'planned', 'reserved', 'in_progress', 'done', 'cancelled');
+  END IF;
+END $$;
+
+CREATE TABLE IF NOT EXISTS erp_materials (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  sku TEXT UNIQUE,
+  kind erp_material_kind NOT NULL DEFAULT 'other',
+  unit TEXT NOT NULL DEFAULT 'шт.',
+  unit_cost_cents INTEGER NOT NULL DEFAULT 0 CHECK (unit_cost_cents >= 0),
+  stock_quantity NUMERIC(14,3) NOT NULL DEFAULT 0,
+  reserved_quantity NUMERIC(14,3) NOT NULL DEFAULT 0,
+  reorder_point NUMERIC(14,3) NOT NULL DEFAULT 0,
+  supplier TEXT,
+  notes TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS erp_material_types (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL UNIQUE,
+  kind erp_material_kind NOT NULL DEFAULT 'other',
+  unit TEXT NOT NULL DEFAULT 'шт.',
+  color TEXT NOT NULL DEFAULT '#64748b',
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE erp_materials
+  ADD COLUMN IF NOT EXISTS type_id UUID REFERENCES erp_material_types(id) ON DELETE SET NULL;
+
+CREATE TABLE IF NOT EXISTS product_recipe_lines (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  erp_material_id UUID NOT NULL REFERENCES erp_materials(id) ON DELETE RESTRICT,
+  role TEXT NOT NULL DEFAULT 'material',
+  quantity NUMERIC(14,4) NOT NULL CHECK (quantity > 0),
+  waste_percent NUMERIC(6,2) NOT NULL DEFAULT 0 CHECK (waste_percent >= 0),
+  production_step TEXT,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS erp_production_orders (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  lead_id UUID REFERENCES leads(id) ON DELETE SET NULL,
+  order_item_id UUID REFERENCES order_items(id) ON DELETE SET NULL,
+  product_id UUID REFERENCES products(id) ON DELETE SET NULL,
+  document_no TEXT,
+  status erp_production_status NOT NULL DEFAULT 'draft',
+  quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
+  planned_start_at TIMESTAMPTZ,
+  planned_finish_at TIMESTAMPTZ,
+  actual_finish_at TIMESTAMPTZ,
+  estimated_cost_cents INTEGER NOT NULL DEFAULT 0,
+  actual_cost_cents INTEGER NOT NULL DEFAULT 0,
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS erp_stock_movements (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  erp_material_id UUID NOT NULL REFERENCES erp_materials(id) ON DELETE RESTRICT,
+  production_order_id UUID REFERENCES erp_production_orders(id) ON DELETE SET NULL,
+  movement_type erp_stock_movement_type NOT NULL,
+  quantity NUMERIC(14,3) NOT NULL,
+  unit_cost_cents INTEGER NOT NULL DEFAULT 0 CHECK (unit_cost_cents >= 0),
+  note TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_erp_materials_kind ON erp_materials(kind);
+CREATE INDEX IF NOT EXISTS idx_erp_materials_type ON erp_materials(type_id);
+CREATE INDEX IF NOT EXISTS idx_erp_material_types_sort ON erp_material_types(sort_order, name);
+CREATE INDEX IF NOT EXISTS idx_product_recipe_lines_product ON product_recipe_lines(product_id, sort_order);
+CREATE INDEX IF NOT EXISTS idx_erp_production_orders_status ON erp_production_orders(status);
+CREATE INDEX IF NOT EXISTS idx_erp_stock_movements_material ON erp_stock_movements(erp_material_id, created_at DESC);
+
+ALTER TABLE IF EXISTS erp_materials ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS erp_material_types ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS product_recipe_lines ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS erp_production_orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS erp_stock_movements ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  DROP POLICY IF EXISTS "ERP materials admin all" ON erp_materials;
+  DROP POLICY IF EXISTS "ERP material types admin all" ON erp_material_types;
+  DROP POLICY IF EXISTS "Product recipes admin all" ON product_recipe_lines;
+  DROP POLICY IF EXISTS "ERP production admin all" ON erp_production_orders;
+  DROP POLICY IF EXISTS "ERP stock movements admin all" ON erp_stock_movements;
+  CREATE POLICY "ERP materials admin all" ON erp_materials FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+  CREATE POLICY "ERP material types admin all" ON erp_material_types FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+  CREATE POLICY "Product recipes admin all" ON product_recipe_lines FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+  CREATE POLICY "ERP production admin all" ON erp_production_orders FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+  CREATE POLICY "ERP stock movements admin all" ON erp_stock_movements FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+END $$;
+
+INSERT INTO erp_material_types (name, kind, unit, color, sort_order)
+VALUES
+  ('Тканина', 'fabric', 'м', '#16a34a', 10),
+  ('Готова основа', 'garment', 'шт.', '#2563eb', 20),
+  ('Матеріали друку', 'print_supply', 'шт.', '#7c3aed', 30),
+  ('Фурнітура', 'hardware', 'шт.', '#f59e0b', 40),
+  ('Нитки', 'thread', 'м', '#db2777', 50),
+  ('Пакування', 'packaging', 'шт.', '#0891b2', 60),
+  ('Послуга', 'service', 'посл.', '#64748b', 70),
+  ('Робота', 'labor', 'год.', '#dc2626', 80),
+  ('Інше', 'other', 'шт.', '#71717a', 90)
+ON CONFLICT (name) DO UPDATE SET
+  kind = EXCLUDED.kind,
+  unit = EXCLUDED.unit,
+  color = EXCLUDED.color,
+  sort_order = EXCLUDED.sort_order,
+  updated_at = NOW();
+
+-- ─────────────────────────────────────────────
 -- SEED: ПРИНТИ (dtf) pricing
 -- ─────────────────────────────────────────────
 INSERT INTO print_type_pricing (print_type, size_label, size_min_cm, size_max_cm, qty_tiers, sort_order)

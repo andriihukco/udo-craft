@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProductColorVariantsList } from "@/components/product-color-variants";
 import { SizeChartModal } from "@/components/size-chart-modal";
+import { ProductErpRecipe } from "./ProductErpRecipe";
+import { ProductVariantSkus } from "./ProductVariantSkus";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -335,6 +337,33 @@ export function ProductForm({ product, categories, sizeCharts, printAreas, onSav
           </CardContent>
         </Card>
       )}
+
+      {/* ── ERP Recipe ─────────────────────────────────────────────────── */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold">ERP: базова калькуляція продукту</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {product?.id ? (
+            <ProductErpRecipe productId={product.id} onChange={markDirty} />
+          ) : (
+            <p className="text-sm text-muted-foreground">ERP-склад товару можна додати після першого збереження.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold">ERP: варіації, артикули і калькуляція</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {product?.id ? (
+            <ProductVariantSkus productId={product.id} sizes={availableSizes} onChange={markDirty} />
+          ) : (
+            <p className="text-sm text-muted-foreground">Варіації SKU можна додати після першого збереження.</p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* ── Color Variants ─────────────────────────────────────────────── */}
       <Card>

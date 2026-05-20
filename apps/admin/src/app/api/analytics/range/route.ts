@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
       { data: leads },
       { data: prevLeads },
       { data: items },
+      { data: materials },
     ] = await Promise.all([
       supabase.from("site_events").select("event_type, session_id, visitor_id, created_at")
         .gte("created_at", from.toISOString()).lte("created_at", to.toISOString()),
@@ -45,6 +46,7 @@ export async function GET(request: NextRequest) {
         .gte("created_at", prevFrom.toISOString()).lt("created_at", prevTo.toISOString()),
       supabase.from("order_items").select("id, quantity, lead_id, created_at")
         .gte("created_at", from.toISOString()).lte("created_at", to.toISOString()),
+      supabase.from("erp_materials").select("id, unit_cost_cents, stock_quantity, reserved_quantity, reorder_point"),
     ]);
 
     const ev = events || [];
@@ -52,6 +54,7 @@ export async function GET(request: NextRequest) {
     const lds = leads || [];
     const plds = prevLeads || [];
     const its = items || [];
+    const mats = materials || [];
 
     const sessions = new Set(ev.filter((e) => e.event_type === "session_start").map((e) => e.session_id)).size;
     const sessionsPrev = new Set(pev.filter((e) => e.event_type === "session_start").map((e) => e.session_id)).size;
@@ -78,6 +81,10 @@ export async function GET(request: NextRequest) {
     const itemsSold = its.reduce((s, i) => s + (i.quantity || 0), 0);
     const totalClients = new Set(lds.map((l) => l.customer_data?.email).filter(Boolean)).size;
     const totalClientsPrev = new Set(plds.map((l: any) => l.customer_data?.email).filter(Boolean)).size;
+    const warehouseItems = mats.length;
+    const warehouseStockValue = mats.reduce((s, m) => s + Number(m.stock_quantity || 0) * Number(m.unit_cost_cents || 0), 0);
+    const warehouseReservedValue = mats.reduce((s, m) => s + Number(m.reserved_quantity || 0) * Number(m.unit_cost_cents || 0), 0);
+    const warehouseLowStock = mats.filter((m) => Number(m.reorder_point || 0) > 0 && Number(m.stock_quantity || 0) <= Number(m.reorder_point || 0)).length;
 
     const dailyMap = new Map<string, { sessions: number; pageViews: number; forms: number; revenue: number }>();
     ev.forEach((e) => {
@@ -105,6 +112,10 @@ export async function GET(request: NextRequest) {
       paidRevenue, paidRevenuePrev, avgOrderValue, avgOrderValuePrev,
       itemsSold, totalClients, totalClientsPrev,
       completedOrders: completed.length, completedOrdersPrev: completedPrev.length,
+      warehouseItems,
+      warehouseStockValue,
+      warehouseReservedValue,
+      warehouseLowStock,
       dailyStats: Array.from(dailyMap.entries()).map(([date, s]) => ({ date, ...s })),
     });
   } catch (err) {

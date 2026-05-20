@@ -4,8 +4,8 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  BarChart2, Users, MessagesSquare, ShoppingBag, Box,
-  Settings, ChevronRight, UserCog,
+  BarChart2, Users, MessagesSquare, ShoppingBag, Box, Boxes,
+  Settings, ChevronRight, UserCog, Factory,
   LayoutDashboard, FileEdit, Palette, Search,
 } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
@@ -69,6 +69,8 @@ const SALES_NAV: NavItem[] = [
 ];
 
 const INVENTORY_NAV: NavItem[] = [
+  { title: "Склад", url: "/warehouse", icon: Boxes },
+  { title: "CRM-ERP", url: "/erp", icon: Factory },
   {
     title: "Каталог",
     url: "/catalog",
@@ -240,7 +242,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
             const ok = handleNavClick(item.url, isActive);
             if (!ok) e.preventDefault();
           }}
-          className="transition-colors"
+          className="h-8 gap-2 px-2.5 py-1.5 text-[13px] transition-colors"
         >
           <item.icon className={`transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`} />
           <span className={isActive ? "font-medium leading-none text-foreground" : "leading-none text-muted-foreground"}>{item.title}</span>
@@ -272,14 +274,14 @@ export function AppSidebar({ user }: AppSidebarProps) {
             aria-current={isGroupActive ? "page" : undefined}
             aria-expanded={isOpen}
             onClick={() => setOpenGroups((prev) => ({ ...prev, [item.url]: !isOpen }))}
-          className="transition-colors"
+          className="h-8 gap-2 px-2.5 py-1.5 text-[13px] transition-colors"
         >
           <item.icon className={`transition-colors ${isGroupActive ? "text-primary" : "text-muted-foreground"}`} />
             <span className={isGroupActive ? "font-medium leading-none text-foreground" : "leading-none text-muted-foreground"}>{item.title}</span>
             <ChevronRight className="ml-auto size-3.5 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 text-muted-foreground" />
           </SidebarMenuButton>
           <CollapsibleContent className="data-[state=closed]:animate-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1">
-            <SidebarMenuSub className="ml-5 mt-1 space-y-0.5 border-l border-border pl-2">
+            <SidebarMenuSub className="ml-4 mt-0.5 space-y-0 border-l border-border pl-2">
               {item.children?.map((child) => {
                 let childActive = false;
                 if (child.url.includes("?")) {
@@ -302,7 +304,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
                         const ok = handleNavClick(child.url, childActive);
                         if (!ok) e.preventDefault();
                       }}
-                      className={`py-1.5 text-xs transition-colors ${childActive ? "font-medium text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                      className={`h-6 py-1 text-[11px] transition-colors ${childActive ? "font-medium text-primary" : "text-muted-foreground hover:text-foreground"}`}
                     >
                       {child.title}
                     </SidebarMenuSubButton>
@@ -319,7 +321,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
   return (
     <>
     <Sidebar collapsible="icon" className="border-r border-border bg-sidebar">
-      <SidebarHeader className="h-16 flex items-center px-4 border-b border-border bg-white">
+      <SidebarHeader className="h-14 flex items-center px-3 border-b border-border bg-white">
         <div className={`flex items-center w-full ${isCollapsed ? "justify-center" : "justify-between"}`}>
           {!isCollapsed && (
             <Link
@@ -330,18 +332,18 @@ export function AppSidebar({ user }: AppSidebarProps) {
               <BrandLogo className="h-6 w-auto" />
             </Link>
           )}
-          <SidebarTrigger className="-mr-2" />
+          <SidebarTrigger className="-mr-1" />
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="gap-5 px-4 py-4">
+      <SidebarContent className="gap-2 px-3 py-2">
         {/* Search */}
-        <SidebarGroup>
+        <SidebarGroup className="p-1">
           <SidebarMenu>
             <SidebarMenuItem>
               <CommandMenu
                 trigger={
-                  <SidebarMenuButton tooltip="Швидкий пошук (⌘K)" className="group h-10 border border-border bg-white hover:bg-muted">
+                  <SidebarMenuButton tooltip="Швидкий пошук (⌘K)" className="group h-9 gap-2 border border-border bg-white px-2.5 py-1.5 hover:bg-muted">
                     <Search className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
                     <span className="text-xs font-medium text-muted-foreground">Швидкий пошук...</span>
                     {!isCollapsed && (
@@ -357,17 +359,17 @@ export function AppSidebar({ user }: AppSidebarProps) {
         </SidebarGroup>
 
         {/* Sales */}
-        <SidebarGroup>
-          <SidebarGroupLabel className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60">Продажі та CRM</SidebarGroupLabel>
-          <SidebarMenu className="gap-1">
+        <SidebarGroup className="p-1">
+          <SidebarGroupLabel className="mb-1 h-5 px-2.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/60">Продажі та CRM</SidebarGroupLabel>
+          <SidebarMenu className="gap-0.5">
             {SALES_NAV.map(renderSimpleItem)}
           </SidebarMenu>
         </SidebarGroup>
 
         {/* Inventory */}
-        <SidebarGroup>
-          <SidebarGroupLabel className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60">Інвентар</SidebarGroupLabel>
-          <SidebarMenu className="gap-1">
+        <SidebarGroup className="p-1">
+          <SidebarGroupLabel className="mb-1 h-5 px-2.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/60">Інвентар</SidebarGroupLabel>
+          <SidebarMenu className="gap-0.5">
             {INVENTORY_NAV.map((item) =>
               item.children ? renderCollapsibleItem(item) : renderSimpleItem(item)
             )}
@@ -375,17 +377,17 @@ export function AppSidebar({ user }: AppSidebarProps) {
         </SidebarGroup>
 
         {/* Insights */}
-        <SidebarGroup>
-          <SidebarGroupLabel className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60">Аналітика</SidebarGroupLabel>
-          <SidebarMenu className="gap-1">
+        <SidebarGroup className="p-1">
+          <SidebarGroupLabel className="mb-1 h-5 px-2.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/60">Аналітика</SidebarGroupLabel>
+          <SidebarMenu className="gap-0.5">
             {INSIGHTS_NAV.map(renderSimpleItem)}
           </SidebarMenu>
         </SidebarGroup>
 
         {/* System */}
-        <SidebarGroup>
-          <SidebarGroupLabel className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60">Керування</SidebarGroupLabel>
-          <SidebarMenu className="gap-1">
+        <SidebarGroup className="p-1">
+          <SidebarGroupLabel className="mb-1 h-5 px-2.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/60">Керування</SidebarGroupLabel>
+          <SidebarMenu className="gap-0.5">
             {SYSTEM_NAV.map((item) =>
               item.children ? renderCollapsibleItem(item) : renderSimpleItem(item)
             )}
@@ -393,7 +395,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border bg-white p-3">
+      <SidebarFooter className="border-t border-border bg-white p-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <NavUser user={user} />

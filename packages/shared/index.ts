@@ -159,6 +159,151 @@ export type Category = z.infer<typeof CategorySchema>;
 export type Material = z.infer<typeof MaterialSchema>;
 export type ProductColorVariant = z.infer<typeof ProductColorVariantSchema>;
 
+// ── ERP / inventory costing ─────────────────────────────────────────────────
+
+export const ErpMaterialKindEnum = z.enum([
+  "garment",
+  "fabric",
+  "print_supply",
+  "hardware",
+  "thread",
+  "packaging",
+  "service",
+  "labor",
+  "other",
+]);
+
+export const ErpMaterialSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  sku: z.string().nullable().optional(),
+  type_id: z.string().uuid().nullable().optional(),
+  kind: ErpMaterialKindEnum.default("other"),
+  unit: z.string().default("шт."),
+  unit_cost_cents: z.number().int().nonnegative().default(0),
+  stock_quantity: z.number().default(0),
+  reserved_quantity: z.number().default(0),
+  reorder_point: z.number().default(0),
+  supplier: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  is_active: z.boolean().default(true),
+  sort_order: z.number().int().default(0),
+});
+
+export const ErpMaterialTypeSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  kind: ErpMaterialKindEnum.default("other"),
+  unit: z.string().default("шт."),
+  color: z.string().default("#64748b"),
+  sort_order: z.number().int().default(0),
+  is_active: z.boolean().default(true),
+});
+
+export const ProductRecipeLineSchema = z.object({
+  id: z.string().uuid(),
+  product_id: z.string().uuid(),
+  erp_material_id: z.string().uuid(),
+  role: z.string().default("material"),
+  quantity: z.number().positive(),
+  waste_percent: z.number().min(0).default(0),
+  production_step: z.string().nullable().optional(),
+  sort_order: z.number().int().default(0),
+});
+
+export const ErpDocumentStatusEnum = z.enum(["draft", "posted", "cancelled"]);
+export const ErpPaymentStatusEnum = z.enum(["unpaid", "partial", "paid", "refunded"]);
+
+export const ErpSupplierSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  phone: z.string().nullable().optional(),
+  email: z.string().nullable().optional(),
+  tax_id: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  is_active: z.boolean().default(true),
+});
+
+export const ErpWarehouseSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  code: z.string().nullable().optional(),
+  address: z.string().nullable().optional(),
+  is_active: z.boolean().default(true),
+  sort_order: z.number().int().default(0),
+});
+
+export const ProductVariantSkuSchema = z.object({
+  id: z.string().uuid(),
+  product_id: z.string().uuid(),
+  color_variant_id: z.string().uuid().nullable().optional(),
+  color_name: z.string().nullable().optional(),
+  size: z.string(),
+  sku: z.string(),
+  sewing_cost_cents: z.number().int().nonnegative().default(0),
+  is_active: z.boolean().default(true),
+  sort_order: z.number().int().default(0),
+});
+
+export const ProductVariantRecipeLineSchema = z.object({
+  id: z.string().uuid(),
+  variant_sku_id: z.string().uuid(),
+  erp_material_id: z.string().uuid(),
+  role: z.string().default("material"),
+  quantity: z.number().positive(),
+  production_step: z.string().nullable().optional(),
+  sort_order: z.number().int().default(0),
+});
+
+export const ErpGoodsReceiptLineSchema = z.object({
+  id: z.string().uuid(),
+  receipt_id: z.string().uuid(),
+  erp_material_id: z.string().uuid(),
+  unit: z.string().default("шт."),
+  quantity: z.number().positive(),
+  unit_cost_cents: z.number().int().nonnegative().default(0),
+  total_cents: z.number().int().nonnegative().default(0),
+  comment: z.string().nullable().optional(),
+  sort_order: z.number().int().default(0),
+});
+
+export const ErpGoodsReceiptSchema = z.object({
+  id: z.string().uuid(),
+  document_no: z.string(),
+  supplier_id: z.string().uuid().nullable().optional(),
+  warehouse_id: z.string().uuid().nullable().optional(),
+  status: ErpDocumentStatusEnum.default("draft"),
+  comment: z.string().nullable().optional(),
+  total_cents: z.number().int().nonnegative().default(0),
+  posted_at: z.string().nullable().optional(),
+});
+
+export const ErpProductionOrderLineSchema = z.object({
+  id: z.string().uuid(),
+  production_order_id: z.string().uuid(),
+  variant_sku_id: z.string().uuid().nullable().optional(),
+  product_id: z.string().uuid().nullable().optional(),
+  quantity: z.number().int().positive(),
+  due_date: z.string().nullable().optional(),
+  comment: z.string().nullable().optional(),
+  material_requirements: z.array(z.record(z.string(), z.unknown())).default([]),
+  sort_order: z.number().int().default(0),
+});
+
+export type ErpMaterialKind = z.infer<typeof ErpMaterialKindEnum>;
+export type ErpMaterial = z.infer<typeof ErpMaterialSchema>;
+export type ErpMaterialType = z.infer<typeof ErpMaterialTypeSchema>;
+export type ProductRecipeLine = z.infer<typeof ProductRecipeLineSchema>;
+export type ErpDocumentStatus = z.infer<typeof ErpDocumentStatusEnum>;
+export type ErpPaymentStatus = z.infer<typeof ErpPaymentStatusEnum>;
+export type ErpSupplier = z.infer<typeof ErpSupplierSchema>;
+export type ErpWarehouse = z.infer<typeof ErpWarehouseSchema>;
+export type ProductVariantSku = z.infer<typeof ProductVariantSkuSchema>;
+export type ProductVariantRecipeLine = z.infer<typeof ProductVariantRecipeLineSchema>;
+export type ErpGoodsReceipt = z.infer<typeof ErpGoodsReceiptSchema>;
+export type ErpGoodsReceiptLine = z.infer<typeof ErpGoodsReceiptLineSchema>;
+export type ErpProductionOrderLine = z.infer<typeof ErpProductionOrderLineSchema>;
+
 // ── Print types & fonts ─────────────────────────────────────────────────────
 
 // Shared print type constants and types — no fabric dependency, safe for SSR
